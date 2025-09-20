@@ -1,9 +1,7 @@
-namespace AuthService.Dto;
+namespace AuthService.DTO; // <-- ESTA LINHA É A MAIS IMPORTANTE
 
-// DTO (Data Transfer Object) para receber os dados de registro/login
 public class UserDto
 {
-    // A palavra-chave 'required' garante que esses campos devem ser enviados na requisição
     public required string Email { get; set; }
     public required string Password { get; set; }
 }

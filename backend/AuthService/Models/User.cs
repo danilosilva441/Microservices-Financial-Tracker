@@ -11,4 +11,8 @@ public class User
 
     [Required]
     public required string PasswordHash { get; set; }
+
+    // REMOVEMOS a propriedade 'string Role'
+    // E ADICIONAMOS a coleção de perfis
+    public ICollection<Role> Roles { get; set; } = new List<Role>();
 }
