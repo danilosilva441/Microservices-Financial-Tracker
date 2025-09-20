@@ -112,7 +112,7 @@ Este projeto está em desenvolvimento. Os próximos passos planejados são:
 
 ## 👨‍💻 Autor
 
-Feito com ❤️ por **[SEU NOME]**.
+Feito com ❤️ por **Danilo Silva**.
 
 [![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/danilo-d-9b04a6140/)
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/danilosilva441)
