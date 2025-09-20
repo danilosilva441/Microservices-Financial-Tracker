@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  # Serviço do Banco de Dados PostgreSQL
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: portfolio_postgres
+    environment:
+      - POSTGRES_DB=portfolio_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1527 # <-- MUDE AQUI PARA A MESMA SENHA DO appsettings.json
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
