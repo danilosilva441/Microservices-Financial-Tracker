@@ -2,36 +2,38 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para permitir que o Express entenda JSON no corpo das requisições
 app.use(express.json());
 
-// Rota principal para um teste de saúde (opcional, mas bom para testar)
-app.get('/', (req, res) => {
-    res.send('Analysis Service is running!');
-});
-
-// O endpoint principal do nosso serviço de análise
 app.post('/projetar', (req, res) => {
-    // 1. Extrai os dados do corpo da requisição
-    const { valorMeta, valorAcumuladoAtual, diaAtualDoMes } = req.body;
+    // 1. Nova estrutura de dados de entrada
+    const { metaMensal, faturamentos } = req.body;
 
-    // 2. Validação simples dos dados de entrada
-    if (!valorMeta || !valorAcumuladoAtual || !diaAtualDoMes) {
-        return res.status(400).json({ error: 'Dados de entrada incompletos. São necessários: valorMeta, valorAcumuladoAtual, diaAtualDoMes.' });
+    // 2. Validação dos dados
+    if (!metaMensal || !faturamentos || !Array.isArray(faturamentos)) {
+        return res.status(400).json({ error: 'Dados incompletos. São necessários: metaMensal e uma lista de faturamentos.' });
     }
 
-    if (diaAtualDoMes <= 0 || valorMeta <= 0) {
-        return res.status(400).json({ error: 'Valores de entrada devem ser positivos.' });
+    if (faturamentos.length === 0) {
+        return res.status(200).json({
+            metaMensal,
+            valorAcumuladoAtual: 0,
+            projecaoFinal: 0,
+            percentualProjetado: 0,
+            mensagem: "Nenhum faturamento registrado para análise."
+        });
     }
 
-    // 3. Lógica da projeção
+    // 3. Lógica de projeção aprimorada
     const hoje = new Date();
-    // Pega o total de dias no mês atual
+    const diaAtualDoMes = hoje.getDate();
     const totalDeDiasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+
+    // Calcula o total faturado somando os valores da lista
+    const valorAcumuladoAtual = faturamentos.reduce((total, fat) => total + fat.valor, 0);
 
     const mediaDiaria = valorAcumuladoAtual / diaAtualDoMes;
     const projecaoFinal = mediaDiaria * totalDeDiasNoMes;
-    const percentualProjetado = (projecaoFinal / valorMeta) * 100;
+    const percentualProjetado = (projecaoFinal / metaMensal) * 100;
 
     let mensagem = `Projeção de ${percentualProjetado.toFixed(2)}% da meta.`;
     if (percentualProjetado >= 100) {
@@ -42,18 +44,16 @@ app.post('/projetar', (req, res) => {
 
     // 4. Monta o objeto de resposta
     const response = {
-        valorMeta,
+        metaMensal,
         valorAcumuladoAtual,
         projecaoFinal: parseFloat(projecaoFinal.toFixed(2)),
         percentualProjetado: parseFloat(percentualProjetado.toFixed(2)),
         mensagem
     };
 
-    // 5. Envia a resposta
     res.status(200).json(response);
 });
 
-// Inicia o servidor para escutar na porta definida
 app.listen(PORT, () => {
     console.log(`Analysis Service rodando na porta ${PORT}`);
 });
