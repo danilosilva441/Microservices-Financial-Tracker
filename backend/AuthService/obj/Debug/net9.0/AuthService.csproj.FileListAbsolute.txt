@@ -140,3 +140,4 @@ C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net9.0\BCr
 C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\My workspace\portfolio-microservices\backend\AuthService\obj\Debug\net9.0\AuthService.sourcelink.json

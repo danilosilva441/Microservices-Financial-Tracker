@@ -139,3 +139,4 @@ C:\My workspace\portfolio-microservices\backend\BillingService\obj\Debug\net9.0\
 C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\obj\Debug\net9.0\BillingService.sourcelink.json

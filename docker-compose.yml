@@ -1,18 +1,62 @@
-version: '3.8'
+# A versão do compose é obsoleta, mas mantemos para compatibilidade. Pode ser removida.
+# version: '3.8' 
 
 services:
-  # Serviço do Banco de Dados PostgreSQL
+  # 1. Serviço do Banco de Dados PostgreSQL
   postgres_db:
     image: postgres:15-alpine
     container_name: portfolio_postgres
     environment:
       - POSTGRES_DB=portfolio_db
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1527 # <-- MUDE AQUI PARA A MESMA SENHA DO appsettings.json
+      - POSTGRES_PASSWORD=1527 # Sua senha que já está funcionando
     ports:
-      - "5432:5432"
+      - "5432:5432" # Expomos a porta do DB para podermos conectar com DBeaver, etc.
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 2. Serviço de Autenticação (ASP.NET Core)
+  auth_service:
+    container_name: auth_service
+    build:
+      context: ./backend/AuthService # Caminho para a pasta do serviço
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres_db # Só inicia depois que o banco estiver pronto
+
+  # 3. Serviço de Faturamento (ASP.NET Core)
+  billing_service:
+    container_name: billing_service
+    build:
+      context: ./backend/BillingService
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres_db
+
+  # 4. Serviço de Análise (Node.js)
+  analysis_service:
+    container_name: analysis_service
+    build:
+      context: ./backend/analysis_service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+  # 5. API Gateway (Nginx)
+  api_gateway:
+    container_name: api_gateway
+    image: nginx:1.25-alpine
+    ports:
+      - "8080:80" # Expõe a porta 80 do Nginx como 8080 na sua máquina
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf # Mapeia nosso arquivo de configuração para dentro do contêiner
+    depends_on:
+      - auth_service
+      - billing_service
+      - analysis_service # Só inicia depois que os serviços de backend estiverem prontos
+    restart: unless-stopped
 
 volumes:
   postgres_data:
