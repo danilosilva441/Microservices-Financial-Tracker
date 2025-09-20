@@ -77,7 +77,7 @@ Siga os passos abaixo para executar a aplicação completa localmente.
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git](https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git)
+    git clone [https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git](https://github.com/danilosilva441/Microservices-Financial-Tracker.git)
     ```
 
 2.  **Navegue até a pasta do projeto:**
