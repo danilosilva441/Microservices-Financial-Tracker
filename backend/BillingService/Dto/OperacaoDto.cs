@@ -10,7 +10,7 @@ public class CreateOperacaoDto
 
     [Required]
     [Range(0.01, double.MaxValue)]
-    public decimal Valor { get; set; }
+    public decimal MetaMensal { get; set; } // <--- MUDANÇA AQUI (de Valor para MetaMensal)
 
     [Required]
     public DateTime DataInicio { get; set; }

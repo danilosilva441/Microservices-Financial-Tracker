@@ -9,5 +9,6 @@ namespace BillingService.Data
 
         public DbSet<Operacao> Operacoes { get; set; }
         public DbSet<Meta> Metas { get; set; }
+        public DbSet<Faturamento> Faturamentos { get; set; }
     }
 }

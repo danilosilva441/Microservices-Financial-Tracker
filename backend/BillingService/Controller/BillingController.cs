@@ -5,6 +5,7 @@ using System.Security.Claims;
 using BillingService.Data;
 using BillingService.DTO;
 using BillingService.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Controllers;
 
@@ -34,16 +35,19 @@ public class BillingController : ControllerBase
 
     // --- Endpoints de Operações ---
 
-    [HttpGet("operacoes")]
-    public async Task<IActionResult> GetOperacoes()
-    {
-        var userId = GetUserId();
-        var operacoes = await _context.Operacoes
-            .Where(op => op.UserId == userId)
-            .ToListAsync();
-        
-        return Ok(operacoes);
-    }
+[HttpGet("operacoes")]
+public async Task<IActionResult> GetOperacoes()
+{
+    var userId = GetUserId();
+
+    // A MUDANÇA ESTÁ AQUI: Adicionamos .Include() para carregar os faturamentos
+    var operacoes = await _context.Operacoes
+        .Include(op => op.Faturamentos) // <-- INCLUA OS FATURAMENTOS RELACIONADOS
+        .Where(op => op.UserId == userId)
+        .ToListAsync();
+    
+    return Ok(operacoes);
+}
 
     [HttpPost("operacoes")]
     public async Task<IActionResult> CreateOperacao([FromBody] CreateOperacaoDto operacaoDto)
@@ -54,11 +58,13 @@ public class BillingController : ControllerBase
         {
             Id = Guid.NewGuid(),
             Descricao = operacaoDto.Descricao,
-            Valor = operacaoDto.Valor,
-            DataInicio = operacaoDto.DataInicio,
-            DataFim = operacaoDto.DataFim,
+            MetaMensal = operacaoDto.MetaMensal,
+            // Converte a data para o padrão Universal (UTC) antes de salvar
+            DataInicio = operacaoDto.DataInicio.ToUniversalTime(), // <--- CORREÇÃO
+                                                                   // Se DataFim não for nula, também converte para UTC
+            DataFim = operacaoDto.DataFim?.ToUniversalTime(),     // <--- CORREÇÃO
             IsAtiva = true,
-            UserId = userId // Vincula a operação ao usuário logado
+            UserId = userId
         };
 
         await _context.Operacoes.AddAsync(novaOperacao);
@@ -71,7 +77,7 @@ public class BillingController : ControllerBase
     public async Task<IActionResult> DeactivateOperacao(Guid id)
     {
         var userId = GetUserId();
-        
+
         // Busca a operação pelo ID E pelo ID do usuário para garantir que um usuário não desative a operação de outro.
         var operacao = await _context.Operacoes.FirstOrDefaultAsync(op => op.Id == id && op.UserId == userId);
 
@@ -107,7 +113,7 @@ public class BillingController : ControllerBase
     public async Task<IActionResult> SetMeta([FromBody] MetaDto metaDto)
     {
         var userId = GetUserId();
-        
+
         // Verifica se já existe uma meta para o período
         var metaExistente = await _context.Metas
             .FirstOrDefaultAsync(m => m.UserId == userId && m.Mes == metaDto.Mes && m.Ano == metaDto.Ano);
@@ -133,5 +139,35 @@ public class BillingController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok("Meta salva com sucesso.");
+    }
+
+    [HttpPost("operacoes/{operacaoId}/faturamentos")]
+    public async Task<IActionResult> AddFaturamento(Guid operacaoId, [FromBody] CreateFaturamentoDto faturamentoDto)
+    {
+        var userId = GetUserId();
+
+        // 1. Verifica se a operação existe e pertence ao usuário logado (MUITO IMPORTANTE!)
+        var operacao = await _context.Operacoes
+            .FirstOrDefaultAsync(op => op.Id == operacaoId && op.UserId == userId);
+
+        if (operacao == null)
+        {
+            return NotFound("A operação especificada não foi encontrada ou não pertence a este usuário.");
+        }
+
+        // 2. Cria a nova entidade de Faturamento
+        var novoFaturamento = new Faturamento
+        {
+            Id = Guid.NewGuid(),
+            Valor = faturamentoDto.Valor,
+            Data = faturamentoDto.Data.ToUniversalTime(), // <--- CORREÇÃO
+            OperacaoId = operacaoId
+        };
+
+        // 3. Salva no banco de dados
+        await _context.Faturamentos.AddAsync(novoFaturamento);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(AddFaturamento), new { id = novoFaturamento.Id }, novoFaturamento);
     }
 }
