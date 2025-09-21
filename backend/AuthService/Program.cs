@@ -52,6 +52,14 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Aplica as migrations do Entity Framework automaticamente ao iniciar a aplicação.
+// Isso garante que o banco de dados estará sempre sincronizado com o código.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

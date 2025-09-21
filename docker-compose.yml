@@ -1,6 +1,3 @@
-# A versão do compose é obsoleta, mas mantemos para compatibilidade. Pode ser removida.
-# version: '3.8' 
-
 services:
   # 1. Serviço do Banco de Dados PostgreSQL
   postgres_db:
@@ -9,9 +6,9 @@ services:
     environment:
       - POSTGRES_DB=portfolio_db
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1527 # Sua senha que já está funcionando
+      - POSTGRES_PASSWORD=1527 # Sua senha
     ports:
-      - "5432:5432" # Expomos a porta do DB para podermos conectar com DBeaver, etc.
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -20,11 +17,14 @@ services:
   auth_service:
     container_name: auth_service
     build:
-      context: ./backend/AuthService # Caminho para a pasta do serviço
+      context: ./backend/AuthService
       dockerfile: Dockerfile
+    environment:
+      # Força a aplicação a escutar na porta 8080 dentro do contêiner
+      - ASPNETCORE_URLS=http://+:8080
     restart: unless-stopped
     depends_on:
-      - postgres_db # Só inicia depois que o banco estiver pronto
+      - postgres_db
 
   # 3. Serviço de Faturamento (ASP.NET Core)
   billing_service:
@@ -32,6 +32,9 @@ services:
     build:
       context: ./backend/BillingService
       dockerfile: Dockerfile
+    environment:
+      # Força a aplicação a escutar na porta 8080 dentro do contêiner
+      - ASPNETCORE_URLS=http://+:8080
     restart: unless-stopped
     depends_on:
       - postgres_db
@@ -51,11 +54,11 @@ services:
     ports:
       - "8080:80" # Expõe a porta 80 do Nginx como 8080 na sua máquina
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf # Mapeia nosso arquivo de configuração para dentro do contêiner
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - auth_service
       - billing_service
-      - analysis_service # Só inicia depois que os serviços de backend estiverem prontos
+      - analysis_service
     restart: unless-stopped
 
 volumes:
