@@ -17,7 +17,7 @@ namespace BillingService.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -87,6 +87,9 @@ namespace BillingService.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<decimal>("MetaMensal")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ProjecaoFaturamento")
                         .HasColumnType("numeric");
 
                     b.Property<Guid>("UserId")

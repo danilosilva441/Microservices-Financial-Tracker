@@ -51,7 +51,7 @@ public class OperacoesController : ControllerBase
         {
             query = query.Where(op => op.DataInicio.Month == mes.Value);
         }
-        
+
         var operacoes = await query.ToListAsync();
         return Ok(operacoes);
     }
@@ -89,6 +89,24 @@ public class OperacoesController : ControllerBase
         }
 
         operacao.IsAtiva = false;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpPatch("{id}/projecao")]
+    public async Task<IActionResult> UpdateProjecao(Guid id, [FromBody] decimal projecao)
+    {
+        // Nota: Este endpoint é para comunicação interna entre serviços.
+        // Em um ambiente de produção, ele seria protegido por uma chave de API ou outro método.
+        var operacao = await _context.Operacoes.FindAsync(id);
+
+        if (operacao == null)
+        {
+            return NotFound();
+        }
+
+        operacao.ProjecaoFaturamento = projecao;
         await _context.SaveChangesAsync();
 
         return NoContent();

@@ -13,6 +13,7 @@ public class Operacao
     public bool IsAtiva { get; set; }
     public Guid UserId { get; set; }
 
+    public decimal? ProjecaoFaturamento { get; set; } // '?' permite que o valor seja nulo
     // Coleção de Faturamentos vinculados
     public ICollection<Faturamento> Faturamentos { get; set; } = new List<Faturamento>();
 }
