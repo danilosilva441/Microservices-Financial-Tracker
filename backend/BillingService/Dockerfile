@@ -1,5 +1,5 @@
 # Estágio 1: Build - Usa a imagem completa do SDK do .NET para compilar a aplicação
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copia o arquivo .csproj e restaura as dependências primeiro
