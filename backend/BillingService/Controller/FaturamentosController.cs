@@ -29,7 +29,7 @@ public class FaturamentosController : ControllerBase
     }
 
     [HttpPost] // POST /api/operacoes/{operacaoId}/faturamentos
-    public async Task<IActionResult> AddFaturamento(Guid operacaoId, [FromBody] CreateFaturamentoDto faturamentoDto)
+    public async Task<IActionResult> AddFaturamento(Guid operacaoId, [FromBody] FaturamentoDto faturamentoDto)
     {
         var userId = GetUserId();
         var operacao = await _context.Operacoes
@@ -45,6 +45,7 @@ public class FaturamentosController : ControllerBase
             Id = Guid.NewGuid(),
             Valor = faturamentoDto.Valor,
             Data = faturamentoDto.Data.ToUniversalTime(),
+            Moeda = faturamentoDto.Moeda, // <-- Adicione esta linha
             OperacaoId = operacaoId
         };
 

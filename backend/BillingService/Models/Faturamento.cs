@@ -12,4 +12,5 @@ public class Faturamento
     // Chave estrangeira para vincular à Operacao
     public Guid OperacaoId { get; set; }
     public Operacao Operacao { get; set; } = null!; // Propriedade de navegação
+    public required string Moeda { get; set; }
 }

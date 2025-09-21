@@ -7,6 +7,8 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 // Add services to the container.
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -46,6 +48,18 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:5173") // A porta do seu frontend Vue
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -62,7 +76,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 

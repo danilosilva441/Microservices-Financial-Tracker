@@ -31,6 +31,10 @@ namespace BillingService.Migrations
                     b.Property<DateTime>("Data")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Moeda")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("OperacaoId")
                         .HasColumnType("uuid");
 
@@ -80,7 +84,9 @@ namespace BillingService.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Descricao")
-                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Endereco")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsAtiva")
@@ -88,6 +94,14 @@ namespace BillingService.Migrations
 
                     b.Property<decimal>("MetaMensal")
                         .HasColumnType("numeric");
+
+                    b.Property<string>("Moeda")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal?>("ProjecaoFaturamento")
                         .HasColumnType("numeric");

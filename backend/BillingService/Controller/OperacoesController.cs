@@ -57,13 +57,16 @@ public class OperacoesController : ControllerBase
     }
 
     [HttpPost] // POST /api/operacoes
-    public async Task<IActionResult> CreateOperacao([FromBody] CreateOperacaoDto operacaoDto)
+    public async Task<IActionResult> CreateOperacao([FromBody] OperacaoDto operacaoDto)
     {
         var userId = GetUserId();
         var novaOperacao = new Operacao
         {
             Id = Guid.NewGuid(),
+            Nome = operacaoDto.Nome,
             Descricao = operacaoDto.Descricao,
+            Endereco = operacaoDto.Endereco,
+            Moeda = operacaoDto.Moeda,
             MetaMensal = operacaoDto.MetaMensal,
             DataInicio = operacaoDto.DataInicio.ToUniversalTime(),
             DataFim = operacaoDto.DataFim?.ToUniversalTime(),
@@ -110,5 +113,20 @@ public class OperacoesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+    [HttpGet("{id}")] // GET /api/operacoes/{id}
+public async Task<IActionResult> GetOperacaoById(Guid id)
+{
+    var userId = GetUserId();
+    var operacao = await _context.Operacoes
+        .Include(op => op.Faturamentos) // Importante incluir os faturamentos!
+        .FirstOrDefaultAsync(op => op.Id == id && op.UserId == userId);
+
+    if (operacao == null)
+    {
+        return NotFound();
+    }
+
+    return Ok(operacao);
     }
 }

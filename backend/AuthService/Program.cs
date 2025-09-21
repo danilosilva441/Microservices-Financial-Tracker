@@ -6,8 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
+// Add services to the container.
 builder.Services.AddControllers();
 
 // ---- ADICIONE ESTA LINHA ----
@@ -50,6 +51,18 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:5173") // A porta do seu frontend Vue
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+
+
 var app = builder.Build();
 
 // Aplica as migrations do Entity Framework automaticamente ao iniciar a aplicação.
@@ -69,7 +82,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// A ordem aqui é importante: primeiro autentica, depois autoriza.
+app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization(); // Esta linha agora tem o serviço que ela precisa.
 
