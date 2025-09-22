@@ -3,9 +3,12 @@ import { ref, onMounted } from 'vue';
 import { useOperacoesStore } from '@/stores/operacoes';
 import OperacaoModal from '@/components/OperacaoModal.vue';
 import { formatCurrency } from '@/utils/formatters.js';
+import { useRouter } from 'vue-router'; // 1. IMPORTE O ROUTER
+
 
 const operacoesStore = useOperacoesStore();
 const isModalVisible = ref(false);
+const router = useRouter();
 
 onMounted(() => {
     operacoesStore.fetchOperacoes();
@@ -14,6 +17,10 @@ onMounted(() => {
 async function handleSave(operacaoData) {
     await operacoesStore.createOperacao(operacaoData);
     isModalVisible.value = false; // Fecha o modal após salvar
+}
+
+function goToDetalhes(operacaoId) {
+    router.push({ name: 'operacao-detalhes', params: { id: operacaoId } });
 }
 </script>
 
@@ -38,13 +45,9 @@ async function handleSave(operacaoData) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="op in operacoesStore.operacoes" :key="op.id" class="border-b">
-                        <td class="py-4 font-semibold">
-                            <RouterLink :to="{ name: 'operacao-detalhes', params: { id: op.id } }"
-                                class="text-primary hover:underline">
-                                {{ op.nome }}
-                            </RouterLink>
-                        </td>
+                    <tr v-for="op in operacoesStore.operacoes" :key="op.id" @click="goToDetalhes(op.id)"
+                        class="border-b hover:bg-gray-100 cursor-pointer transition-colors">
+                        <td class="py-4 font-semibold text-primary">{{ op.nome || 'Operação Sem Nome' }}</td>
                         <td>{{ formatCurrency(op.metaMensal, op.moeda) }}</td>
                         <td>{{ formatCurrency(op.projecaoFaturamento || 0, op.moeda) }}</td>
                         <td>
