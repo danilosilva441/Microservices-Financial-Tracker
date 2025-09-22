@@ -16,7 +16,7 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     try {
       const response = await api.get('/operacoes');
       // A API .NET retorna os dados dentro de '$values' por causa do ReferenceHandler
-      operacoes.value = response.data.$values || []; 
+      operacoes.value = response.data.$values || [];
     } catch (err) {
       console.error('Erro ao buscar operações:', err);
       error.value = 'Não foi possível carregar os dados das operações.';
@@ -24,16 +24,16 @@ export const useOperacoesStore = defineStore('operacoes', () => {
       isLoading.value = false;
     }
     // Dentro de /stores/operacoes.js -> fetchOperacoes
-try {
-  const response = await api.get('/operacoes');
+    try {
+      const response = await api.get('/operacoes');
 
-  
-  //console.log('Resposta da API recebida:', response.data); 
-  operacoes.value = response.data.$values || []; 
-  
-} catch (err) {
-  // ...
-}
+
+      //console.log('Resposta da API recebida:', response.data); 
+      operacoes.value = response.data.$values || [];
+
+    } catch (err) {
+      // ...
+    }
   }
 
   async function createOperacao(operacaoData) {
@@ -67,6 +67,23 @@ try {
       isLoading.value = false;
     }
   }
+  async function addFaturamento(operacaoId, faturamentoData) {
+    try {
+      // Usa o endpoint aninhado que criamos no backend
+      const response = await api.post(`/operacoes/${operacaoId}/faturamentos`, faturamentoData);
 
-  return { operacoes, isLoading, error, operacaoAtual, fetchOperacoes, createOperacao, fetchOperacaoById };
+      // Atualiza a lista de faturamentos na operação atual para a tela refletir a mudança
+      if (operacaoAtual.value && operacaoAtual.value.id === operacaoId) {
+        operacaoAtual.value.faturamentos.$values.push(response.data);
+      }
+    } catch (err) {
+      console.error('Erro ao adicionar faturamento:', err);
+      // Opcional: definir uma mensagem de erro no estado
+    }
+  }
+
+  return {
+    operacoes, isLoading, error, operacaoAtual,
+    fetchOperacoes, createOperacao, fetchOperacaoById, addFaturamento
+  };
 });
