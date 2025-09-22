@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
+using BillingService.Repositories;
+using BillingService.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +22,18 @@ builder.Services.AddAuthorization(); // Registra serviços de autorização
 
 builder.Services.AddDbContext<BillingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Adiciona os serviços e repositórios ao contêiner de injeção de dependência
+builder.Services.AddScoped<OperacaoRepository>();
+builder.Services.AddScoped<OperacaoService>();
+
+builder.Services.AddScoped<FaturamentoRepository>();
+builder.Services.AddScoped<FaturamentoService>();
+
+builder.Services.AddScoped<MetaRepository>();
+builder.Services.AddScoped<MetaService>();
+
+builder.Services.AddControllers();
+
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))

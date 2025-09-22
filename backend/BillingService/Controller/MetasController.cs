@@ -1,39 +1,35 @@
+using BillingService.DTO;
+using BillingService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using BillingService.Data;
-using BillingService.DTO;
-using BillingService.Models;
 
 namespace BillingService.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // Rota será /api/metas
+[Route("api/[controller]")]
 [Authorize]
 public class MetasController : ControllerBase
 {
-    private readonly BillingDbContext _context;
-    
-    public MetasController(BillingDbContext context)
+    private readonly MetaService _metaService;
+
+    public MetasController(MetaService metaService)
     {
-        _context = context;
+        _metaService = metaService;
     }
-    
+
     private Guid GetUserId()
     {
-        // ... (código do GetUserId é o mesmo)
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userIdClaim == null) throw new InvalidOperationException("User ID not found in token.");
         return Guid.Parse(userIdClaim);
     }
 
-    [HttpGet] // GET /api/metas?mes=9&ano=2025
+    [HttpGet]
     public async Task<IActionResult> GetMeta([FromQuery] int mes, [FromQuery] int ano)
     {
         var userId = GetUserId();
-        var meta = await _context.Metas
-            .FirstOrDefaultAsync(m => m.UserId == userId && m.Mes == mes && m.Ano == ano);
+        var meta = await _metaService.GetMetaAsync(userId, mes, ano);
 
         if (meta == null)
         {
@@ -43,31 +39,11 @@ public class MetasController : ControllerBase
         return Ok(meta);
     }
 
-    [HttpPost] // POST /api/metas
+    [HttpPost]
     public async Task<IActionResult> SetMeta([FromBody] MetaDto metaDto)
     {
         var userId = GetUserId();
-        var metaExistente = await _context.Metas
-            .FirstOrDefaultAsync(m => m.UserId == userId && m.Mes == metaDto.Mes && m.Ano == metaDto.Ano);
-
-        if (metaExistente != null)
-        {
-            metaExistente.ValorAlvo = metaDto.ValorAlvo;
-        }
-        else
-        {
-            var novaMeta = new Meta
-            {
-                Id = Guid.NewGuid(),
-                Mes = metaDto.Mes,
-                Ano = metaDto.Ano,
-                ValorAlvo = metaDto.ValorAlvo,
-                UserId = userId
-            };
-            await _context.Metas.AddAsync(novaMeta);
-        }
-
-        await _context.SaveChangesAsync();
-        return Ok("Meta salva com sucesso.");
+        var metaSalva = await _metaService.SetMetaAsync(metaDto, userId);
+        return Ok(metaSalva);
     }
 }
