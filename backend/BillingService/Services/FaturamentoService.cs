@@ -1,30 +1,42 @@
 using BillingService.DTO;
 using BillingService.Models;
 using BillingService.Repositories;
+using BillingService.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Services;
 
 public class FaturamentoService
 {
     private readonly FaturamentoRepository _repository;
+    private readonly BillingDbContext _context;
 
     public FaturamentoService(FaturamentoRepository repository)
     {
         _repository = repository;
     }
 
+    public FaturamentoService(FaturamentoRepository repository, BillingDbContext context)
+    {
+        _repository = repository;
+        _context = context; // Atribui o valor recebido ao campo da classe
+    }
+
     public async Task<(Faturamento? faturamento, string? errorMessage)> AddFaturamentoAsync(Guid operacaoId, FaturamentoDto faturamentoDto, Guid userId)
     {
-        if (!await _repository.OperacaoExistsAndBelongsToUserAsync(operacaoId, userId))
+        // Agora o .AnyAsync() será encontrado por causa do 'using Microsoft.EntityFrameworkCore;'
+        var vinculoExiste = await _context.UsuarioOperacoes.AnyAsync(uo => uo.OperacaoId == operacaoId && uo.UserId == userId);
+
+        if (!vinculoExiste)
         {
-            return (null, "Operação não encontrada.");
+            return (null, "A operação não foi encontrada ou o usuário não tem permissão para acessá-la.");
         }
 
         var dataFaturamentoUtc = DateTime.SpecifyKind(faturamentoDto.Data, DateTimeKind.Utc);
 
         if (await _repository.FaturamentoExistsOnDateAsync(operacaoId, dataFaturamentoUtc))
         {
-            return (null, "Já existe um faturamento para esta data.");
+            return (null, "Já existe um faturamento registrado para esta data.");
         }
 
         var novoFaturamento = new Faturamento
@@ -41,6 +53,7 @@ public class FaturamentoService
 
         return (novoFaturamento, null);
     }
+
 
     public async Task<(bool success, string? errorMessage)> UpdateFaturamentoAsync(Guid operacaoId, Guid faturamentoId, UpdateFaturamentoDto faturamentoDto, Guid userId)
     {

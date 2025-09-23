@@ -9,6 +9,15 @@ namespace BillingService.Data
 
         public DbSet<Operacao> Operacoes { get; set; }
         public DbSet<Meta> Metas { get; set; }
+        public DbSet<UsuarioOperacao> UsuarioOperacoes { get; set; }
         public DbSet<Faturamento> Faturamentos { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Configura a chave primária composta para a tabela de junção
+            modelBuilder.Entity<UsuarioOperacao>()
+                .HasKey(uo => new { uo.UserId, uo.OperacaoId });
+        }
     }
 }

@@ -15,9 +15,12 @@ public class OperacaoRepository
 
     public async Task<IEnumerable<Operacao>> GetByUserIdAsync(Guid userId)
     {
-        return await _context.Operacoes
+        // A consulta agora seleciona as Operacoes onde o Id está na lista
+        // de OperacaoId's vinculados ao userId na tabela UsuarioOperacoes.
+        return await _context.UsuarioOperacoes
+            .Where(uo => uo.UserId == userId)
+            .Select(uo => uo.Operacao)
             .Include(op => op.Faturamentos)
-            .Where(op => op.UserId == userId)
             .ToListAsync();
     }
 
