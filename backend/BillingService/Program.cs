@@ -35,6 +35,9 @@ builder.Services.AddScoped<MetaService>();
 builder.Services.AddScoped<EmpresaRepository>();
 builder.Services.AddScoped<EmpresaService>();
 
+builder.Services.AddScoped<MensalistaRepository>();
+builder.Services.AddScoped<MensalistaService>();
+
 builder.Services.AddControllers();
 
 
