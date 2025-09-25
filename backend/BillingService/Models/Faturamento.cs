@@ -13,4 +13,5 @@ public class Faturamento
     public Guid OperacaoId { get; set; }
     public Operacao Operacao { get; set; } = null!; // Propriedade de navegação
     public required string Moeda { get; set; }
+    public required string Origem { get; set; } = "AVULSO";
 }

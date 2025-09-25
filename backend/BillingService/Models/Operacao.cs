@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 namespace BillingService.Models;
+
 public class Operacao
 {
     public Guid Id { get; set; }
@@ -17,5 +18,6 @@ public class Operacao
     public DateTime? DataFim { get; set; }
     public bool IsAtiva { get; set; }
     public Guid UserId { get; set; }
+    public bool TemMensalistas { get; set; } = false;
     
 }

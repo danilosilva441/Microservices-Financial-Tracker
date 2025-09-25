@@ -41,6 +41,7 @@ public class FaturamentoService
             Valor = faturamentoDto.Valor,
             Data = dataFaturamentoUtc,
             Moeda = faturamentoDto.Moeda,
+            Origem = faturamentoDto.Origem,
             OperacaoId = operacaoId
         };
 

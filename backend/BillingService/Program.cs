@@ -32,6 +32,9 @@ builder.Services.AddScoped<FaturamentoService>();
 builder.Services.AddScoped<MetaRepository>();
 builder.Services.AddScoped<MetaService>();
 
+builder.Services.AddScoped<EmpresaRepository>();
+builder.Services.AddScoped<EmpresaService>();
+
 builder.Services.AddControllers();
 
 

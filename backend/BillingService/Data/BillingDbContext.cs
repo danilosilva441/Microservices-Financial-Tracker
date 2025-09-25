@@ -10,6 +10,9 @@ namespace BillingService.Data
         public DbSet<Operacao> Operacoes { get; set; }
         public DbSet<Meta> Metas { get; set; }
         public DbSet<UsuarioOperacao> UsuarioOperacoes { get; set; }
+        public DbSet<Empresa> Empresas { get; set; }
+        public DbSet<Mensalista> Mensalistas { get; set; }
+        public DbSet<Fatura> Faturas { get; set; }
         public DbSet<Faturamento> Faturamentos { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
