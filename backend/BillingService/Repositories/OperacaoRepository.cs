@@ -13,16 +13,37 @@ public class OperacaoRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Operacao>> GetByUserIdAsync(Guid userId)
+    public async Task<IEnumerable<Operacao>> GetByUserIdAsync(Guid userId, int? ano, int? mes, bool? isAtiva)
     {
-        // A consulta agora seleciona as Operacoes onde o Id está na lista
-        // de OperacaoId's vinculados ao userId na tabela UsuarioOperacoes.
-        return await _context.UsuarioOperacoes
+        // 1. Primeiro, buscamos apenas os IDs das operações permitidas para o usuário.
+        var operacoesIds = await _context.UsuarioOperacoes
             .Where(uo => uo.UserId == userId)
-            .Select(uo => uo.Operacao)
-            .Include(op => op.Faturamentos)
+            .Select(uo => uo.OperacaoId)
             .ToListAsync();
+
+        // 2. Agora, começamos uma nova consulta na tabela de Operacoes.
+        var query = _context.Operacoes
+            .Include(op => op.Faturamentos) // Aplicamos o Include primeiro
+            .Where(op => operacoesIds.Contains(op.Id)); // Filtramos pelos IDs permitidos
+
+        // 3. Aplicamos os filtros opcionais
+        if (isAtiva.HasValue)
+        {
+            query = query.Where(op => op.IsAtiva == isAtiva.Value);
+        }
+        if (ano.HasValue)
+        {
+            query = query.Where(op => op.DataInicio.Year == ano.Value);
+        }
+        if (mes.HasValue)
+        {
+            query = query.Where(op => op.DataInicio.Month == mes.Value);
+        }
+
+        // 4. Finalmente, executamos a consulta completa.
+        return await query.ToListAsync();
     }
+
 
     public async Task AddAsync(Operacao operacao)
     {

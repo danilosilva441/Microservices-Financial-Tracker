@@ -11,10 +11,6 @@ public class FaturamentoService
     private readonly FaturamentoRepository _repository;
     private readonly BillingDbContext _context;
 
-    public FaturamentoService(FaturamentoRepository repository)
-    {
-        _repository = repository;
-    }
 
     public FaturamentoService(FaturamentoRepository repository, BillingDbContext context)
     {

@@ -13,9 +13,9 @@ public class OperacaoService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<Operacao>> GetOperacoesByUserAsync(Guid userId)
+    public async Task<IEnumerable<Operacao>> GetOperacoesByUserAsync(Guid userId, int? ano, int? mes, bool? isAtiva)
     {
-        return await _repository.GetByUserIdAsync(userId);
+        return await _repository.GetByUserIdAsync(userId, ano, mes, isAtiva);
     }
 
     public async Task<Operacao> CreateOperacaoAsync(OperacaoDto operacaoDto, Guid userId)

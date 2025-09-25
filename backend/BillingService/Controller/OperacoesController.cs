@@ -27,10 +27,10 @@ public class OperacoesController : ControllerBase
 
     // GET /api/operacoes
     [HttpGet]
-    public async Task<IActionResult> GetOperacoes()
+    public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] int? mes, [FromQuery] bool? isAtiva)
     {
         var userId = GetUserId();
-        var operacoes = await _operacaoService.GetOperacoesByUserAsync(userId);
+        var operacoes = await _operacaoService.GetOperacoesByUserAsync(userId, ano, mes, isAtiva);
         return Ok(operacoes);
     }
 
