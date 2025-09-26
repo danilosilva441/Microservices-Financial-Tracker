@@ -1,4 +1,4 @@
-# Minimundo - Gestão de Faturamento & Previsões (Full-Stack)
+# Gestão de Faturamento & Previsões (Full-Stack)
 
 ![Status](https://img.shields.io/badge/status-backend%20em%20evolução-yellow)
 ![Backend](https://img.shields.io/badge/Backend-ASP.NET%20%7C%20Node.js-blueviolet)
