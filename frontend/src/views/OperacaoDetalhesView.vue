@@ -86,7 +86,7 @@ async function handleSaveFaturamento(faturamentoData) {
           Nenhum faturamento registrado para esta operação.
         </div>
 
-        <FaturamentoForm @submit="handleSaveFaturamento" />
+        <FaturamentoForm @submit="handleSaveFaturamento" :error-message="operacoesStore.error" />
       </div>
     </div>
   </div>
