@@ -14,4 +14,5 @@ public class Faturamento
     public Operacao Operacao { get; set; } = null!; // Propriedade de navegação
     public required string Moeda { get; set; }
     public required string Origem { get; set; } = "AVULSO";
+      public bool IsAtivo { get; set; } = true;
 }

@@ -68,4 +68,19 @@ public class FaturamentosController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{faturamentoId}/desativar")]
+    // Sem [Authorize(Roles = "Admin")], qualquer usuário vinculado pode desativar
+    public async Task<IActionResult> DeactivateFaturamento(Guid operacaoId, Guid faturamentoId)
+    {
+        var userId = GetUserId();
+        var (success, errorMessage) = await _faturamentoService.DeactivateFaturamentoAsync(operacaoId, faturamentoId, userId);
+
+        if (!success)
+        {
+            return NotFound(errorMessage);
+        }
+
+        return NoContent(); // Retorna 204 No Content, indicando sucesso sem corpo de resposta
+    }
 }

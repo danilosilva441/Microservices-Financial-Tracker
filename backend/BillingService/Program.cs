@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+// 1. CHAME NOSSO NOVO MÉTODO PARA REGISTRAR TODOS OS SERVICES E REPOSITORIES
 
 // Configuração do CORS
 builder.Services.AddCors(options =>
