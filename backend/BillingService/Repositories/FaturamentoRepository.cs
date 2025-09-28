@@ -13,9 +13,11 @@ public class FaturamentoRepository
         _context = context;
     }
 
-    public async Task<bool> OperacaoExistsAndBelongsToUserAsync(Guid operacaoId, Guid userId)
+    public async Task<bool> UserHasAccessToOperacaoAsync(Guid operacaoId, Guid userId)
     {
-        return await _context.Operacoes.AnyAsync(op => op.Id == operacaoId && op.UserId == userId);
+        // Verifica se existe um vínculo na tabela de junção
+        return await _context.UsuarioOperacoes
+            .AnyAsync(uo => uo.OperacaoId == operacaoId && uo.UserId == userId);
     }
 
     public async Task<bool> FaturamentoExistsOnDateAsync(Guid operacaoId, DateTime data, Guid? excludeFaturamentoId = null)

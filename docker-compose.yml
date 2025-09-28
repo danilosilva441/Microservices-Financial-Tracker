@@ -1,55 +1,87 @@
+version: "3.9"
+
 services:
   postgres_db:
     image: postgres:15-alpine
     container_name: portfolio_postgres
+    restart: always
     environment:
-      - POSTGRES_DB=portfolio_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1527
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   auth_service:
-    container_name: auth_service
-    build:
-      context: ./backend/AuthService
+    build: ./backend/AuthService
+    container_name: portfolio-microservices-auth_service
+    restart: always
+    depends_on:
+      postgres_db:
+        condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-    restart: unless-stopped
-    depends_on:
-      - postgres_db
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=auth_db;Username=postgres;Password=admin
+      - Jwt__Key=SUA_CHAVE_SECRETA_SUPER_LONGA_E_SEGURA_AQUI_123456
+      - Jwt__Issuer=AuthService
+      - Jwt__Audience=BillingService
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 30s
 
   billing_service:
-    container_name: billing_service
-    build:
-      context: ./backend/BillingService
+    build: ./backend/BillingService
+    container_name: portfolio-microservices-billing_service
+    restart: always
+    depends_on:
+      postgres_db:
+        condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-    restart: unless-stopped
-    depends_on:
-      - postgres_db
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=billing_db;Username=postgres;Password=admin
+      - Jwt__Key=SUA_CHAVE_SECRETA_SUPER_LONGA_E_SEGURA_AQUI_123456
+      - Jwt__Issuer=AuthService
+      - Jwt__Audience=BillingService
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 30s
 
   analysis_service:
-    container_name: analysis_service
-    build:
-      context: ./backend/analysis_service
-    restart: unless-stopped
+    build: ./backend/analysis_service
+    container_name: portfolio-microservices-analysis_service
+    restart: always
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:admin@postgres_db:5432/analysis_db
+      - PORT=3000
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 30s
 
   api_gateway:
-    container_name: api_gateway
     image: nginx:1.25-alpine
+    container_name: portfolio-microservices-api_gateway
+    restart: always
     ports:
       - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-    restart: unless-stopped
     depends_on:
-      - auth_service
-      - billing_service
-      - analysis_service
+      auth_service:
+        condition: service_healthy
+      billing_service:
+        condition: service_healthy
+      analysis_service:
+        condition: service_healthy
 
 volumes:
   postgres_data:

@@ -34,6 +34,7 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create(Guid operacaoId, [FromBody] CreateMensalistaDto mensalistaDto)
     {
         var userId = GetUserId();
@@ -48,6 +49,7 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPut("{mensalistaId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid operacaoId, Guid mensalistaId, [FromBody] UpdateMensalistaDto mensalistaDto)
     {
         var userId = GetUserId();
@@ -62,6 +64,7 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPatch("{mensalistaId}/desativar")]
+    [Authorize(Roles = "Admin")] // Apenas Admins podem desativar mensalistas
     public async Task<IActionResult> Deactivate(Guid operacaoId, Guid mensalistaId)
     {
         var userId = GetUserId();

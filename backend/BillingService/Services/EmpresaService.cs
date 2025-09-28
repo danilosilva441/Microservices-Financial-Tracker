@@ -32,4 +32,27 @@ public class EmpresaService
         await _repository.SaveChangesAsync();
         return novaEmpresa;
     }
+    public async Task<Empresa?> UpdateEmpresaAsync(Guid id, UpdateEmpresaDto empresaDto)
+    {
+        var empresaExistente = await _repository.GetByIdAsync(id);
+        if (empresaExistente == null) return null;
+
+        empresaExistente.Nome = empresaDto.Nome;
+        empresaExistente.CNPJ = empresaDto.CNPJ;
+        empresaExistente.DiaVencimentoBoleto = empresaDto.DiaVencimentoBoleto;
+
+        _repository.Update(empresaExistente);
+        await _repository.SaveChangesAsync();
+        return empresaExistente;
+    }
+
+    public async Task<bool> DeleteEmpresaAsync(Guid id)
+    {
+        var empresaExistente = await _repository.GetByIdAsync(id);
+        if (empresaExistente == null) return false;
+
+        _repository.Remove(empresaExistente);
+        await _repository.SaveChangesAsync();
+        return true;
+    }
 }

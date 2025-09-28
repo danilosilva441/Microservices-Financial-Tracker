@@ -30,4 +30,25 @@ public class EmpresasController : ControllerBase
         var novaEmpresa = await _empresaService.CreateEmpresaAsync(empresaDto);
         return CreatedAtAction(nameof(GetAllEmpresas), new { id = novaEmpresa.Id }, novaEmpresa);
     }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateEmpresa(Guid id, [FromBody] UpdateEmpresaDto empresaDto)
+    {
+        var empresaAtualizada = await _empresaService.UpdateEmpresaAsync(id, empresaDto);
+        if (empresaAtualizada == null)
+        {
+            return NotFound();
+        }
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteEmpresa(Guid id)
+    {
+        var success = await _empresaService.DeleteEmpresaAsync(id);
+        if (!success)
+        {
+            return NotFound();
+        }
+        return NoContent();
+    }
 }

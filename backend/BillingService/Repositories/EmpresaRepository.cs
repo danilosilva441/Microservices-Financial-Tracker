@@ -27,4 +27,18 @@ public class EmpresaRepository
     {
         await _context.SaveChangesAsync();
     }
+    public async Task<Empresa?> GetByIdAsync(Guid id)
+    {
+        return await _context.Empresas.FindAsync(id);
+    }
+
+    public void Update(Empresa empresa)
+    {
+        _context.Empresas.Update(empresa);
+    }
+
+    public void Remove(Empresa empresa)
+    {
+        _context.Empresas.Remove(empresa);
+    }
 }

@@ -40,6 +40,7 @@ public class FaturamentosController : ControllerBase
     }
 
     [HttpPut("{faturamentoId}")]
+    [Authorize(Roles = "Admin")] // Apenas Admins podem atualizar faturamentos
     public async Task<IActionResult> UpdateFaturamento(Guid operacaoId, Guid faturamentoId, [FromBody] UpdateFaturamentoDto faturamentoDto)
     {
         var userId = GetUserId();
@@ -54,6 +55,7 @@ public class FaturamentosController : ControllerBase
     }
 
     [HttpDelete("{faturamentoId}")]
+    [Authorize(Roles = "Admin")] // Apenas Admins podem deletar faturamentos
     public async Task<IActionResult> DeleteFaturamento(Guid operacaoId, Guid faturamentoId)
     {
         var userId = GetUserId();

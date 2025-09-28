@@ -1,52 +1,40 @@
 using System.Text;
+using BillingService.Configuration; // <-- 1. IMPORTE A NOVA CONFIGURAÇÃO
 using BillingService.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
-using BillingService.Repositories;
-using BillingService.Services;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
-// Add services to the container.
-builder.Services.AddControllers().AddJsonOptions(options =>
+// Configuração do CORS
+builder.Services.AddCors(options =>
 {
-    // Ignora os ciclos de referência ao serializar para JSON
-    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
-builder.Services.AddAuthorization(); // Registra serviços de autorização
 
+// Configuração do DbContext
 builder.Services.AddDbContext<BillingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Adiciona os serviços e repositórios ao contêiner de injeção de dependência
-builder.Services.AddScoped<OperacaoRepository>();
-builder.Services.AddScoped<OperacaoService>();
 
-builder.Services.AddScoped<FaturamentoRepository>();
-builder.Services.AddScoped<FaturamentoService>();
+// 2. CHAME NOSSO NOVO MÉTODO PARA REGISTRAR TODOS OS SERVICES E REPOSITORIES
+builder.Services.AddBillingServices();
 
-builder.Services.AddScoped<MetaRepository>();
-builder.Services.AddScoped<MetaService>();
-
-builder.Services.AddScoped<EmpresaRepository>();
-builder.Services.AddScoped<EmpresaService>();
-
-builder.Services.AddScoped<MensalistaRepository>();
-builder.Services.AddScoped<MensalistaService>();
-
-builder.Services.AddControllers();
-
-
+// (O código de autenticação/autorização precisa estar aqui também,
+// pois o BillingService precisa validar os tokens gerados pelo AuthService)
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
 {
-    throw new InvalidOperationException("Chave JWT não está configurada no appsettings.json");
+    throw new InvalidOperationException("Chave JWT não está configurada.");
 }
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -65,39 +53,34 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
+builder.Services.AddAuthorization();
+
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          policy.WithOrigins("http://localhost:5173") // A porta do seu frontend Vue
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                      });
-});
-
-
 var app = builder.Build();
 
+// Aplica migrations
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
     db.Database.Migrate();
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors(MyAllowSpecificOrigins);
+
 app.UseAuthentication();
 app.UseAuthorization();
 

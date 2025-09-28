@@ -13,6 +13,11 @@ public class OperacaoService
         _repository = repository;
     }
 
+    public async Task<IEnumerable<Operacao>> GetAllOperacoesAsync(int? ano, int? mes, bool? isAtiva)
+    {
+        return await _repository.GetAllAsync(ano, mes, isAtiva);
+    }
+
     public async Task<IEnumerable<Operacao>> GetOperacoesByUserAsync(Guid userId, int? ano, int? mes, bool? isAtiva)
     {
         return await _repository.GetByUserIdAsync(userId, ano, mes, isAtiva);
@@ -20,6 +25,7 @@ public class OperacaoService
 
     public async Task<Operacao> CreateOperacaoAsync(OperacaoDto operacaoDto, Guid userId)
     {
+        // 1. Cria a nova entidade Operacao (como antes)
         var novaOperacao = new Operacao
         {
             Id = Guid.NewGuid(),
@@ -33,8 +39,18 @@ public class OperacaoService
             IsAtiva = true,
             UserId = userId
         };
-
         await _repository.AddAsync(novaOperacao);
+
+        // 2. Cria o novo vínculo entre o usuário e a operação que ele acabou de criar
+        var novoVinculo = new UsuarioOperacao
+        {
+            UserId = userId,
+            OperacaoId = novaOperacao.Id
+        };
+        await _repository.AddUsuarioOperacaoLinkAsync(novoVinculo);
+
+        // 3. Salva AMBAS as alterações no banco de dados de uma só vez.
+        // Isso garante que a operação e o vínculo sejam salvos juntos. Se um falhar, nenhum é salvo.
         await _repository.SaveChangesAsync();
 
         return novaOperacao;
@@ -83,4 +99,14 @@ public class OperacaoService
         await _repository.SaveChangesAsync();
         return true;
     }
+    public async Task<bool> DeleteOperacaoAsync(Guid id, Guid userId)
+    {
+        var operacaoExistente = await _repository.GetByIdAndUserIdAsync(id, userId);
+        if (operacaoExistente == null) return false;
+
+        _repository.Remove(operacaoExistente);
+        await _repository.SaveChangesAsync();
+        return true;
+    }
+
 }

@@ -15,3 +15,6 @@ app.post('/projetar', projetarManualmente);
 app.listen(PORT, () => {
     console.log(`Analysis Service rodando na porta ${PORT}`);
 });
+
+const healthRouter = require('./health');
+app.use('/', healthRouter);

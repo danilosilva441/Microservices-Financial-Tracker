@@ -8,7 +8,7 @@ namespace BillingService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize] // Todos precisam estar logados para acessar qualquer endpoint aqui
 public class OperacoesController : ControllerBase
 {
     private readonly OperacaoService _operacaoService;
@@ -25,14 +25,28 @@ public class OperacoesController : ControllerBase
         return Guid.Parse(userIdClaim);
     }
 
+    // GETs podem ser acessados por qualquer usuário autenticado (a lógica de vínculo já protege os dados)
     // GET /api/operacoes
-    [HttpGet]
-    public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] int? mes, [FromQuery] bool? isAtiva)
+[HttpGet]
+public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] int? mes, [FromQuery] bool? isAtiva)
+{
+    // --- VERIFICAÇÃO PARA SERVIÇO INTERNO ---
+    var remoteIpAddress = HttpContext.Connection.RemoteIpAddress;
+    // Se a requisição vem de um IP da rede interna do Docker, não precisa de UserId.
+    // Isso permite que o AnalysisService busque todos os dados.
+    if (remoteIpAddress != null && remoteIpAddress.ToString().StartsWith("172.")) // IPs do Docker geralmente começam com 172.
     {
-        var userId = GetUserId();
-        var operacoes = await _operacaoService.GetOperacoesByUserAsync(userId, ano, mes, isAtiva);
-        return Ok(operacoes);
+        // Busca TODAS as operações, sem filtrar por usuário
+        var todasOperacoes = await _operacaoService.GetAllOperacoesAsync(ano, mes, isAtiva);
+        return Ok(todasOperacoes);
     }
+    // ------------------------------------------
+
+    // Se não for uma chamada interna, a lógica de permissão por usuário continua
+    var userId = GetUserId();
+    var operacoes = await _operacaoService.GetOperacoesByUserAsync(userId, ano, mes, isAtiva);
+    return Ok(operacoes);
+}
 
     // GET /api/operacoes/{id}
     [HttpGet("{id}")]
@@ -49,6 +63,7 @@ public class OperacoesController : ControllerBase
 
     // POST /api/operacoes
     [HttpPost]
+    [Authorize(Roles = "Admin")] // Apenas Admins podem criar novas operações
     public async Task<IActionResult> CreateOperacao([FromBody] OperacaoDto operacaoDto)
     {
         var userId = GetUserId();
@@ -58,10 +73,12 @@ public class OperacoesController : ControllerBase
 
     // PUT /api/operacoes/{id}
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")] // Apenas Admins podem atualizar operações
     public async Task<IActionResult> UpdateOperacao(Guid id, [FromBody] UpdateOperacaoDto operacaoDto)
     {
         var userId = GetUserId();
         var success = await _operacaoService.UpdateOperacaoAsync(id, operacaoDto, userId);
+
         if (!success)
         {
             return NotFound("Operação não encontrada ou não pertence ao usuário.");
@@ -71,10 +88,23 @@ public class OperacoesController : ControllerBase
 
     // PATCH /api/operacoes/{id}/desativar
     [HttpPatch("{id}/desativar")]
+    [Authorize(Roles = "Admin")] // Apenas Admins podem desativar operações
     public async Task<IActionResult> DeactivateOperacao(Guid id)
     {
         var userId = GetUserId();
         var success = await _operacaoService.DeactivateOperacaoAsync(id, userId);
+        if (!success)
+        {
+            return NotFound("Operação não encontrada ou não pertence ao usuário.");
+        }
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteOperacao(Guid id)
+    {
+        var success = await _operacaoService.DeleteOperacaoAsync(id, GetUserId());
         if (!success)
         {
             return NotFound("Operação não encontrada ou não pertence ao usuário.");
