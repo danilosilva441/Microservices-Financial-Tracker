@@ -22,5 +22,6 @@ namespace BillingService.Data
             modelBuilder.Entity<UsuarioOperacao>()
                 .HasKey(uo => new { uo.UserId, uo.OperacaoId });
         }
+        public DbSet<SolicitacaoAjuste> SolicitacoesAjuste { get; set; }
     }
 }

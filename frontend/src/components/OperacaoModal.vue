@@ -4,34 +4,34 @@ import { ref, watch } from 'vue';
 const props = defineProps({ isVisible: Boolean });
 const emit = defineEmits(['close', 'save']);
 
-// Novos campos reativos
+// --- ESTADO DO FORMULÁRIO SIMPLIFICADO ---
 const nome = ref('');
 const descricao = ref('');
 const endereco = ref('');
-const moeda = ref('BRL'); // Moeda padrão
 const metaMensal = ref(0);
 const dataInicio = ref('');
 
+// --- FUNÇÕES ---
 function resetForm() {
   nome.value = '';
   descricao.value = '';
   endereco.value = '';
-  moeda.value = 'BRL';
   metaMensal.value = 0;
   dataInicio.value = new Date().toISOString().split('T')[0];
 }
 
 function handleSubmit() {
+  // Envia os dados para o componente pai, sem o campo 'moeda'
   emit('save', {
     nome: nome.value,
     descricao: descricao.value,
     endereco: endereco.value,
-    moeda: moeda.value,
     metaMensal: parseFloat(metaMensal.value),
     dataInicio: new Date(dataInicio.value),
   });
 }
 
+// Observa a propriedade 'isVisible' para resetar o formulário quando o modal abre
 watch(() => props.isVisible, (newValue) => {
   if (newValue) {
     resetForm();
@@ -58,21 +58,13 @@ watch(() => props.isVisible, (newValue) => {
             <label for="endereco" class="block">Endereço (Opcional)</label>
             <input v-model="endereco" id="endereco" type="text" class="w-full mt-1 p-2 border rounded-md" />
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="metaMensal" class="block">Meta Mensal</label>
-              <input v-model="metaMensal" id="metaMensal" type="number" step="0.01" required
-                class="w-full mt-1 p-2 border rounded-md" />
-            </div>
-            <div>
-              <label for="moeda" class="block">Moeda</label>
-              <select v-model="moeda" id="moeda" required class="w-full mt-1 p-2 border rounded-md bg-white">
-                <option value="BRL">Real (BRL)</option>
-                <option value="USD">Dólar (USD)</option>
-                <option value="EUR">Euro (EUR)</option>
-              </select>
-            </div>
+          
+          <div>
+            <label for="metaMensal" class="block">Meta Mensal (R$)</label>
+            <input v-model="metaMensal" id="metaMensal" type="number" step="0.01" required
+              class="w-full mt-1 p-2 border rounded-md" />
           </div>
+          
           <div>
             <label for="dataInicio" class="block">Data de Início</label>
             <input v-model="dataInicio" id="dataInicio" type="date" required

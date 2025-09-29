@@ -40,16 +40,17 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     }
   }
 
-  async function fetchOperacaoById(id) {
+  async function fetchOperacoes() {
     isLoading.value = true;
     error.value = null;
-    operacaoAtual.value = null;
     try {
-      const response = await api.get(`/operacoes/${id}`);
-      operacaoAtual.value = response.data;
+      const response = await api.get('/operacoes');
+      // CORREÇÃO: Salva o objeto de resposta completo.
+      // O componente cuidará de acessar a propriedade '$values'.
+      operacoes.value = response.data;
     } catch (err) {
-      console.error(`Erro ao buscar operação ${id}:`, err);
-      error.value = 'Não foi possível carregar os dados da operação.';
+      console.error('Erro ao buscar operações:', err);
+      error.value = 'Não foi possível carregar os dados das operações.';
     } finally {
       isLoading.value = false;
     }
@@ -74,34 +75,35 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     }
   }
 
-  async function deactivateFaturamento(operacaoId, faturamentoId) {
-    isLoading.value = true;
-    error.value = null;
+  async function deleteFaturamento(operacaoId, faturamentoId) {
     try {
-      await api.patch(`/operacoes/${operacaoId}/faturamentos/${faturamentoId}/desativar`);
-      const faturamento = operacaoAtual.value.faturamentos.$values.find(f => f.id === faturamentoId);
-      if (faturamento) {
-        faturamento.isAtivo = false;
+      // Chama o endpoint DELETE que já existe no backend
+      await api.delete(`/operacoes/${operacaoId}/faturamentos/${faturamentoId}`);
+
+      if (operacaoAtual.value && operacaoAtual.value.id === operacaoId) {
+        // Encontra o índice do faturamento na lista
+        const index = operacaoAtual.value.faturamentos.$values.findIndex(f => f.id === faturamentoId);
+        // Se encontrou, remove o item da lista para a UI atualizar
+        if (index !== -1) {
+          operacaoAtual.value.faturamentos.$values.splice(index, 1);
+        }
       }
-      return true;
     } catch (err) {
-      error.value = err.response?.data || 'Erro desconhecido ao desativar faturamento.';
-      console.error('Erro ao desativar faturamento:', error.value);
-      return false;
-    } finally {
-      isLoading.value = false;
+      console.error('Erro ao excluir faturamento:', err);
+      error.value = 'Não foi possível excluir o faturamento.';
     }
   }
 
-  return {
-    operacoes,
-    isLoading,
-    error,
+  
+ return {
+    operacoes, 
+    isLoading, 
+    error, 
     operacaoAtual,
-    fetchOperacoes,
-    createOperacao,
-    fetchOperacaoById,
+    fetchOperacoes, 
+    createOperacao, 
+    fetchOperacaoById, 
     addFaturamento,
-    deactivateFaturamento
+    deleteFaturamento
   };
 });

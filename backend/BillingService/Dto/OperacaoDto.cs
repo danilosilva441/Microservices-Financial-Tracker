@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 namespace BillingService.DTO;
+
 public class OperacaoDto
 {
     [Required]
@@ -7,8 +8,6 @@ public class OperacaoDto
     public required string Nome { get; set; }
     public string? Descricao { get; set; }
     public string? Endereco { get; set; }
-    [Required]
-    public required string Moeda { get; set; }
     [Required]
     [Range(0.01, double.MaxValue)]
     public decimal MetaMensal { get; set; }

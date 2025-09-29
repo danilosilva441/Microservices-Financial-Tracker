@@ -3,17 +3,20 @@ using System;
 using BillingService.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace BillingService.Migrations
+namespace BillingService.Data.Migrations
 {
     [DbContext(typeof(BillingDbContext))]
-    partial class BillingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250928165616_AddSolicitacaoAjusteTable")]
+    partial class AddSolicitacaoAjusteTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,6 +96,10 @@ namespace BillingService.Migrations
 
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Moeda")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("OperacaoId")
                         .HasColumnType("uuid");
@@ -191,6 +198,10 @@ namespace BillingService.Migrations
 
                     b.Property<decimal>("MetaMensal")
                         .HasColumnType("numeric");
+
+                    b.Property<string>("Moeda")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Nome")
                         .IsRequired()

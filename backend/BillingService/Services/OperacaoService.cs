@@ -32,7 +32,6 @@ public class OperacaoService
             Nome = operacaoDto.Nome,
             Descricao = operacaoDto.Descricao,
             Endereco = operacaoDto.Endereco,
-            Moeda = operacaoDto.Moeda,
             MetaMensal = operacaoDto.MetaMensal,
             DataInicio = DateTime.SpecifyKind(operacaoDto.DataInicio, DateTimeKind.Utc),
             DataFim = operacaoDto.DataFim.HasValue ? DateTime.SpecifyKind(operacaoDto.DataFim.Value, DateTimeKind.Utc) : null,
@@ -73,7 +72,6 @@ public class OperacaoService
         operacaoExistente.Nome = operacaoDto.Nome;
         operacaoExistente.Descricao = operacaoDto.Descricao;
         operacaoExistente.Endereco = operacaoDto.Endereco;
-        operacaoExistente.Moeda = operacaoDto.Moeda;
         operacaoExistente.MetaMensal = operacaoDto.MetaMensal;
         operacaoExistente.DataInicio = DateTime.SpecifyKind(operacaoDto.DataInicio, DateTimeKind.Utc);
         operacaoExistente.DataFim = operacaoDto.DataFim.HasValue

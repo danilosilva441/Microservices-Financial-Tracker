@@ -10,7 +10,4 @@ public class UpdateFaturamentoDto
 
     [Required]
     public DateTime Data { get; set; }
-
-    [Required]
-    public required string Moeda { get; set; }
 }

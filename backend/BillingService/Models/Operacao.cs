@@ -12,12 +12,11 @@ public class Operacao
     public string? Descricao { get; set; }
     public string? Endereco { get; set; }
     [Required]
-    public required string Moeda { get; set; }
     public decimal MetaMensal { get; set; }
     public DateTime DataInicio { get; set; }
     public DateTime? DataFim { get; set; }
     public bool IsAtiva { get; set; }
     public Guid UserId { get; set; }
     public bool TemMensalistas { get; set; } = false;
-    
+
 }

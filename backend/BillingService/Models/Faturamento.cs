@@ -5,14 +5,13 @@ namespace BillingService.Models;
 
 public class Faturamento
 {
-    public Guid Id { get; set; }
-    public decimal Valor { get; set; }
-    public DateTime Data { get; set; }
+  public Guid Id { get; set; }
+  public decimal Valor { get; set; }
+  public DateTime Data { get; set; }
 
-    // Chave estrangeira para vincular à Operacao
-    public Guid OperacaoId { get; set; }
-    public Operacao Operacao { get; set; } = null!; // Propriedade de navegação
-    public required string Moeda { get; set; }
-    public required string Origem { get; set; } = "AVULSO";
-      public bool IsAtivo { get; set; } = true;
+  // Chave estrangeira para vincular à Operacao
+  public Guid OperacaoId { get; set; }
+  public Operacao Operacao { get; set; } = null!; // Propriedade de navegação
+  public required string Origem { get; set; } = "AVULSO";
+  public bool IsAtivo { get; set; } = true;
 }

@@ -1,7 +1,6 @@
 using BillingService.DTO;
 using BillingService.Models;
 using BillingService.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Services;
 
@@ -9,7 +8,6 @@ public class FaturamentoService
 {
     private readonly FaturamentoRepository _repository;
 
-    // CORREÇÃO: Removemos a injeção do DbContext daqui. O serviço não precisa conhecê-lo.
     public FaturamentoService(FaturamentoRepository repository)
     {
         _repository = repository;
@@ -17,30 +15,26 @@ public class FaturamentoService
 
     public async Task<(Faturamento? faturamento, string? errorMessage)> AddFaturamentoAsync(Guid operacaoId, FaturamentoDto faturamentoDto, Guid userId)
     {
-        // CORREÇÃO: Usa apenas o método do repositório para a validação.
         // 1. Validação de Permissão
         if (!await _repository.UserHasAccessToOperacaoAsync(operacaoId, userId))
         {
             return (null, "Operação não encontrada ou o usuário não tem permissão para acessá-la.");
         }
 
-        // Em vez de converter, nós "carimbamos" a data como sendo UTC.
-        // Isso preserva o dia que o usuário selecionou no frontend.
+        // Converte a data para UTC preservando o dia
         var dataFaturamentoUtc = DateTime.SpecifyKind(faturamentoDto.Data, DateTimeKind.Utc);
 
         // 2. REGRA: NÃO PERMITIR DATAS FUTURAS
-        /*
         if (dataFaturamentoUtc.Date > DateTime.UtcNow.Date)
         {
             return (null, "Não é permitido registrar um faturamento para uma data futura.");
         }
-        */
 
-        // 3. REGRA: JANELA DE LANÇAMENTO (D+1)
-        // Exemplo: Se hoje é dia 28, o faturamento só pode ser do dia 27.
-        if (DateTime.UtcNow.Date != dataFaturamentoUtc.Date.AddDays(1))
+        // 3. REGRA FLEXÍVEL: Permite faturamentos de até 30 dias no passado
+        var diasDiferenca = (DateTime.UtcNow.Date - dataFaturamentoUtc.Date).Days;
+        if (diasDiferenca > 30)
         {
-            return (null, $"O faturamento só pode ser registrado no dia seguinte à data da ocorrência. Hoje é {DateTime.UtcNow.ToShortDateString()}, portanto, só são aceitos faturamentos do dia {DateTime.UtcNow.Date.AddDays(-1).ToShortDateString()}.");
+            return (null, $"Não é permitido registrar faturamentos com mais de 30 dias de diferença. Data máxima permitida: {DateTime.UtcNow.Date.AddDays(-30).ToShortDateString()}.");
         }
 
         // 4. REGRA: NÃO PERMITIR DUPLICIDADE
@@ -49,15 +43,14 @@ public class FaturamentoService
             return (null, "Já existe um faturamento registrado para esta data.");
         }
 
-        // Cria o novo faturamento se todas as regras passarem
+        // Cria o novo faturamento
         var novoFaturamento = new Faturamento
         {
             Id = Guid.NewGuid(),
             Valor = faturamentoDto.Valor,
             Data = dataFaturamentoUtc,
-            Moeda = faturamentoDto.Moeda,
             Origem = faturamentoDto.Origem,
-            IsAtivo = true, // Garante que o novo faturamento seja criado como ativo
+            IsAtivo = true,
             OperacaoId = operacaoId
         };
 
@@ -88,18 +81,23 @@ public class FaturamentoService
         {
             return (false, "Não é permitido atualizar um faturamento para uma data futura.");
         }
-        // (A regra D+1 pode ou não se aplicar à edição, vamos deixá-la de fora por enquanto para mais flexibilidade)
 
-        // 4. Validação de duplicidade (verifica se já existe OUTRO faturamento na nova data)
+        // 4. Validação flexível para atualização (até 30 dias no passado)
+        var diasDiferenca = (DateTime.UtcNow.Date - dataFaturamentoUtc.Date).Days;
+        if (diasDiferenca > 30)
+        {
+            return (false, $"Não é permitido atualizar faturamentos para datas com mais de 30 dias de diferença. Data máxima permitida: {DateTime.UtcNow.Date.AddDays(-30).ToShortDateString()}.");
+        }
+
+        // 5. Validação de duplicidade (verifica se já existe OUTRO faturamento na nova data)
         if (await _repository.FaturamentoExistsOnDateAsync(operacaoId, dataFaturamentoUtc, faturamentoId))
         {
             return (false, "Já existe outro faturamento registrado para esta nova data.");
         }
 
-        // 5. Atualiza os dados
+        // 6. Atualiza os dados
         faturamentoExistente.Valor = faturamentoDto.Valor;
         faturamentoExistente.Data = dataFaturamentoUtc;
-        faturamentoExistente.Moeda = faturamentoDto.Moeda;
 
         _repository.Update(faturamentoExistente);
         await _repository.SaveChangesAsync();

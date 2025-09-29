@@ -17,7 +17,8 @@ const dashboardRoutes = [
     name: 'operacao-detalhes',
     component: () => import('@/views/OperacaoDetalhesView.vue'),
     meta: { requiresAuth: true }
-  }
+  },
+
 ];
 
 export default dashboardRoutes;

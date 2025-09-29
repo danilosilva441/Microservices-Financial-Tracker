@@ -11,6 +11,7 @@ public static class DependencyInjectionConfig
         // Repositories
         services.AddScoped<OperacaoRepository>();
         services.AddScoped<FaturamentoRepository>();
+        services.AddScoped<SolicitacaoRepository>();
         services.AddScoped<MetaRepository>();
         services.AddScoped<EmpresaRepository>();
         services.AddScoped<MensalistaRepository>();
@@ -18,6 +19,7 @@ public static class DependencyInjectionConfig
         // Services
         services.AddScoped<OperacaoService>();
         services.AddScoped<FaturamentoService>();
+        services.AddScoped<SolicitacaoService>();
         services.AddScoped<MetaService>();
         services.AddScoped<EmpresaService>();
         services.AddScoped<MensalistaService>();
