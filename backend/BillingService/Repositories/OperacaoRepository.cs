@@ -15,63 +15,90 @@ public class OperacaoRepository
 
     public async Task<IEnumerable<Operacao>> GetByUserIdAsync(Guid userId, int? ano, int? mes, bool? isAtiva)
     {
-        // 1. Buscamos os IDs das operações permitidas para o usuário.
         var operacoesIds = await _context.UsuarioOperacoes
             .Where(uo => uo.UserId == userId)
             .Select(uo => uo.OperacaoId)
             .ToListAsync();
 
-        // 2. Criamos a consulta inicial para buscar as operações com seus faturamentos.
         var query = _context.Operacoes
             .Where(op => operacoesIds.Contains(op.Id))
-            .Include(op => op.Faturamentos)
             .AsQueryable();
 
-        // 3. Aplicamos os filtros opcionais
-        if (isAtiva.HasValue)
-        {
-            query = query.Where(op => op.IsAtiva == isAtiva.Value);
-        }
-        if (ano.HasValue)
-        {
-            query = query.Where(op => op.DataInicio.Year == ano.Value);
-        }
-        if (mes.HasValue)
-        {
-            query = query.Where(op => op.DataInicio.Month == mes.Value);
-        }
+        // Aplica filtros na Operação
+        if (isAtiva.HasValue) query = query.Where(op => op.IsAtiva == isAtiva.Value);
+        if (ano.HasValue) query = query.Where(op => op.DataInicio.Year == ano.Value);
+        if (mes.HasValue) query = query.Where(op => op.DataInicio.Month == mes.Value);
 
-        // 4. Finalmente, executamos a consulta completa.
-        return await query.ToListAsync();
+        // --- CORREÇÃO AQUI ---
+        // Carrega os faturamentos, aplicando os mesmos filtros de data
+        // Isso garante que a Projeção seja calculada corretamente
+        return await query.Select(op => new Operacao
+        {
+            // Copia todas as propriedades da operação
+            Id = op.Id,
+            Nome = op.Nome,
+            Descricao = op.Descricao,
+            Endereco = op.Endereco,
+            MetaMensal = op.MetaMensal,
+            ProjecaoFaturamento = op.ProjecaoFaturamento,
+            DataInicio = op.DataInicio,
+            DataFim = op.DataFim,
+            IsAtiva = op.IsAtiva,
+            UserId = op.UserId,
+            // Filtra a lista de faturamentos incluída
+            Faturamentos = op.Faturamentos
+                .Where(f => (!ano.HasValue || f.Data.Year == ano.Value) &&
+                            (!mes.HasValue || f.Data.Month == mes.Value))
+                .ToList()
+        }).ToListAsync();
     }
 
-    public async Task AddAsync(Operacao operacao)
+    // O método GetAllAsync também se beneficia da mesma correção
+    public async Task<IEnumerable<Operacao>> GetAllAsync(int? ano, int? mes, bool? isAtiva)
     {
-        await _context.Operacoes.AddAsync(operacao);
-    }
+        var query = _context.Operacoes.AsQueryable();
 
-    public async Task SaveChangesAsync()
-    {
-        await _context.SaveChangesAsync();
+        if (isAtiva.HasValue) query = query.Where(op => op.IsAtiva == isAtiva.Value);
+        if (ano.HasValue) query = query.Where(op => op.DataInicio.Year == ano.Value);
+        if (mes.HasValue) query = query.Where(op => op.DataInicio.Month == mes.Value);
+
+        return await query.Select(op => new Operacao
+        {
+            Id = op.Id,
+            Nome = op.Nome,
+            Descricao = op.Descricao,
+            Endereco = op.Endereco,
+            MetaMensal = op.MetaMensal,
+            ProjecaoFaturamento = op.ProjecaoFaturamento,
+            DataInicio = op.DataInicio,
+            DataFim = op.DataFim,
+            IsAtiva = op.IsAtiva,
+            UserId = op.UserId,
+            Faturamentos = op.Faturamentos
+                .Where(f => (!ano.HasValue || f.Data.Year == ano.Value) &&
+                            (!mes.HasValue || f.Data.Month == mes.Value))
+                .ToList()
+        }).ToListAsync();
     }
 
     public async Task<Operacao?> GetByIdAndUserIdAsync(Guid id, Guid userId)
     {
-        // Valida o vínculo antes de retornar a operação
         var temAcesso = await _context.UsuarioOperacoes.AnyAsync(uo => uo.UserId == userId && uo.OperacaoId == id);
         if (!temAcesso)
         {
             return null;
         }
 
+        // Esta consulta específica não precisa do filtro de data, pois busca por ID
         return await _context.Operacoes
             .Include(op => op.Faturamentos)
             .FirstOrDefaultAsync(op => op.Id == id);
     }
 
-    public void Update(Operacao operacao)
+    // --- MÉTODOS RESTANTES ESTÃO CORRETOS ---
+    public async Task AddAsync(Operacao operacao)
     {
-        _context.Operacoes.Update(operacao);
+        await _context.Operacoes.AddAsync(operacao);
     }
 
     public async Task AddUsuarioOperacaoLinkAsync(UsuarioOperacao vinculo)
@@ -79,20 +106,33 @@ public class OperacaoRepository
         await _context.UsuarioOperacoes.AddAsync(vinculo);
     }
 
+    public void Update(Operacao operacao)
+    {
+        _context.Operacoes.Update(operacao);
+    }
+
     public void Remove(Operacao operacao)
     {
         _context.Operacoes.Remove(operacao);
     }
-    public async Task<IEnumerable<Operacao>> GetAllAsync(int? ano, int? mes, bool? isAtiva)
+
+    public async Task SaveChangesAsync()
     {
-        var query = _context.Operacoes
-            .Include(op => op.Faturamentos)
-            .AsQueryable();
+        await _context.SaveChangesAsync();
+    }
+    public async Task<bool> UpdateProjecaoAsync(Guid id, decimal projecao)
+    {
+        // Encontra a operação diretamente pelo ID
+        var operacao = await _context.Operacoes.FindAsync(id);
+        if (operacao == null)
+        {
+            return false; // Retorna falso se não encontrar
+        }
 
-        if (isAtiva.HasValue) query = query.Where(op => op.IsAtiva == isAtiva.Value);
-        if (ano.HasValue) query = query.Where(op => op.DataInicio.Year == ano.Value);
-        if (mes.HasValue) query = query.Where(op => op.DataInicio.Month == mes.Value);
+        // Atualiza o campo e salva no banco
+        operacao.ProjecaoFaturamento = projecao;
+        await _context.SaveChangesAsync();
 
-        return await query.ToListAsync();
+        return true; // Retorna verdadeiro indicando sucesso
     }
 }

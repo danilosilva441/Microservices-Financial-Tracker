@@ -1,5 +1,7 @@
 using BillingService.DTO;
 using BillingService.Services;
+using BillingService.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -8,7 +10,7 @@ namespace BillingService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Todos precisam estar logados para acessar qualquer endpoint aqui
+[Authorize] // Todos os endpoints aqui exigem login, a menos que especificado o contrário
 public class OperacoesController : ControllerBase
 {
     private readonly OperacaoService _operacaoService;
@@ -25,30 +27,31 @@ public class OperacoesController : ControllerBase
         return Guid.Parse(userIdClaim);
     }
 
-    // GETs podem ser acessados por qualquer usuário autenticado (a lógica de vínculo já protege os dados)
-    // GET /api/operacoes
-[HttpGet]
-public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] int? mes, [FromQuery] bool? isAtiva)
-{
-    // --- VERIFICAÇÃO PARA SERVIÇO INTERNO ---
-    var remoteIpAddress = HttpContext.Connection.RemoteIpAddress;
-    // Se a requisição vem de um IP da rede interna do Docker, não precisa de UserId.
-    // Isso permite que o AnalysisService busque todos os dados.
-    if (remoteIpAddress != null && remoteIpAddress.ToString().StartsWith("172.")) // IPs do Docker geralmente começam com 172.
+    [HttpGet]
+    [Authorize] // Agora está protegido por JWT padrão, sem políticas complexas
+    public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] int? mes, [FromQuery] bool? isAtiva)
     {
-        // Busca TODAS as operações, sem filtrar por usuário
-        var todasOperacoes = await _operacaoService.GetAllOperacoesAsync(ano, mes, isAtiva);
-        return Ok(todasOperacoes);
+        // Pega o email do token JWT do chamador
+        var callerEmail = User.FindFirstValue(ClaimTypes.Email);
+
+        // Se a chamada vier do nosso usuário de sistema...
+        if (callerEmail == "system@internal.service")
+        {
+            // ...retorna TODAS as operações, pois é um serviço interno confiável.
+            var todasOperacoes = await _operacaoService.GetAllOperacoesAsync(ano, mes, isAtiva);
+            return Ok(todasOperacoes);
+        }
+        else
+        {
+            // Senão, é um usuário comum, então aplica a lógica de segurança padrão.
+            var userId = GetUserId();
+            var operacoes = await _operacaoService.GetOperacoesByUserAsync(userId, ano, mes, isAtiva);
+            return Ok(operacoes);
+        }
     }
-    // ------------------------------------------
 
-    // Se não for uma chamada interna, a lógica de permissão por usuário continua
-    var userId = GetUserId();
-    var operacoes = await _operacaoService.GetOperacoesByUserAsync(userId, ano, mes, isAtiva);
-    return Ok(operacoes);
-}
+    // --- NENHUMA ALTERAÇÃO NECESSÁRIA NOS MÉTODOS ABAIXO ---
 
-    // GET /api/operacoes/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOperacaoById(Guid id)
     {
@@ -61,9 +64,8 @@ public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] 
         return Ok(operacao);
     }
 
-    // POST /api/operacoes
     [HttpPost]
-    [Authorize(Roles = "Admin")] // Apenas Admins podem criar novas operações
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateOperacao([FromBody] OperacaoDto operacaoDto)
     {
         var userId = GetUserId();
@@ -73,29 +75,31 @@ public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] 
 
     // PUT /api/operacoes/{id}
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")] // Apenas Admins podem atualizar operações
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOperacao(Guid id, [FromBody] UpdateOperacaoDto operacaoDto)
     {
         var userId = GetUserId();
+        // O método do serviço retorna um booleano simples.
         var success = await _operacaoService.UpdateOperacaoAsync(id, operacaoDto, userId);
 
         if (!success)
         {
-            return NotFound("Operação não encontrada ou não pertence ao usuário.");
+            // Retorna um erro genérico, pois o serviço já logou o detalhe.
+            return NotFound("Operação não encontrada ou usuário sem permissão.");
         }
         return NoContent();
     }
 
     // PATCH /api/operacoes/{id}/desativar
     [HttpPatch("{id}/desativar")]
-    [Authorize(Roles = "Admin")] // Apenas Admins podem desativar operações
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeactivateOperacao(Guid id)
     {
         var userId = GetUserId();
         var success = await _operacaoService.DeactivateOperacaoAsync(id, userId);
         if (!success)
         {
-            return NotFound("Operação não encontrada ou não pertence ao usuário.");
+            return NotFound("Operação não encontrada ou usuário sem permissão.");
         }
         return NoContent();
     }
@@ -108,6 +112,25 @@ public async Task<IActionResult> GetOperacoes([FromQuery] int? ano, [FromQuery] 
         if (!success)
         {
             return NotFound("Operação não encontrada ou não pertence ao usuário.");
+        }
+        return NoContent();
+    }
+
+    [HttpPatch("{id}/projecao")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProjecaoFaturamento(Guid id, [FromBody] ProjecaoDto projecaoDto)
+    {
+        var callerEmail = User.FindFirstValue(ClaimTypes.Email);
+        // Apenas o serviço interno pode chamar este endpoint
+        if (callerEmail != "system@internal.service")
+        {
+            return Forbid();
+        }
+
+        var success = await _operacaoService.UpdateProjecaoAsync(id, projecaoDto.ProjecaoFaturamento);
+        if (!success)
+        {
+            return NotFound("Operação não encontrada.");
         }
         return NoContent();
     }

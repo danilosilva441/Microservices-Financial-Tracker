@@ -107,4 +107,9 @@ public class OperacaoService
         return true;
     }
 
+    public async Task<bool> UpdateProjecaoAsync(Guid id, decimal projecao)
+    {
+        return await _repository.UpdateProjecaoAsync(id, projecao);
+    }
+
 }

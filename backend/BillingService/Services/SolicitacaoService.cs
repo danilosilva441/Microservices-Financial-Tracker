@@ -9,11 +9,17 @@ public class SolicitacaoService
 {
     private readonly SolicitacaoRepository _repository;
     private readonly FaturamentoRepository _faturamentoRepository;
+    private readonly OperacaoRepository _operacaoRepository;
 
-    public SolicitacaoService(SolicitacaoRepository repository, FaturamentoRepository faturamentoRepository)
+    public SolicitacaoService(
+        SolicitacaoRepository repository,
+        FaturamentoRepository faturamentoRepository,
+        OperacaoRepository operacaoRepository
+    )
     {
         _repository = repository;
         _faturamentoRepository = faturamentoRepository;
+        _operacaoRepository = operacaoRepository;
     }
 
     public async Task<SolicitacaoAjuste> CriarSolicitacaoAsync(SolicitacaoAjuste solicitacao, Guid solicitanteId)

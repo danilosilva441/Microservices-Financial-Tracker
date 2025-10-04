@@ -1,42 +1,40 @@
-using AuthService.Configuration;        
+using AuthService.Configuration;
 using AuthService.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. Definição da Política de CORS ---
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          policy.WithOrigins("http://localhost:5173") // A porta do seu frontend
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                      });
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
-// Adiciona os serviços do DbContext e CORS (se tiver)
+// --- 2. Configuração do Banco de Dados ---
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ... (código do CORS, se você o adicionou aqui)
-
-// 2. CHAME NOSSO NOVO MÉTODO DE CONFIGURAÇÃO EM UMA ÚNICA LINHA!
+// --- 3. Configuração Modular de Autenticação ---
 builder.Services.AddAuthConfiguration(builder.Configuration);
 
+// --- 4. Configurações Padrão ---
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    // ... (configuração do Json para ciclos, se necessário)
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Aplica as migrations automaticamente
+// Aplica migrations na inicialização
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
@@ -49,11 +47,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// A ordem aqui é importante
-app.UseCors("_myAllowSpecificOrigins"); // Se você tiver uma política de CORS
+// --- Middlewares (A Ordem é Importante) ---
+app.UseCors(MyAllowSpecificOrigins); // Usa a política de CORS
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
