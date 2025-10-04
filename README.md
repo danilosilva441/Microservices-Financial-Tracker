@@ -1,84 +1,89 @@
-# Minimundo - Gestão de Faturamento & Previsões (Full-Stack)
+# Microservices Financial Tracker
 
-![Status](https://img.shields.io/badge/status-Backend%20Concluído-brightgreen)
+![Status](https://img.shields.io/badge/status-MVP%20Funcional-brightgreen)
 ![Backend](https://img.shields.io/badge/Backend-ASP.NET%20%7C%20Node.js-blueviolet)
+![Frontend](https://img.shields.io/badge/Frontend-Vue.js-green)
 ![Infra](https://img.shields.io/badge/Infra-Docker%20%7C%20Nginx-blue)
-![Database](https://img.shields.io/badge/Database-PostgreSQL-darkblue)
 
-Este é um projeto full-stack para gestão de operações financeiras, com um foco em faturamento diário, gerenciamento de mensalistas e projeções de performance. A arquitetura é baseada em microserviços híbridos no backend e uma Single Page Application (SPA) reativa no frontend.
+## 📄 Sobre o Projeto
+O **Microservices Financial Tracker** é um sistema full-stack para controle e visualização de performance de operações financeiras. O foco principal é fornecer um dashboard centralizado com gráficos e relatórios que comparam metas com faturamentos, alimentado por um backend robusto construído em uma arquitetura de microserviços.
 
-O objetivo é demonstrar competências em todo o ciclo de vida do desenvolvimento de software, desde o design de uma arquitetura robusta e a implementação de regras de negócio complexas, até a orquestração da infraestrutura com Docker e a criação de uma API segura e profissional.
-
----
-
-## 🏛️ Visão Geral da Arquitetura
-
-O sistema é composto por múltiplos serviços independentes que se comunicam através de um API Gateway, garantindo um ponto de entrada único, seguro e gerenciável para o frontend.
-
-* **API Gateway (Nginx):** Roteia as requisições para o microserviço apropriado.
-* **AuthService (ASP.NET Core):** Gerencia Usuários, Perfis (Roles) e todo o fluxo de autenticação, gerando tokens JWT seguros.
-* **BillingService (ASP.NET Core):** O coração do sistema. Gerencia Operações, Faturamentos (avulsos e de mensalistas), Metas, Empresas e Mensalistas, aplicando todas as regras de negócio.
-* **AnalysisService (Node.js):** Motor de cálculo proativo que analisa o histórico e gera projeções de performance através de jobs agendados.
-* **Banco de Dados (PostgreSQL):** Armazena os dados de cada serviço em bancos de dados separados, garantindo a autonomia dos microserviços.
+O projeto demonstra a criação de uma aplicação completa, desde a infraestrutura com Docker e um API Gateway, passando por um backend seguro com regras de negócio, até uma interface reativa no frontend.
 
 ---
 
-## ✨ Funcionalidades do Backend
+## 🏛️ Arquitetura
+O sistema é composto por múltiplos serviços independentes que se comunicam através de um API Gateway, garantindo um ponto de entrada único e seguro.
 
-* **Autenticação & Autorização:**
-    * [✅] Registro e Login com senhas criptografadas (`BCrypt`).
-    * [✅] Geração de Tokens JWT contendo `claims` de perfil (`Role`).
-    * [✅] Sistema de Perfis (`Roles`) relacional (User/Admin).
-    * [✅] Endpoint administrativo para promover usuários a Admin.
-    * [✅] Autorização granular: um usuário só pode acessar os dados das operações às quais está vinculado.
-    * [✅] Proteção de endpoints baseada em Perfis (ex: `[Authorize(Roles = "Admin")]`).
-
-* **Lógica de Negócio (Billing):**
-    * [✅] CRUD completo e seguro para **Operações**, **Empresas**, **Mensalistas** e **Faturamentos**.
-    * [✅] Vínculo automático do usuário criador à sua nova operação.
-    * [✅] Endpoint de Admin para gerenciar vínculos Usuário-Operação.
-    * [✅] Regras de data para registro de faturamentos (impede datas futuras e força a janela de lançamento D+1).
-    * [✅] Modelo de faturamento duplo: **Fixo** (mensalistas) e **Variável** (avulsos).
-
-* **Análise e Projeção:**
-    * [✅] Endpoint reativo para projeções sob demanda.
-    * [✅] Job agendado (`node-cron`) que calcula e salva projeções de forma proativa e segura.
-
-* **Design de API e Arquitetura:**
-    * [✅] Arquitetura em camadas (`Controllers`, `Services`, `Repositories`) para separação de responsabilidades.
-    * [✅] Arquitetura Multi-Banco: um banco de dados dedicado para cada serviço (`auth_db`, `billing_db`).
-    * [✅] Orquestração de startup com `healthchecks` no Docker Compose para garantir uma inicialização estável.
-    * [✅] Uso de DTOs para garantir um contrato de API limpo e seguro.
+- **API Gateway (Nginx):** Roteia as requisições para o microserviço apropriado.
+- **AuthService (ASP.NET Core):** Gerencia Usuários, Perfis (Roles) e todo o fluxo de autenticação com JWT.
+- **BillingService (ASP.NET Core):** O coração do sistema. Gerencia Operações e Faturamentos, aplicando todas as regras de negócio.
+- **AnalysisService (Node.js):** Motor de cálculo que roda em background, se autentica de forma segura no `AuthService` e consome dados do `BillingService` para gerar projeções de faturamento.
+- **Banco de Dados (PostgreSQL):** Cada serviço possui seu próprio banco de dados (`auth_db`, `billing_db`), garantindo a autonomia.
 
 ---
 
-## 🛠️ Como Executar o Backend
+## ✨ Funcionalidades Principais
 
-Siga os passos abaixo para executar a aplicação completa.
+* **[✅] Autenticação Segura com Perfis (User/Admin):** Sistema de login completo com tokens JWT, protegendo o acesso aos dados.
+* **[✅] Gerenciamento de Operações:**
+    * **API:** CRUD completo para criar, ler, atualizar e deletar operações.
+    * **Frontend:** Interface para listar, visualizar detalhes, **criar** e **deletar** operações (ações de criação/deleção restritas a Admins).
+* **[✅] Rastreamento de Faturamentos:**
+    * **API:** CRUD completo para adicionar, ler, atualizar e deletar faturamentos diários.
+    * **Frontend:** Interface para listar faturamentos nos detalhes da operação, **adicionar** e **deletar** registros.
+* **[🚧 EM ANDAMENTO] Dashboard de Performance:**
+    * **Frontend:** Tela de dashboard com cards de KPIs (Key Performance Indicators) e gráficos (usando `Chart.js`) para visualização de dados.
+    * **Dependência:** Aguardando a finalização do `AnalysisService` para popular os dados de projeção.
+* **[🚧 EM ANDAMENTO] Motor de Análise Proativo:**
+    * O `AnalysisService` é responsável por calcular as projeções de faturamento que alimentam o dashboard. **Esta é a funcionalidade atualmente em desenvolvimento.**
+
+---
+
+## 🛠️ Como Executar o Projeto
+
+Siga os passos abaixo para executar a aplicação completa em seu ambiente local.
 
 ### Pré-requisitos
 * [Git](https://git-scm.com/)
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### Passos para Instalação
-
+### Passos
 1.  **Clone o repositório e navegue até a pasta.**
-2.  **Verifique as configurações** no arquivo `docker-compose.yml` (senhas do banco, chave JWT, etc.).
-3.  **Suba os contêineres** com Docker Compose:
+2.  **Configure as Variáveis de Ambiente:** Verifique o arquivo `docker-compose.yml`, principalmente as credenciais do `SYSTEM_EMAIL` e `SYSTEM_PASSWORD` para o `analysis_service`.
+3.  **Inicie os Contêineres:**
     ```bash
     docker-compose up --build -d
     ```
-4.  Aguarde até que todos os contêineres estejam com o status `healthy` (verifique com `docker ps`).
-5.  Use o **Postman** ou similar para interagir com a API através do Gateway na porta **`http://localhost:8080`**.
+4.  **Acesse a Aplicação:**
+    * A API estará disponível em `http://localhost:8080`.
+    * O frontend de desenvolvimento (se estiver rodando localmente) estará em `http://localhost:5173`.
 
 ---
 
-## 🔮 Roadmap de Evolução
+## 📡 Documentação da API (Endpoints Principais)
+A API possui mais endpoints para funcionalidades avançadas (como `Empresas` e `Solicitações`), mas estes são os essenciais para o escopo atual do frontend.
 
-* [🎯] **Desenvolver o Frontend Completo (Vue.js):** Construir as telas de CRUD, painéis de Admin e o Dashboard principal com gráficos.
-* [🎯] **Adicionar Testes Unitários e de Integração** para garantir a qualidade contínua do backend.
-* [🎯] **Configurar CI/CD (GitHub Actions):** Automatizar o processo de build, teste e deploy.
-* [🎯] **Realizar o Deploy em Nuvem:** Publicar a aplicação completa em um serviço como Azure, AWS ou Railway.
+| Método | Endpoint | Autorização | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/users` | Nenhuma | Registra um novo usuário. |
+| `POST` | `/api/token` | Nenhuma | Autentica um usuário e retorna um token JWT. |
+| `GET` | `/api/operacoes` | Bearer Token | Lista operações do usuário (ou todas se for serviço interno). |
+| `POST`| `/api/operacoes` | **Admin** | Cria uma nova operação. |
+| `DELETE`|`/api/operacoes/{id}` | **Admin** | Exclui uma operação. |
+| `POST`| `/api/operacoes/{id}/faturamentos` | Bearer Token | Adiciona um novo faturamento a uma operação. |
+| `DELETE`|`/api/operacoes/{opId}/faturamentos/{fatId}`| **Admin** | Exclui um faturamento. |
+
+---
+
+## 🔮 Roadmap Futuro
+
+- **[🎯] Finalizar e Estabilizar o `AnalysisService`:** Corrigir a inicialização do serviço para garantir que ele se autentique e busque os dados do `BillingService`, populando o campo `projecaoFaturamento`.
+- **[ ] Polimento do Dashboard:** Adicionar mais gráficos e filtros de período.
+- **[ ] Implementar Edição:** Adicionar a funcionalidade de editar Operações e Faturamentos no frontend.
+- **[ ] Adicionar Módulos Avançados:** Construir as interfaces de frontend para as funcionalidades de `Empresas`, `Mensalistas` e `Solicitações de Ajuste` que já existem no backend.
+
+
 
 ---
 
