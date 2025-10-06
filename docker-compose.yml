@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   postgres_db:
     image: postgres:15-alpine
@@ -33,9 +35,6 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
 
   billing_service:
     build: ./backend/BillingService
@@ -53,9 +52,6 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
 
   analysis_service:
     build: ./backend/analysis_service
@@ -70,7 +66,17 @@ services:
       - SYSTEM_EMAIL=system@internal.service
       - SYSTEM_PASSWORD=UMA_SENHA_MUITO_FORTE_E_SEGURA_AQUI_123456
       - BILLING_SERVICE_URL=http://billing_service:8080
-    # REMOVEMOS O HEALTHCHECK DELE PARA SIMPLIFICAR
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
 
   api_gateway:
     image: nginx:1.25-alpine
@@ -85,10 +91,13 @@ services:
         condition: service_healthy
       billing_service:
         condition: service_healthy
-      # O gateway só precisa esperar o contêiner do analysis existir,
-      # não precisa que ele esteja 'healthy'
       analysis_service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
