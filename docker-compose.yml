@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -28,8 +28,8 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=auth_db;Username=postgres;Password=admin
-      - Jwt__Key=SUA_CHAVE_SECRETA_SUPER_LONGA_E_SEGURA_AQUI_123456
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=auth_db;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=AuthService
       - Jwt__Audience=BillingService
     healthcheck:
@@ -45,8 +45,8 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=billing_db;Username=postgres;Password=admin
-      - Jwt__Key=SUA_CHAVE_SECRETA_SUPER_LONGA_E_SEGURA_AQUI_123456
+      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=billing_db;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=AuthService
       - Jwt__Audience=BillingService
     healthcheck:
@@ -64,7 +64,7 @@ services:
       - DATABASE_URL=postgres://postgres:admin@postgres_db:5432/analysis_db
       - PORT=3000
       - SYSTEM_EMAIL=system@internal.service
-      - SYSTEM_PASSWORD=UMA_SENHA_MUITO_FORTE_E_SEGURA_AQUI_123456
+      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
       - BILLING_SERVICE_URL=http://billing_service:8080
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health || exit 1"]
@@ -93,11 +93,7 @@ services:
         condition: service_healthy
       analysis_service:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
 
 volumes:
   postgres_data:
