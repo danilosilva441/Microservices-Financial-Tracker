@@ -16,7 +16,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        // Adiciona a URL do seu frontend em produção (Railway)
+        // Substitua 'SUA-URL-DA-RAILWAY.up.railway.app' pela sua URL real
+        policy.WithOrigins("http://localhost:5173", "https://SEU_DOMINIO_DA_RAILWAY_AQUI.up.railway.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -25,17 +27,16 @@ builder.Services.AddCors(options =>
 // --- 2. Configuração do Banco de Dados (Railway ou Local) ---
 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Tenta pegar as variáveis de ambiente do Railway
-var pgHost = Environment.GetEnvironmentVariable("PGHOST");
-var pgPort = Environment.GetEnvironmentVariable("PGPORT");
-var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE");
-var pgUser = Environment.GetEnvironmentVariable("PGUSER");
-var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+var pgHost = builder.Configuration["PGHOST"];
+var pgPort = builder.Configuration["PGPORT"];
+var pgUser = builder.Configuration["PGUSER"];
+var pgPassword = builder.Configuration["PGPASSWORD"];
+var pgDatabase = "billing_db"; // Nome do banco de dados para este serviço
 
 // Se estiver rodando no Railway, monta a connection string dinamicamente
 if (!string.IsNullOrEmpty(pgHost))
 {
-    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=true";
+    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};";
     Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
 }
 else
@@ -57,7 +58,6 @@ if (string.IsNullOrEmpty(jwtKey))
 }
 builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection(ApiKeySettings.SectionName));
 
-// Unifica a configuração de ambos os esquemas: JWT (padrão) e ApiKey
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -95,7 +95,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// --- 7. Aplica migrations automaticamente ---
+// Aplica migrations na inicialização
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
@@ -108,7 +108,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// --- 8. Middlewares ---
+// --- Middlewares ---
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();

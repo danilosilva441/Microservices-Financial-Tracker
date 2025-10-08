@@ -34,7 +34,10 @@ services:
       - Jwt__Audience=BillingService
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
+      interval: 15s # <-- CORREÇÃO: Aumentamos o intervalo
+      timeout: 10s  # <-- CORREÇÃO: Adicionamos timeout
+      retries: 5    # <-- CORREÇÃO: Adicionamos retries
+      start_period: 30s # <-- CORREÇÃO: Adicionamos start_period
 
   billing_service:
     build: ./backend/BillingService
@@ -51,27 +54,32 @@ services:
       - Jwt__Audience=BillingService
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
+      interval: 15s # <-- CORREÇÃO: Aumentamos o intervalo
+      timeout: 10s  # <-- CORREÇÃO: Adicionamos timeout
+      retries: 5    # <-- CORREÇÃO: Adicionamos retries
+      start_period: 30s # <-- CORREÇÃO: Adicionamos start_period
 
   analysis_service:
     build: ./backend/analysis_service
     container_name: analysis_service
     restart: always
     depends_on:
-      - auth_service
-      - billing_service
+      auth_service: # <-- CORREÇÃO: Espera os serviços estarem saudáveis
+        condition: service_healthy
+      billing_service:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://postgres:admin@postgres_db:5432/analysis_db
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres_db:5432/analysis_db # <-- CORREÇÃO: Usando a variável de senha
       - PORT=3000
       - SYSTEM_EMAIL=system@internal.service
       - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
       - BILLING_SERVICE_URL=http://billing_service:8080
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # <-- CORREÇÃO: Usando curl e um endpoint /health
+      interval: 15s
+      timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 20s
 
   frontend:
     build: ./frontend
@@ -93,11 +101,8 @@ services:
         condition: service_healthy
       analysis_service:
         condition: service_healthy
-
-
-
-
-
+      frontend: # <-- CORREÇÃO: Adicionamos dependência do frontend
+        condition: service_started
 
 volumes:
   postgres_data:

@@ -1,57 +1,56 @@
+const express = require('express');
+const cors = require('cors');
 const cron = require('node-cron');
-const http = require('http');
 const { getAuthToken } = require('./auth.js');
 const { fetchOperacoes, updateProjecao } = require('./services/billingService.js');
 
-console.log('Analysis Service: Tarefa de análise agendada.');
+// 1. Inicializa o Express
+const app = express();
+const port = 3000;
 
-// A função principal do job, agora separada para ser reutilizável
+// 2. Configura o CORS (permite requisições do frontend)
+app.use(cors({ origin: 'http://localhost:5173' }));
+
+// 3. Rota para o Healthcheck do Docker
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
+// --- LÓGICA DO JOB AGENDADO (CRON) ---
 async function runProjectionJob() {
-  console.log('Analysis Service: Iniciando job de análise...');
-
+  console.log('Analysis Service: Iniciando job de projeção...');
   const token = await getAuthToken();
-  if (token) {
-    const operacoes = await fetchOperacoes(token);
+  if (!token) return;
 
-    if (operacoes && operacoes.length > 0) {
-      console.log(`Analysis Service: ${operacoes.length} operações encontradas. Calculando e salvando projeções...`);
+  const operacoes = await fetchOperacoes(token);
+  if (operacoes && operacoes.length > 0) {
+    console.log(`Analysis Service: ${operacoes.length} operações encontradas. Atualizando projeções...`);
+    for (const op of operacoes) {
+      const faturamentos = op.faturamentos?.$values || [];
+      const projecaoCalculada = faturamentos
+        .filter(f => f.isAtivo)
+        .reduce((total, fat) => total + fat.valor, 0);
 
-      for (const op of operacoes) {
-        const faturamentos = op.faturamentos?.$values || [];
-        const projecaoCalculada = faturamentos
-          .filter(f => f.isAtivo)
-          .reduce((total, fat) => total + fat.valor, 0);
-
-        if (op.projecaoFaturamento !== projecaoCalculada) {
-          await updateProjecao(op.id, projecaoCalculada, token);
-        }
+      if (op.projecaoFaturamento !== projecaoCalculada) {
+        await updateProjecao(op.id, projecaoCalculada, token);
       }
-      console.log('Analysis Service: Job de projeção concluído.');
-    } else {
-      console.log('Analysis Service: Nenhuma operação encontrada.');
     }
+    console.log('Analysis Service: Job de projeção concluído.');
+  } else {
+    console.log('Analysis Service: Nenhuma operação encontrada.');
   }
 }
 
 // Agenda o job para rodar a cada minuto
 cron.schedule('* * * * *', runProjectionJob);
 
-// --- CORREÇÃO AQUI: Adiciona try...catch ao job inicial ---
-// Roda o job uma vez na inicialização para popular os dados imediatamente
-setTimeout(async () => {
-    try {
-        console.log("Executando job inicial...");
-        await runProjectionJob();
-    } catch (error) {
-        console.error("Erro durante a execução do job inicial:", error);
-        // Mesmo com erro, o serviço principal continua rodando.
-    }
-}, 10000); // Aumentado para 10 segundos para dar mais tempo aos outros serviços
+// Roda o job uma vez na inicialização
+setTimeout(() => {
+    console.log("Executando job de projeção inicial...");
+    runProjectionJob().catch(err => console.error("Erro no job inicial:", err));
+}, 15000); // 15 segundos para dar tempo aos outros serviços
 
-// Servidor para healthcheck
-http.createServer((req, res) => {
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end('Analysis Service is running\n');
-}).listen(3000);
-
-console.log('Analysis Service rodando na porta 3000');
+// 4. Inicia o servidor Express para escutar as requisições
+app.listen(port, () => {
+  console.log(`Analysis Service rodando e escutando na porta ${port}`);
+});
