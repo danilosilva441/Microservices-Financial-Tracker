@@ -22,9 +22,29 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- 2. Configuração do Banco de Dados ---
+// --- 2. Configuração do Banco de Dados (Railway ou Local) ---
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Tenta pegar as variáveis de ambiente do Railway
+var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+var pgPort = Environment.GetEnvironmentVariable("PGPORT");
+var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE");
+var pgUser = Environment.GetEnvironmentVariable("PGUSER");
+var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+
+// Se estiver rodando no Railway, monta a connection string dinamicamente
+if (!string.IsNullOrEmpty(pgHost))
+{
+    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=true";
+    Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
+}
+else
+{
+    Console.WriteLine("💻 Conectando ao PostgreSQL local...");
+}
+
 builder.Services.AddDbContext<BillingDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // --- 3. Configuração Modular de Injeção de Dependência ---
 builder.Services.AddBillingServices();
@@ -39,7 +59,7 @@ builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection(ApiK
 
 // Unifica a configuração de ambos os esquemas: JWT (padrão) e ApiKey
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => // Configura o JWT Bearer
+    .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -52,13 +72,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     })
-    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>( // Adiciona o esquema da ApiKey
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName, null);
 
-// --- 5. Configuração de Autorização (COM A POLÍTICA CORRIGIDA) ---
+// --- 5. Configuração de Autorização ---
 builder.Services.AddAuthorization(options =>
 {
-    // Cria a política que aceita JWT OU ApiKey
     options.AddPolicy("JwtOrApiKey", policy =>
     {
         policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, ApiKeyAuthenticationHandler.SchemeName);
@@ -76,7 +95,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Aplica migrations na inicialização
+// --- 7. Aplica migrations automaticamente ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
@@ -89,7 +108,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// --- Middlewares (A Ordem é Importante) ---
+// --- 8. Middlewares ---
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();

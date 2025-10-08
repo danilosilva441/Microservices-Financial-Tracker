@@ -17,9 +17,29 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- 2. Configuração do Banco de Dados ---
+// --- 2. Configuração do Banco de Dados (Railway ou Local) ---
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Tenta capturar as variáveis de ambiente do Railway
+var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+var pgPort = Environment.GetEnvironmentVariable("PGPORT");
+var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE");
+var pgUser = Environment.GetEnvironmentVariable("PGUSER");
+var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+
+// Se estiver rodando no Railway, monta dinamicamente a connection string
+if (!string.IsNullOrEmpty(pgHost))
+{
+    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=true";
+    Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
+}
+else
+{
+    Console.WriteLine("💻 Conectando ao PostgreSQL local...");
+}
+
 builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // --- 3. Configuração Modular de Autenticação ---
 builder.Services.AddAuthConfiguration(builder.Configuration);
@@ -34,7 +54,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Aplica migrations na inicialização
+// --- 5. Aplica migrations automaticamente ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
@@ -47,8 +67,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// --- Middlewares (A Ordem é Importante) ---
-app.UseCors(MyAllowSpecificOrigins); // Usa a política de CORS
+// --- 6. Middlewares (A Ordem é Importante) ---
+app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
