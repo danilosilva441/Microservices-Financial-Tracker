@@ -28,7 +28,11 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=auth_db;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - PGHOST=postgres_db
+      - PGPORT=5432
+      - PGDATABASE=auth_db
+      - PGUSER=postgres
+      - PGPASSWORD=${POSTGRES_PASSWORD}
       - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=AuthService
       - Jwt__Audience=BillingService
