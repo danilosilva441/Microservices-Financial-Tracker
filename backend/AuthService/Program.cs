@@ -17,39 +17,55 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- 2. Configuração do Banco de Dados ---
+// --- 2. Configuração do Banco de Dados (com suporte ao Railway) ---
+
 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// Se não houver ConnectionString no appsettings.json, tenta usar DATABASE_URL (Railway)
 if (string.IsNullOrEmpty(connectionString))
 {
-    // Fallback para variáveis de ambiente individuais (Railway)
-    var pgHost = Environment.GetEnvironmentVariable("PGHOST");
-    if (!string.IsNullOrEmpty(pgHost))
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
     {
-        var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-        var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE") ?? "auth_db";
-        var pgUser = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
-        var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
-        
-        connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
+        try
+        {
+            var uri = new Uri(databaseUrl);
+            var userInfo = uri.UserInfo.Split(':');
+
+            var host = uri.Host;
+            var port = uri.Port;
+            var database = uri.AbsolutePath.Trim('/');
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+
+            connectionString =
+                $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode=Require;Trust Server Certificate=true";
+
+            Console.WriteLine("📡 Conectando ao PostgreSQL via DATABASE_URL do Railway...");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Erro ao processar DATABASE_URL: {ex.Message}");
+            throw;
+        }
     }
     else
     {
-        Console.WriteLine("💻 Conectando ao PostgreSQL local...");
+        Console.WriteLine("⚠️ Nenhuma ConnectionString ou DATABASE_URL encontrada!");
     }
 }
 else
 {
-    Console.WriteLine("💻 Conectando ao PostgreSQL via Connection String...");
+    Console.WriteLine("💻 Conectando ao PostgreSQL via Connection String local...");
 }
 
-// Log para debug (remova em produção)
+// Log para debug (esconde a senha)
 Console.WriteLine($"Connection String: {connectionString?.Replace("Password=", "Password=***")}");
 
+// Validação final
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("Connection string não configurada");
+    throw new InvalidOperationException("❌ Connection string não configurada.");
 }
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
