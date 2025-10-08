@@ -6,18 +6,18 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# 🔧 Corrige permissões do Vite (evita "Permission denied")
-RUN chmod +x node_modules/.bin/vite
-
 COPY . .
 
-# 🔧 Usa o Vite via npx (garante execução mesmo sem PATH)
-RUN npx vite build
+# ✅ Evita erro de permissão com o Vite no Railway
+RUN node node_modules/vite/bin/vite.js build
 
 # --- ESTÁGIO 2: Serve (Produção) ---
 FROM nginx:1.25-alpine
 
+# Copia os arquivos gerados pelo Vite (Vue 3)
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copia a configuração customizada do Nginx (importante para rotas do Vue)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
