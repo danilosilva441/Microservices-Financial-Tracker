@@ -24,38 +24,44 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- 2. Configuração do Banco de Dados (Railway ou Local) ---
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// --- 2. Configuração do Banco de Dados (Dinâmica) ---
+string connectionString;
+// As variáveis de ambiente do Railway (PGHOST, etc.) são lidas automaticamente pelo .NET
+var pgHost = builder.Configuration["PGHOST"]; 
 
-var pgHost = builder.Configuration["PGHOST"];
-var pgPort = builder.Configuration["PGPORT"];
-var pgUser = builder.Configuration["PGUSER"];
-var pgPassword = builder.Configuration["PGPASSWORD"];
-var pgDatabase = "billing_db"; // Nome do banco de dados para este serviço
-
-// Se estiver rodando no Railway, monta a connection string dinamicamente
 if (!string.IsNullOrEmpty(pgHost))
 {
+    // Ambiente de produção (Railway)
+    Console.WriteLine("📡 BillingService: Conectando ao PostgreSQL do Railway...");
+    var pgPort = builder.Configuration["PGPORT"];
+    var pgUser = builder.Configuration["PGUSER"];
+    var pgPassword = builder.Configuration["PGPASSWORD"];
+    var pgDatabase = "billing_db"; // Banco de dados específico para este serviço
     connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};";
-    Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
 }
 else
 {
-    Console.WriteLine("💻 Conectando ao PostgreSQL local...");
+    // Ambiente de desenvolvimento local
+    Console.WriteLine("💻 BillingService: Conectando ao PostgreSQL local...");
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+}
+
+if(string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("String de conexão com o banco de dados não foi encontrada.");
 }
 
 builder.Services.AddDbContext<BillingDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// --- 3. Configuração Modular de Injeção de Dependência ---
+
+// --- 3. Injeção de Dependência ---
 builder.Services.AddBillingServices();
 
-// --- 4. Configuração de Autenticação (UNIFICADA) ---
+// --- 4. Autenticação (Unificada) ---
 var jwtKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrEmpty(jwtKey))
-{
-    throw new InvalidOperationException("Chave JWT não está configurada.");
-}
+if (string.IsNullOrEmpty(jwtKey)) throw new InvalidOperationException("Chave JWT não configurada.");
+
 builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection(ApiKeySettings.SectionName));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -75,7 +81,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName, null);
 
-// --- 5. Configuração de Autorização ---
+// --- 5. Autorização ---
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("JwtOrApiKey", policy =>
@@ -85,7 +91,7 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
-// --- 6. Configurações Padrão ---
+// --- 6. Outros Serviços ---
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -95,23 +101,23 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Aplica migrations na inicialização
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
-    db.Database.Migrate();
-}
-
+// --- 7. Pipeline de Middlewares ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// --- Middlewares ---
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Aplica as migrations na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();
