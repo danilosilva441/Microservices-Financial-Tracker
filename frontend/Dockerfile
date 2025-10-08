@@ -1,19 +1,16 @@
 # --- ESTÁGIO 1: Build (Construção) ---
-FROM node:20-alpine AS build
+# CORREÇÃO: Usa a imagem 'slim' que é mais robusta com permissões
+FROM node:20-slim AS build
 
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm install
 
-# --- CORREÇÃO AQUI ---
-# Garante que o executável do Vite tenha permissão de execução
-RUN chmod +x /app/node_modules/.bin/vite
+# A linha 'RUN chmod +x ...' foi REMOVIDA
 
-# Copia todo o resto do código do frontend
 COPY . .
 
-# Roda o comando de build do Vite, que gera a pasta /dist
 RUN npm run build
 
 # --- ESTÁGIO 2: Serve (Produção) ---

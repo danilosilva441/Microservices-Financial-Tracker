@@ -37,8 +37,9 @@ if (string.IsNullOrEmpty(jwtKey))
 }
 builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection(ApiKeySettings.SectionName));
 
+// Unifica a configuração de ambos os esquemas: JWT (padrão) e ApiKey
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer(options => // Configura o JWT Bearer
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -51,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     })
-    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>( // Adiciona o esquema da ApiKey
         ApiKeyAuthenticationHandler.SchemeName, null);
 
 // --- 5. Configuração de Autorização (COM A POLÍTICA CORRIGIDA) ---
