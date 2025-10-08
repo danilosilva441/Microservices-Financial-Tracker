@@ -19,31 +19,25 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- 2. Configuração do Banco de Dados (Dinâmica) ---
-string connectionString;
-// As variáveis de ambiente do Railway (PGHOST, etc.) são lidas automaticamente pelo .NET
-var pgHost = builder.Configuration["PGHOST"]; 
+// --- 2. Configuração do Banco de Dados (Railway ou Local) ---
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// Tenta pegar as variáveis de ambiente do Railway
+var pgHost = builder.Configuration["PGHOST"];
+var pgPort = builder.Configuration["PGPORT"];
+var pgUser = builder.Configuration["PGUSER"];
+var pgPassword = builder.Configuration["PGPASSWORD"];
+var pgDatabase = "auth_db"; // Nome do banco de dados para este serviço
+
+// Se estiver rodando no Railway, monta a connection string dinamicamente
 if (!string.IsNullOrEmpty(pgHost))
 {
-    // Ambiente de produção (Railway)
-    Console.WriteLine("📡 AuthService: Conectando ao PostgreSQL do Railway...");
-    var pgPort = builder.Configuration["PGPORT"];
-    var pgUser = builder.Configuration["PGUSER"];
-    var pgPassword = builder.Configuration["PGPASSWORD"];
-    var pgDatabase = "auth_db"; // Banco de dados específico para este serviço
     connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};";
+    Console.WriteLine("📡 AuthService: Conectando ao PostgreSQL do Railway...");
 }
 else
 {
-    // Ambiente de desenvolvimento local
     Console.WriteLine("💻 AuthService: Conectando ao PostgreSQL local...");
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-}
-
-if(string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException("String de conexão com o banco de dados não foi encontrada.");
 }
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -53,7 +47,7 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 // --- 3. Configuração Modular de Autenticação ---
 builder.Services.AddAuthConfiguration(builder.Configuration);
 
-// --- 4. Outros Serviços ---
+// --- 4. Configurações Padrão ---
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -63,23 +57,23 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// --- 5. Pipeline de Middlewares ---
+// Aplica migrations na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+    db.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// --- Middlewares (A Ordem é Importante) ---
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-// Aplica as migrations na inicialização
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    db.Database.Migrate();
-}
 
 app.Run();
