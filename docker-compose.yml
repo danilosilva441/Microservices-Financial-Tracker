@@ -49,13 +49,20 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=billing_db;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - PGHOST=postgres_db
+      - PGPORT=5432
+      - PGDATABASE=billing_db
+      - PGUSER=postgres
+      - PGPASSWORD=${POSTGRES_PASSWORD}
       - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=AuthService
       - Jwt__Audience=BillingService
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   analysis_service:
     build: ./backend/analysis_service

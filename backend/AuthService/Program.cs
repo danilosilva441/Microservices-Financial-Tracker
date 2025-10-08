@@ -17,25 +17,39 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- 2. Configuração do Banco de Dados (Railway ou Local) ---
+// --- 2. Configuração do Banco de Dados ---
 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Tenta capturar as variáveis de ambiente do Railway
-var pgHost = Environment.GetEnvironmentVariable("PGHOST");
-var pgPort = Environment.GetEnvironmentVariable("PGPORT");
-var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE");
-var pgUser = Environment.GetEnvironmentVariable("PGUSER");
-var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
-
-// Se estiver rodando no Railway, monta dinamicamente a connection string
-if (!string.IsNullOrEmpty(pgHost))
+if (string.IsNullOrEmpty(connectionString))
 {
-    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=true";
-    Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
+    // Fallback para variáveis de ambiente individuais (Railway)
+    var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+    if (!string.IsNullOrEmpty(pgHost))
+    {
+        var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+        var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE") ?? "auth_db";
+        var pgUser = Environment.GetEnvironmentVariable("PGUSER") ?? "postgres";
+        var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+        
+        connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine("📡 Conectando ao PostgreSQL do Railway...");
+    }
+    else
+    {
+        Console.WriteLine("💻 Conectando ao PostgreSQL local...");
+    }
 }
 else
 {
-    Console.WriteLine("💻 Conectando ao PostgreSQL local...");
+    Console.WriteLine("💻 Conectando ao PostgreSQL via Connection String...");
+}
+
+// Log para debug (remova em produção)
+Console.WriteLine($"Connection String: {connectionString?.Replace("Password=", "Password=***")}");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Connection string não configurada");
 }
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -57,8 +71,17 @@ var app = builder.Build();
 // --- 5. Aplica migrations automaticamente ---
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    db.Database.Migrate();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        db.Database.Migrate();
+        Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Erro ao aplicar migrations: {ex.Message}");
+        throw;
+    }
 }
 
 if (app.Environment.IsDevelopment())
