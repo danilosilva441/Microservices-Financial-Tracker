@@ -1,5 +1,4 @@
 # --- ESTÁGIO 1: Build (Construção) ---
-# CORREÇÃO: Usa a imagem 'slim' que é mais robusta com permissões
 FROM node:20-slim AS build
 
 WORKDIR /app
@@ -7,14 +6,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# A linha 'RUN chmod +x ...' foi REMOVIDA
+# 🔧 Corrige permissões do Vite (evita "Permission denied")
+RUN chmod +x node_modules/.bin/vite
 
 COPY . .
 
-RUN npm run build
+# 🔧 Usa o Vite via npx (garante execução mesmo sem PATH)
+RUN npx vite build
 
 # --- ESTÁGIO 2: Serve (Produção) ---
-# (O resto do arquivo continua igual)
 FROM nginx:1.25-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
