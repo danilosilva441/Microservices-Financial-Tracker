@@ -11,43 +11,45 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
-        // Adiciona a URL do seu frontend em produção (Railway)
-        // Substitua 'SUA-URL-DA-RAILWAY.up.railway.app' pela sua URL real
         policy.WithOrigins("http://localhost:5173", "https://SEU_DOMINIO_DA_RAILWAY_AQUI.up.railway.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-// --- 2. Configuração do Banco de Dados (Railway ou Local) ---
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// --- 2. Configuração do Banco de Dados (Corrigida) ---
+string connectionString;
 
-// Tenta pegar as variáveis de ambiente do Railway
-var pgHost = builder.Configuration["PGHOST"];
-var pgPort = builder.Configuration["PGPORT"];
-var pgUser = builder.Configuration["PGUSER"];
-var pgPassword = builder.Configuration["PGPASSWORD"];
-var pgDatabase = "auth_db"; // Nome do banco de dados para este serviço
+// Verifica primeiro a DATABASE_URL do Railway (formato padrão)
+var databaseUrl = builder.Configuration["DATABASE_URL"];
 
-// Se estiver rodando no Railway, monta a connection string dinamicamente
-if (!string.IsNullOrEmpty(pgHost))
+if (!string.IsNullOrEmpty(databaseUrl))
 {
-    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};";
+    // Ambiente de produção (Railway) - Converte DATABASE_URL para formato Npgsql
     Console.WriteLine("📡 AuthService: Conectando ao PostgreSQL do Railway...");
+    connectionString = ConvertDatabaseUrlToConnectionString(databaseUrl);
 }
 else
 {
+    // Ambiente de desenvolvimento local
     Console.WriteLine("💻 AuthService: Conectando ao PostgreSQL local...");
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
+
+if(string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("String de conexão com o banco de dados não foi encontrada.");
+}
+
+Console.WriteLine($"🔗 String de conexão: {connectionString.Replace("Password=", "Password=*****")}");
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-
 // --- 3. Configuração Modular de Autenticação ---
 builder.Services.AddAuthConfiguration(builder.Configuration);
 
-// --- 4. Configurações Padrão ---
+// --- 4. Outros Serviços ---
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -57,23 +59,55 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Aplica migrations na inicialização
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    db.Database.Migrate();
-}
-
+// --- 5. Pipeline de Middlewares ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// --- Middlewares (A Ordem é Importante) ---
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Aplica as migrations na inicialização
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        Console.WriteLine("🔄 Aplicando migrations do banco de dados...");
+        db.Database.Migrate();
+        Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"❌ Erro ao aplicar migrations: {ex.Message}");
+    throw;
+}
+
 app.Run();
+
+// --- Função para converter DATABASE_URL do Railway ---
+static string ConvertDatabaseUrlToConnectionString(string databaseUrl)
+{
+    try
+    {
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        
+        var host = uri.Host;
+        var port = uri.Port;
+        var database = uri.AbsolutePath.TrimStart('/');
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException($"Falha ao converter DATABASE_URL: {ex.Message}");
+    }
+}
