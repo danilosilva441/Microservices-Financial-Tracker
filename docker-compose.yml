@@ -27,17 +27,17 @@ services:
       postgres_db:
         condition: service_healthy
     environment:
-      - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=auth_db;Username=postgres;Password=${POSTGRES_PASSWORD}
-      - Jwt__Key=${JWT_KEY}
-      - Jwt__Issuer=AuthService
-      - Jwt__Audience=BillingService
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres_db;Database=auth_db;Username=postgres;Password=${POSTGRES_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: AuthService
+      Jwt__Audience: BillingService
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 15s # <-- CORREÇÃO: Aumentamos o intervalo
-      timeout: 10s  # <-- CORREÇÃO: Adicionamos timeout
-      retries: 5    # <-- CORREÇÃO: Adicionamos retries
-      start_period: 30s # <-- CORREÇÃO: Adicionamos start_period
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   billing_service:
     build: ./backend/BillingService
@@ -47,35 +47,35 @@ services:
       postgres_db:
         condition: service_healthy
     environment:
-      - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres_db;Database=billing_db;Username=postgres;Password=${POSTGRES_PASSWORD}
-      - Jwt__Key=${JWT_KEY}
-      - Jwt__Issuer=AuthService
-      - Jwt__Audience=BillingService
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres_db;Database=billing_db;Username=postgres;Password=${POSTGRES_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: AuthService
+      Jwt__Audience: BillingService
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 15s # <-- CORREÇÃO: Aumentamos o intervalo
-      timeout: 10s  # <-- CORREÇÃO: Adicionamos timeout
-      retries: 5    # <-- CORREÇÃO: Adicionamos retries
-      start_period: 30s # <-- CORREÇÃO: Adicionamos start_period
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   analysis_service:
     build: ./backend/analysis_service
     container_name: analysis_service
     restart: always
     depends_on:
-      auth_service: # <-- CORREÇÃO: Espera os serviços estarem saudáveis
+      auth_service:
         condition: service_healthy
       billing_service:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@postgres_db:5432/analysis_db # <-- CORREÇÃO: Usando a variável de senha
-      - PORT=3000
-      - SYSTEM_EMAIL=system@internal.service
-      - SYSTEM_PASSWORD=${SYSTEM_PASSWORD}
-      - BILLING_SERVICE_URL=http://billing_service:8080
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres_db:5432/analysis_db
+      PORT: 3000
+      SYSTEM_EMAIL: system@internal.service
+      SYSTEM_PASSWORD: ${SYSTEM_PASSWORD}
+      BILLING_SERVICE_URL: http://billing_service:8080
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # <-- CORREÇÃO: Usando curl e um endpoint /health
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -87,7 +87,6 @@ services:
     restart: always
 
   api_gateway:
-    # CORREÇÃO: Agora ele constrói a partir da pasta nginx
     build: ./nginx
     container_name: api_gateway
     restart: always
@@ -103,14 +102,15 @@ services:
       frontend:
         condition: service_started
     environment:
-      AUTH_SERVICE_HOST: auth_service
-      AUTH_SERVICE_PORT: 8080
-      BILLING_SERVICE_HOST: billing_service
-      BILLING_SERVICE_PORT: 8080
-      ANALYSIS_SERVICE_HOST: analysis_service
-      ANALYSIS_SERVICE_PORT: 3000
-      FRONTEND_HOST: frontend
-      FRONTEND_PORT: 80
+      # Variáveis dinâmicas para substituição no nginx.template
+      AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST:-auth_service}
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT:-8080}
+      BILLING_SERVICE_HOST: ${BILLING_SERVICE_HOST:-billing_service}
+      BILLING_SERVICE_PORT: ${BILLING_SERVICE_PORT:-8080}
+      ANALYSIS_SERVICE_HOST: ${ANALYSIS_SERVICE_HOST:-analysis_service}
+      ANALYSIS_SERVICE_PORT: ${ANALYSIS_SERVICE_PORT:-3000}
+      FRONTEND_HOST: ${FRONTEND_HOST:-frontend}
+      FRONTEND_PORT: ${FRONTEND_PORT:-80}
 
 volumes:
   postgres_data:
