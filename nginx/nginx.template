@@ -1,16 +1,22 @@
-# nginx.template - Configuração dinâmica com variáveis de ambiente
+# ==============================
+# 🌐 NGINX TEMPLATE DINÂMICO
+# ==============================
 
+# Upstreams serão preenchidos pelo envsubst no CMD do Dockerfile
 upstream auth_service {
-    server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
+    server $AUTH_SERVICE_HOST:$AUTH_SERVICE_PORT;
 }
+
 upstream billing_service {
-    server ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT};
+    server $BILLING_SERVICE_HOST:$BILLING_SERVICE_PORT;
 }
+
 upstream analysis_service {
-    server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
+    server $ANALYSIS_SERVICE_HOST:$ANALYSIS_SERVICE_PORT;
 }
+
 upstream frontend {
-    server ${FRONTEND_HOST}:${FRONTEND_PORT};
+    server $FRONTEND_HOST:$FRONTEND_PORT;
 }
 
 server {
@@ -19,16 +25,23 @@ server {
     location /api/ {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Roteamento de acordo com o prefixo
+        # Rotas de AUTH
         if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
             proxy_pass http://auth_service;
+            break;
         }
+
+        # Rotas de ANALYSIS
         if ($uri ~* "^/api/analysis") {
             rewrite ^/api/analysis/(.*)$ /$1 break;
             proxy_pass http://analysis_service;
+            break;
         }
 
+        # Todas as outras vão para BILLING
         proxy_pass http://billing_service;
     }
 
@@ -36,5 +49,10 @@ server {
         proxy_pass http://frontend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
+
+
+    error_page 404 /index.html;
 }
