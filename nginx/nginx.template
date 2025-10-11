@@ -1,60 +1,74 @@
 # ==============================
-# 🌐 NGINX TEMPLATE DINÂMICO
+# 🌐 NGINX TEMPLATE DINÂMICO — LOCAL + PRODUÇÃO (RAILWAY)
 # ==============================
 
-# Upstreams serão preenchidos pelo envsubst no CMD do Dockerfile
+# ------------------------------
+# 🔒 Upstreams (com fallback local)
+# ------------------------------
+
 upstream auth_service {
-    server $AUTH_SERVICE_HOST:$AUTH_SERVICE_PORT;
+    server ${AUTH_SERVICE_HOST:-auth-service}:${AUTH_SERVICE_PORT:-8081};
 }
 
 upstream billing_service {
-    server $BILLING_SERVICE_HOST:$BILLING_SERVICE_PORT;
+    server ${BILLING_SERVICE_HOST:-billing-service}:${BILLING_SERVICE_PORT:-8082};
 }
 
 upstream analysis_service {
-    server $ANALYSIS_SERVICE_HOST:$ANALYSIS_SERVICE_PORT;
+    server ${ANALYSIS_SERVICE_HOST:-analysis-service}:${ANALYSIS_SERVICE_PORT:-8083};
 }
 
 upstream frontend {
-    server $FRONTEND_HOST:$FRONTEND_PORT;
+    server ${FRONTEND_HOST:-frontend}:${FRONTEND_PORT:-5173};
 }
+
+# ------------------------------
+# 🚀 Servidor principal
+# ------------------------------
 
 server {
     listen 80;
 
+    # --------------------------
+    # 🔐 Rotas de API
+    # --------------------------
     location /api/ {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Rotas de AUTH
+        # AUTH
         if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
             proxy_pass http://auth_service;
             break;
         }
 
-        # Rotas de ANALYSIS
+        # ANALYSIS
         if ($uri ~* "^/api/analysis") {
             rewrite ^/api/analysis/(.*)$ /$1 break;
             proxy_pass http://analysis_service;
             break;
         }
 
-        # Todas as outras vão para BILLING
+        # DEMAIS rotas → BILLING
         proxy_pass http://billing_service;
     }
 
+    # --------------------------
+    # 🌍 Frontend (SPA)
+    # --------------------------
     location / {
         proxy_pass http://frontend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        try_files $uri /index.html;
     }
 
-
+    # --------------------------
+    # 🧱 Página de fallback
+    # --------------------------
     error_page 404 /index.html;
-
-    
 }
