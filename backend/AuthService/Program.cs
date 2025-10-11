@@ -11,7 +11,6 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
-        // IMPORTANTE: Substitua 'SEU_DOMINIO_DA_RAILWAY_AQUI.up.railway.app' pela sua URL real da Railway
         policy.WithOrigins("http://localhost:5173", "https://apigateway-production-de54.up.railway.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
@@ -19,9 +18,8 @@ builder.Services.AddCors(options =>
 });
 
 // --- 2. Configuração do Banco de Dados (Dinâmica) ---
-string? connectionString;
+string? connectionString; // <-- CORREÇÃO AQUI: Adicionado '?' para indicar que pode ser nulo
 
-// Railway fornece a string de conexão completa na variável DATABASE_URL
 var databaseUrl = builder.Configuration["DATABASE_URL"];
 
 if (!string.IsNullOrEmpty(databaseUrl))
@@ -40,7 +38,6 @@ if(string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("String de conexão com o banco de dados não foi encontrada.");
 }
 
-// Oculta a senha nos logs para segurança
 Console.WriteLine($"🔗 String de conexão usada: {connectionString.Split("Password=")[0]}Password=*****");
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -72,7 +69,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Aplica as migrations na inicialização de forma segura
+// Aplica as migrations na inicialização
 try
 {
     using (var scope = app.Services.CreateScope())
@@ -91,26 +88,17 @@ catch (Exception ex)
 
 app.Run();
 
-// --- Função Auxiliar para Converter a DATABASE_URL do Railway ---
+// --- Função Auxiliar para Converter a DATABASE_URL ---
 static string ConvertDatabaseUrlToConnectionString(string databaseUrl)
 {
-    try
-    {
-        var uri = new Uri(databaseUrl);
-        var userInfo = uri.UserInfo.Split(':');
-        
-        var host = uri.Host;
-        var port = uri.Port;
-        var username = userInfo[0];
-        var password = userInfo[1];
-        // CORREÇÃO: Força o nome do banco de dados para ser 'auth_db'
-        var database = "auth_db"; 
-        
-        // Adiciona SSL Mode e Trust Server Certificate, essenciais para a maioria das conexões em nuvem
-        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
-    }
-    catch (Exception ex)
-    {
-        throw new InvalidOperationException($"Falha ao converter DATABASE_URL: {ex.Message}", ex);
-    }
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    
+    var host = uri.Host;
+    var port = uri.Port;
+    var username = userInfo[0];
+    var password = userInfo[1];
+    var database = "auth_db"; 
+    
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
 }
