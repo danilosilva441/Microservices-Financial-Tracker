@@ -85,6 +85,8 @@ services:
     build: ./frontend
     container_name: frontend
     restart: always
+    expose:
+      - "80"
 
   api_gateway:
     build: ./nginx
