@@ -101,16 +101,6 @@ services:
         condition: service_healthy
       frontend:
         condition: service_started
-    environment:
-      # Variáveis dinâmicas para substituição no nginx.template
-      AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST:-auth_service}
-      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT:-8080}
-      BILLING_SERVICE_HOST: ${BILLING_SERVICE_HOST:-billing_service}
-      BILLING_SERVICE_PORT: ${BILLING_SERVICE_PORT:-8080}
-      ANALYSIS_SERVICE_HOST: ${ANALYSIS_SERVICE_HOST:-analysis_service}
-      ANALYSIS_SERVICE_PORT: ${ANALYSIS_SERVICE_PORT:-3000}
-      FRONTEND_HOST: ${FRONTEND_HOST:-frontend}
-      FRONTEND_PORT: ${FRONTEND_PORT:-80}
 
 volumes:
   postgres_data:
