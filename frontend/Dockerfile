@@ -1,22 +1,28 @@
 # --- ESTÁGIO 1: Build (Construção) ---
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
+
 WORKDIR /app
 
-# Copia os arquivos de dependência e instala (sem a sua node_modules local)
 COPY package*.json ./
 RUN npm install
 
-# Copia o resto do código do seu projeto
 COPY . .
 
-# Roda o comando de build do Vite
-RUN npm run build
+# ✅ Evita erro de permissão com o Vite no Railway
+RUN node node_modules/vite/bin/vite.js build
 
 # --- ESTÁGIO 2: Serve (Produção) ---
 FROM nginx:1.25-alpine
 
+# Copia os arquivos gerados pelo Vite (Vue 3)
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copia a configuração customizada do Nginx (importante para rotas do Vue)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]
+
+
