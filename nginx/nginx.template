@@ -12,7 +12,7 @@ upstream billing_service {
 }
 
 upstream analysis_service {
-    server $ANALYSIS_SERVICE_URLT;
+    server $ANALYSIS_SERVICE_URL;
 }
 
 upstream frontend {
