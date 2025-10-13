@@ -22,39 +22,31 @@ upstream frontend {
 server {
     listen 80;
 
-    location /api/ {
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Rotas de AUTH
-        if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
-            proxy_pass http://auth_service;
-            break;
-        }
-
-        # Rotas de ANALYSIS
-        if ($uri ~* "^/api/analysis") {
-            rewrite ^/api/analysis/(.*)$ /$1 break;
-            proxy_pass http://analysis_service;
-            break;
-        }
-
-        # Todas as outras vão para BILLING
-        proxy_pass http://billing_service;
+    # AUTH
+    location ~ ^/api/(users|token|admin/promote-to-admin) {
+        proxy_pass http://auth_service;
+        include /etc/nginx/proxy_params;
     }
 
+    # ANALYSIS
+    location ~ ^/api/analysis/?(.*)$ {
+        rewrite ^/api/analysis/(.*)$ /$1 break;
+        proxy_pass http://analysis_service;
+        include /etc/nginx/proxy_params;
+    }
+
+    # BILLING (default /api)
+    location /api/ {
+        proxy_pass http://billing_service;
+        include /etc/nginx/proxy_params;
+    }
+
+    # FRONTEND
     location / {
         proxy_pass http://frontend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        include /etc/nginx/proxy_params;
     }
 
-
     error_page 404 /index.html;
-
-    
 }
+
