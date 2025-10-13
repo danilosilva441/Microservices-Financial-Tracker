@@ -6,7 +6,7 @@ echo "🚀 Iniciando configuração dinâmica do Nginx"
 echo "======================================="
 
 # Lista de variáveis obrigatórias
-REQUIRED_VARS="AUTH_SERVICE_HOST AUTH_SERVICE_PORT BILLING_SERVICE_HOST BILLING_SERVICE_PORT ANALYSIS_SERVICE_HOST ANALYSIS_SERVICE_PORT FRONTEND_HOST FRONTEND_PORT"
+REQUIRED_VARS="AUTH_SERVICE_URL BILLING_SERVICE_URL ANALYSIS_SERVICE_URL FRONTEND_URL"
 
 # Verifica se todas as variáveis estão definidas
 for var in $REQUIRED_VARS; do
@@ -27,7 +27,7 @@ fi
 
 # Substitui variáveis do template
 echo "🛠️  Gerando configuração final..."
-envsubst '\$AUTH_SERVICE_HOST \$AUTH_SERVICE_PORT \$BILLING_SERVICE_HOST \$BILLING_SERVICE_PORT \$ANALYSIS_SERVICE_HOST \$ANALYSIS_SERVICE_PORT \$FRONTEND_HOST \$FRONTEND_PORT' \
+envsubst '\$AUTH_SERVICE_URL \$BILLING_SERVICE_URL \$ANALYSIS_SERVICE_URL \$FRONTEND_URL' \
   < /etc/nginx/conf.d/nginx.template \
   > /etc/nginx/conf.d/default.conf
 
