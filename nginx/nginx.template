@@ -1,49 +1,70 @@
-# nginx/nginx.template (versão final)
+# nginx/nginx.template (VERSÃO CORRIGIDA)
 
 # --- Definição dos Endereços dos Serviços ---
 upstream auth_service {
-    server $AUTH_SERVICE_HOST:$AUTH_SERVICE_PORT;
+    server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
 }
+
 upstream billing_service {
-    server $BILLING_SERVICE_HOST:$BILLING_SERVICE_PORT;
+    server ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT};
 }
+
 upstream analysis_service {
-    server $ANALYSIS_SERVICE_HOST:$ANALYSIS_SERVICE_PORT;
+    server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
 }
+
 upstream frontend {
-    server $FRONTEND_HOST:$FRONTEND_PORT;
+    server ${FRONTEND_HOST}:${FRONTEND_PORT};
 }
 
 server {
-    # --- CORREÇÃO: Escuta em IPv4 e IPv6 ---
-    listen 80;
-    listen [::]:80;
+    # --- CORREÇÃO CRÍTICA: Usa a porta do Railway ---
+    listen ${PORT:-80};
+    listen [::]:${PORT:-80};
+    
+    server_name _;
 
-    # --- ROTA PARA O FRONTEND (CORRIGIDA) ---
-    # Qualquer requisição que não seja para a API é encaminhada para o serviço do frontend
-    location / {
-        proxy_pass http://frontend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
+    # --- Health Check para o Railway ---
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
     }
 
     # --- ROTA PARA A API ---
     location /api/ {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Roteamento Específico
-        if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
-            proxy_pass http://auth_service;
-            break;
-        }
-        if ($uri ~* "^/api/analysis") {
-            rewrite ^/api/analysis/(.*)$ /$1 break;
-            proxy_pass http://analysis_service;
-            break;
+        # Roteamento baseado em prefixos (MAIS CONFIÁVEL)
+        location /api/users/ {
+            proxy_pass http://auth_service/;
         }
         
-        # Rota padrão para o resto da API
-        proxy_pass http://billing_service;
+        location /api/token/ {
+            proxy_pass http://auth_service/;
+        }
+        
+        location /api/admin/promote-to-admin {
+            proxy_pass http://auth_service;
+        }
+        
+        location /api/analysis/ {
+            proxy_pass http://analysis_service/;
+        }
+        
+        # Rota padrão para o resto da API vai para billing
+        proxy_pass http://billing_service/;
+    }
+
+    # --- ROTA PARA O FRONTEND ---
+    location / {
+        proxy_pass http://frontend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
