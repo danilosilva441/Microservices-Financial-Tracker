@@ -13,7 +13,7 @@ app.use(cors({ origin: 'http://localhost:5173' }));
 
 // 3. Rota para o Healthcheck do Docker
 app.get('/health', (req, res) => {
-    res.status(200).send('OK');
+  res.status(200).send('OK');
 });
 
 // --- LÓGICA DO JOB AGENDADO (CRON) ---
@@ -46,11 +46,12 @@ cron.schedule('* * * * *', runProjectionJob);
 
 // Roda o job uma vez na inicialização
 setTimeout(() => {
-    console.log("Executando job de projeção inicial...");
-    runProjectionJob().catch(err => console.error("Erro no job inicial:", err));
+  console.log("Executando job de projeção inicial...");
+  runProjectionJob().catch(err => console.error("Erro no job inicial:", err));
 }, 15000); // 15 segundos para dar tempo aos outros serviços
 
 // 4. Inicia o servidor Express para escutar as requisições
-app.listen(port, () => {
-  console.log(`Analysis Service rodando e escutando na porta ${port}`);
+// O segundo argumento '::' força o servidor a escutar em todas as interfaces IPv6 e IPv4
+app.listen(port, '::', () => {
+  console.log(`Analysis Service a rodar e a escutar na porta ${port}`);
 });

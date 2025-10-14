@@ -2,7 +2,7 @@ const axios = require('axios');
 
 // Aponta DIRETAMENTE para o nome do serviço no Docker Compose
 const authApi = axios.create({
-    baseURL: process.env.AUTH_SERVICE_URL,
+    baseURL: process.env.AUTH_SERVICE_URL || 'http://auth_service:8080',
 });
 
 // Função que faz o login como "usuário de sistema" e retorna o token

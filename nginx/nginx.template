@@ -25,7 +25,10 @@ upstream frontend {
 
 # --- Configuração do Servidor Principal (Gateway) ---
 server {
+    # --- CORREÇÃO AQUI ---
+    # Escuta tanto em IPv4 (padrão) quanto em IPv6
     listen 80;
+    listen [::]:80;
 
     # --- ROTA PARA O FRONTEND (REGRA GERAL) ---
     # Qualquer requisição que NÃO comece com /api/ cairá aqui.
