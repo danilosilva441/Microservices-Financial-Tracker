@@ -1,6 +1,5 @@
-# nginx/nginx.template (VERSÃO CORRIGIDA)
+# nginx.template (VERSÃO CORRIGIDA)
 
-# --- Definição dos Endereços dos Serviços ---
 upstream auth_service {
     server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
 }
@@ -29,38 +28,48 @@ server {
         add_header Content-Type text/plain;
     }
 
-    # --- ROTA PARA A API (funciona mesmo sem frontend) ---
+    # --- ROTA PARA A API (CORRIGIDA) ---
     location /api/ {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Roteamento da API (mantenha suas regras)
-        location /api/users/ {
-            proxy_pass http://auth_service/;
+        proxy_set_header X-Forwarded-Host $host;
+        
+        # Desativa redirecionamentos internos do proxy
+        proxy_redirect off;
+        
+        # Roteamento específico
+        location /api/users {
+            proxy_pass http://auth_service;
         }
         
-        location /api/token/ {
-            proxy_pass http://auth_service/;
+        location /api/token {
+            proxy_pass http://auth_service;
         }
         
         location /api/admin/promote-to-admin {
             proxy_pass http://auth_service;
         }
         
-        location /api/analysis/ {
-            proxy_pass http://analysis_service/;
+        location /api/analysis {
+            proxy_pass http://analysis_service;
         }
         
-        proxy_pass http://billing_service/;
+        location /api/operacoes {
+            proxy_pass http://billing_service;
+        }
+        
+        # Rota padrão para billing service
+        proxy_pass http://billing_service;
     }
 
-    # --- FALLBACK QUANDO FRONTEND ESTIVER OFFLINE ---
+    # --- ROTA PARA O FRONTEND ---
     location / {
-        # Se o frontend não estiver disponível, mostra página informativa
-        if ($upstream_addr ~* "failed") {
-            return 503 "Frontend service is temporarily unavailable. API routes are working.";
+        # Página informativa enquanto frontend está offline
+        if ($request_uri = /) {
+            return 200 "API Gateway funcionando! Use /api/ para acessar os serviços.\n";
+            add_header Content-Type text/plain;
         }
         
         proxy_pass http://frontend;
