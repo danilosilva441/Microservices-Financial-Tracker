@@ -39,9 +39,10 @@ echo "---------------------------------------"
 echo "🔧 Testando configuração do Nginx..."
 nginx -t
 
-echo "---------------------------------------"
-echo "🚀 Iniciando Nginx na porta ${PORT:-80}..."
 echo "======================================="
+echo "🚀 Iniciando configuração dinâmica do Nginx"
+echo "======================================="
+echo "✅ PORT definida como: $PORT"
 
 # Inicia o Nginx
 exec nginx -g 'daemon off;'
