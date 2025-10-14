@@ -1,72 +1,57 @@
-# ==============================
-# 🌐 NGINX TEMPLATE DINÂMICO
-# ==============================
-# Este arquivo é um "molde". As variáveis ${...} serão substituídas
-# pelos valores do ambiente (Docker Compose ou Railway) durante a inicialização.
-
 # --- Definição dos Endereços dos Serviços ---
-# O 'upstream' é como um apelido para o endereço de cada serviço.
+# Use as variáveis de ambiente PRIVADAS do Railway para comunicação interna
 upstream auth_service {
-    # Valor padrão ':-' é usado se a variável de ambiente não for encontrada (útil para testes locais)
-    server $AUTH_SERVICE_URL;
+    server ${{AUTH_SERVICE_URL}};
 }
 
 upstream billing_service {
-    server $BILLING_SERVICE_URL;
+    server ${{BILLING_SERVICE_URL}};
 }
 
 upstream analysis_service {
-    server $ANALYSIS_SERVICE_URL;
+    server ${{ANALYSIS_SERVICE_URL}};
 }
 
 upstream frontend {
-    server $FRONTEND_URL;
+    server ${{FRONTEND_URL}};
 }
 
 # --- Configuração do Servidor Principal (Gateway) ---
 server {
-    listen 80;
+    # Escuta na porta fornecida pelo Railway em IPv4 e IPv6
+    listen $PORT;
+    listen [::]:$PORT;
 
-    # --- ROTA PARA O FRONTEND (REGRA GERAL) ---
-    # Qualquer requisição que NÃO comece com /api/ cairá aqui.
+    # --- ROTA PARA O FRONTEND (Vue.js) ---
     location / {
-        # Encaminha a requisição para o contêiner do frontend.
         proxy_pass http://frontend;
-
-        # Cabeçalhos importantes para o frontend funcionar corretamente.
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # --- ROTA GERAL PARA A API ---
-    # Qualquer requisição que comece com /api/ será tratada aqui.
+    # --- ROTAS PARA A API ---
     location /api/ {
-        # Cabeçalhos importantes para os serviços de backend.
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # ROTEAMENTO ESPECÍFICO: O Nginx processa estas regras 'if' primeiro.
-        
-        # Rotas do AuthService
+        # Rotas do AuthService (ASP.NET)
         if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
             proxy_pass http://auth_service;
-            break; # Para de processar outras regras 'if'
+            break;
         }
 
-        # Rotas do AnalysisService
+        # Rotas do AnalysisService (Node.js)
         if ($uri ~* "^/api/analysis") {
-            # Remove o prefixo /api/analysis antes de passar para o serviço Node.js
             rewrite ^/api/analysis/(.*)$ /$1 break;
             proxy_pass http://analysis_service;
-            break; # Para de processar outras regras
+            break;
         }
 
-        # ROTA PADRÃO PARA A API:
-        # Se nenhuma das regras 'if' acima corresponder, a requisição vai para o BillingService.
+        # Rota padrão para o BillingService (ASP.NET)
         proxy_pass http://billing_service;
     }
 }
