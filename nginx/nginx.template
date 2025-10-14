@@ -8,19 +8,19 @@
 # O 'upstream' é como um apelido para o endereço de cada serviço.
 upstream auth_service {
     # Valor padrão ':-' é usado se a variável de ambiente não for encontrada (útil para testes locais)
-    server ${AUTH_SERVICE_URL:-auth_service:8080};
+    server $AUTH_SERVICE_URL;
 }
 
 upstream billing_service {
-    server ${BILLING_SERVICE_URL:-billing_service:8080};
+    server $BILLING_SERVICE_URL;
 }
 
 upstream analysis_service {
-    server ${ANALYSIS_SERVICE_URL:-analysis_service:3000};
+    server $ANALYSIS_SERVICE_URL;
 }
 
 upstream frontend {
-    server ${FRONTEND_URL:-frontend:80};
+    server $FRONTEND_URL;
 }
 
 # --- Configuração do Servidor Principal (Gateway) ---
