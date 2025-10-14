@@ -1,17 +1,12 @@
-# nginx.template (VERSÃO CORRIGIDA)
-
 upstream auth_service {
     server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
 }
-
 upstream billing_service {
     server ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT};
 }
-
 upstream analysis_service {
     server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
 }
-
 upstream frontend {
     server ${FRONTEND_HOST}:${FRONTEND_PORT};
 }
@@ -21,25 +16,39 @@ server {
     listen [::]:${PORT};
     server_name _;
 
-    # --- HEALTH CHECK ---
+    # --- Configurações de CORS e Headers Gerais ---
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # --- Health Check ---
     location /health {
         access_log off;
-        return 200 "healthy\n";
         add_header Content-Type text/plain;
+        return 200 "healthy\n";
     }
 
-    # --- ROTA PARA A API (CORRIGIDA) ---
+    # --- ROTA PARA A API ---
     location /api/ {
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        
-        # Desativa redirecionamentos internos do proxy
-        proxy_redirect off;
-        
-        # Roteamento específico
+        # Configurações específicas de CORS para a API:cite[9]
+        add_header 'Access-Control-Allow-Origin' "$http_origin" always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+        # Responde a requisições OPTIONS (Preflight) diretamente:cite[2]
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' "$http_origin";
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        # Roteamento baseado em prefixos (MAIS CONFIÁVEL que 'if'):cite[1]:cite[8]
         location /api/users {
             proxy_pass http://auth_service;
         }
@@ -56,30 +65,13 @@ server {
             proxy_pass http://analysis_service;
         }
         
-        location /api/operacoes {
-            proxy_pass http://billing_service;
-        }
-        
-        # Rota padrão para billing service
+        # Rota padrão para o resto da API vai para billing
         proxy_pass http://billing_service;
     }
 
     # --- ROTA PARA O FRONTEND ---
     location / {
-        # Página informativa enquanto frontend está offline
-        if ($request_uri = /) {
-            return 200 "API Gateway funcionando! Use /api/ para acessar os serviços.\n";
-            add_header Content-Type text/plain;
-        }
-        
         proxy_pass http://frontend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        proxy_connect_timeout 5s;
-        proxy_send_timeout 5s;
-        proxy_read_timeout 5s;
+        # Headers de proxy já estão definidos no nível do server
     }
 }
