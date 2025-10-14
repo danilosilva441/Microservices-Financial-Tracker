@@ -44,5 +44,17 @@ echo "🚀 Iniciando configuração dinâmica do Nginx"
 echo "======================================="
 echo "✅ PORT definida como: $PORT"
 
-# Inicia o Nginx
+echo "🔧 Gerando configuração do Nginx..."
+envsubst '${PORT} ${AUTH_SERVICE_HOST} ${AUTH_SERVICE_PORT} ${BILLING_SERVICE_HOST} ${BILLING_SERVICE_PORT} ${ANALYSIS_SERVICE_HOST} ${ANALYSIS_SERVICE_PORT} ${FRONTEND_HOST} ${FRONTEND_PORT}' \
+  < /etc/nginx/templates/default.conf.template \
+  > /etc/nginx/conf.d/default.conf
+
+echo "✅ Configuração gerada com sucesso!"
+echo "📋 Mostrando configuração relevante:"
+grep -A 5 -B 5 "listen.*${PORT}" /etc/nginx/conf.d/default.conf
+
+echo "🔧 Testando configuração..."
+nginx -t
+
+echo "🚀 Iniciando Nginx..."
 exec nginx -g 'daemon off;'
