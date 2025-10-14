@@ -1,57 +1,119 @@
-# --- Definição dos Endereços dos Serviços ---
-# Use as variáveis de ambiente PRIVADAS do Railway para comunicação interna
-upstream auth_service {
-    server $AUTH_SERVICE_HOST:$AUTH_SERVICE_PORT;
+# NGINX Configuration for Railway
+worker_processes auto;
+error_log /dev/stderr info;
+
+events {
+    worker_connections 1024;
 }
 
-upstream billing_service {
-    server $BILLING_SERVICE_HOST:$BILLING_SERVICE_PORT;
-}
-
-upstream analysis_service {
-    server $ANALYSIS_SERVICE_HOST:$ANALYSIS_SERVICE_PORT;
-}
-
-upstream frontend {
-    server $FRONTEND_HOST:$FRONTEND_PORT;
-}
-
-# --- Configuração do Servidor Principal (Gateway) ---
-server {
-    # Escuta na porta fornecida pelo Railway em IPv4 e IPv6
-    listen $PORT;
-    listen [::]:$PORT;
-
-    # --- ROTA PARA O FRONTEND (Vue.js) ---
-    location / {
-        proxy_pass http://frontend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+http {
+    access_log /dev/stdout;
+    
+    # Resolver para DNS interno do Railway
+    resolver 8.8.8.8 1.1.1.1 valid=30s;
+    
+    # Timeouts aumentados
+    proxy_connect_timeout 30s;
+    proxy_send_timeout 30s;
+    proxy_read_timeout 30s;
+    
+    # Configurações de buffer
+    proxy_buffering on;
+    proxy_buffer_size 4k;
+    proxy_buffers 8 4k;
+    
+    upstream auth_service {
+        server $AUTH_SERVICE_HOST:$AUTH_SERVICE_PORT max_fails=3 fail_timeout=30s;
+    }
+    
+    upstream billing_service {
+        server ${{BILLING_SERVICE_HOST:$BILLING_SERVICE_PORT max_fails=3 fail_timeout=30s;
+    }
+    
+    upstream analysis_service {
+        server ${{ANALYSIS_SERVICE_HOST:$ANALYSIS_SERVICE_PORT max_fails=3 fail_timeout=30s;
+    }
+    
+    upstream frontend {
+        server $FRONTEND_HOST:$FRONTEND_PORT max_fails=3 fail_timeout=30s;
     }
 
-    # --- ROTAS PARA A API ---
-    location /api/ {
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Rotas do AuthService (ASP.NET)
-        if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
-            proxy_pass http://auth_service;
-            break;
+    server {
+        listen $PORT reuseport;
+        server_name _;
+        
+        # Health Check para Railway - ESSENCIAL!
+        location /health {
+            access_log off;
+            add_header Content-Type text/plain;
+            return 200 "healthy\n";
+        }
+        
+        # Health Check mais detalhado
+        location /ready {
+            access_log off;
+            add_header Content-Type application/json;
+            
+            # Verifica se o Nginx está respondendo
+            return 200 '{"status":"ready","service":"nginx"}';
         }
 
-        # Rotas do AnalysisService (Node.js)
-        if ($uri ~* "^/api/analysis") {
+        # Frontend - Vue.js
+        location / {
+            proxy_pass http://frontend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            
+            # Timeouts específicos
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+        }
+
+        # API Routes
+        location /api/ {
+            proxy_pass http://billing_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # Configurações de timeout
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+        }
+
+        # Rotas específicas do AuthService
+        location ~* ^/api/(users|token|admin) {
+            proxy_pass http://auth_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Rotas específicas do AnalysisService
+        location ~* ^/api/analysis {
             rewrite ^/api/analysis/(.*)$ /$1 break;
             proxy_pass http://analysis_service;
-            break;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # Rota padrão para o BillingService (ASP.NET)
-        proxy_pass http://billing_service;
+        # Status page para debugging
+        location /nginx-status {
+            stub_status on;
+            access_log off;
+            allow all;
+        }
     }
 }
