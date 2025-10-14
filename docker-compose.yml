@@ -73,7 +73,7 @@ services:
       PORT: 3000
       SYSTEM_EMAIL: system@internal.service
       SYSTEM_PASSWORD: ${SYSTEM_PASSWORD}
-      BILLING_SERVICE_URL: http://billing_service:8080
+      BILLING_SERVICE_URL: ${BILLING_SERVICE_URL}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 15s
