@@ -18,27 +18,25 @@ upstream frontend {
 }
 
 server {
-    # --- CORREÇÃO CRÍTICA: Usa a porta do Railway ---
     listen ${PORT};
     listen [::]:${PORT};
-    
     server_name _;
 
-    # --- Health Check para o Railway ---
+    # --- HEALTH CHECK ---
     location /health {
         access_log off;
         return 200 "healthy\n";
         add_header Content-Type text/plain;
     }
 
-    # --- ROTA PARA A API ---
+    # --- ROTA PARA A API (funciona mesmo sem frontend) ---
     location /api/ {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Roteamento baseado em prefixos (MAIS CONFIÁVEL)
+        # Roteamento da API (mantenha suas regras)
         location /api/users/ {
             proxy_pass http://auth_service/;
         }
@@ -55,21 +53,24 @@ server {
             proxy_pass http://analysis_service/;
         }
         
-        # Rota padrão para o resto da API vai para billing
         proxy_pass http://billing_service/;
     }
 
-# --- ROTA PARA O FRONTEND ---
+    # --- FALLBACK QUANDO FRONTEND ESTIVER OFFLINE ---
     location / {
+        # Se o frontend não estiver disponível, mostra página informativa
+        if ($upstream_addr ~* "failed") {
+            return 503 "Frontend service is temporarily unavailable. API routes are working.";
+        }
+        
         proxy_pass http://frontend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         
-        # Adicionar timeouts para evitar 502
-        proxy_connect_timeout 30s;
-        proxy_send_timeout 30s;
-        proxy_read_timeout 30s;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 5s;
+        proxy_read_timeout 5s;
     }
 }
