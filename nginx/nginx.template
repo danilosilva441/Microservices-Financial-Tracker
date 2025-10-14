@@ -1,52 +1,72 @@
 # ==============================
 # 🌐 NGINX TEMPLATE DINÂMICO
 # ==============================
+# Este arquivo é um "molde". As variáveis ${...} serão substituídas
+# pelos valores do ambiente (Docker Compose ou Railway) durante a inicialização.
 
-# Upstreams serão preenchidos pelo envsubst no CMD do Dockerfile
+# --- Definição dos Endereços dos Serviços ---
+# O 'upstream' é como um apelido para o endereço de cada serviço.
 upstream auth_service {
-    server $AUTH_SERVICE_URL;
+    # Valor padrão ':-' é usado se a variável de ambiente não for encontrada (útil para testes locais)
+    server ${AUTH_SERVICE_URL:-auth_service:8080};
 }
 
 upstream billing_service {
-    server $BILLING_SERVICE_URL;
+    server ${BILLING_SERVICE_URL:-billing_service:8080};
 }
 
 upstream analysis_service {
-    server $ANALYSIS_SERVICE_URL;
+    server ${ANALYSIS_SERVICE_URL:-analysis_service:3000};
 }
 
 upstream frontend {
-    server $FRONTEND_URL;
+    server ${FRONTEND_URL:-frontend:80};
 }
 
+# --- Configuração do Servidor Principal (Gateway) ---
 server {
     listen 80;
 
-    # AUTH
-    location ~ ^/api/(users|token|admin/promote-to-admin) {
-        proxy_pass http://auth_service;
-        include /etc/nginx/proxy_params;
-    }
-
-    # ANALYSIS
-    location ~ ^/api/analysis/?(.*)$ {
-        rewrite ^/api/analysis/(.*)$ /$1 break;
-        proxy_pass http://analysis_service;
-        include /etc/nginx/proxy_params;
-    }
-
-    # BILLING (default /api)
-    location /api/ {
-        proxy_pass http://billing_service;
-        include /etc/nginx/proxy_params;
-    }
-
-    # FRONTEND
+    # --- ROTA PARA O FRONTEND (REGRA GERAL) ---
+    # Qualquer requisição que NÃO comece com /api/ cairá aqui.
     location / {
+        # Encaminha a requisição para o contêiner do frontend.
         proxy_pass http://frontend;
-        include /etc/nginx/proxy_params;
+
+        # Cabeçalhos importantes para o frontend funcionar corretamente.
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    error_page 404 /index.html;
-}
+    # --- ROTA GERAL PARA A API ---
+    # Qualquer requisição que comece com /api/ será tratada aqui.
+    location /api/ {
+        # Cabeçalhos importantes para os serviços de backend.
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
 
+        # ROTEAMENTO ESPECÍFICO: O Nginx processa estas regras 'if' primeiro.
+        
+        # Rotas do AuthService
+        if ($uri ~* "^/api/(users|token|admin/promote-to-admin)") {
+            proxy_pass http://auth_service;
+            break; # Para de processar outras regras 'if'
+        }
+
+        # Rotas do AnalysisService
+        if ($uri ~* "^/api/analysis") {
+            # Remove o prefixo /api/analysis antes de passar para o serviço Node.js
+            rewrite ^/api/analysis/(.*)$ /$1 break;
+            proxy_pass http://analysis_service;
+            break; # Para de processar outras regras
+        }
+
+        # ROTA PADRÃO PARA A API:
+        # Se nenhuma das regras 'if' acima corresponder, a requisição vai para o BillingService.
+        proxy_pass http://billing_service;
+    }
+}
