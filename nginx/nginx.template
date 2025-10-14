@@ -19,8 +19,8 @@ upstream frontend {
 
 server {
     # --- CORREÇÃO CRÍTICA: Usa a porta do Railway ---
-    listen ${PORT:-80};
-    listen [::]:${PORT:-80};
+    listen ${PORT};
+    listen [::]:${PORT};
     
     server_name _;
 
