@@ -1,19 +1,19 @@
 # --- Definição dos Endereços dos Serviços ---
 # Use as variáveis de ambiente PRIVADAS do Railway para comunicação interna
 upstream auth_service {
-    server ${{AUTH_SERVICE_URL}};
+    server $AUTH_SERVICE_URL;
 }
 
 upstream billing_service {
-    server ${{BILLING_SERVICE_URL}};
+    server $BILLING_SERVICE_URL;
 }
 
 upstream analysis_service {
-    server ${{ANALYSIS_SERVICE_URL}};
+    server $ANALYSIS_SERVICE_URL;
 }
 
 upstream frontend {
-    server ${{FRONTEND_URL}};
+    server $FRONTEND_URL;
 }
 
 # --- Configuração do Servidor Principal (Gateway) ---
