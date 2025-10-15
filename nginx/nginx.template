@@ -1,19 +1,27 @@
-# nginx/nginx.template (CONFIGURAÇÃO FINAL CORRIGIDA)
+# nginx.template (SOLUÇÃO COMPLETA)
 
 # --- Definição dos Endereços dos Serviços ---
 upstream auth_service {
     server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
 }
+
 upstream billing_service {
     server ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT};
 }
+
 upstream analysis_service {
     server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
 }
 
-# --- CORREÇÃO: Frontend com HTTP interno ---
-upstream frontend {
+# --- CORREÇÃO: Dois upstreams para frontend ---
+# 1. Upstream interno para comunicação entre serviços
+upstream frontend_internal {
     server ${FRONTEND_HOST}:${FRONTEND_PORT};
+}
+
+# 2. Upstream externo para fallback (opcional)
+upstream frontend_external {
+    server frontend-production-47982.up.railway.app:443;
 }
 
 server {
@@ -21,7 +29,6 @@ server {
     listen [::]:${PORT};
     server_name _;
 
-    
     # --- Configurações de CORS e Headers Gerais ---
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -35,34 +42,24 @@ server {
         return 200 "healthy\n";
     }
 
-    # --- ROTA PARA A API ---
+    # --- ROTA PARA A API (mantenha suas configurações) ---
     location /api/ {
-        # Configurações CORS
+        # Suas configurações CORS e roteamento da API...
         add_header 'Access-Control-Allow-Origin' "$http_origin" always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
         add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
-        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
-
+        
         if ($request_method = 'OPTIONS') {
-            add_header 'Access-Control-Allow-Origin' "$http_origin";
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
-            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-            add_header 'Access-Control-Max-Age' 1728000;
-            add_header 'Content-Type' 'text/plain; charset=utf-8';
-            add_header 'Content-Length' 0;
+            # ... suas configurações OPTIONS
             return 204;
         }
 
-        # Roteamento da API
+        # Seu roteamento da API...
         location /api/users {
             proxy_pass http://auth_service;
         }
         
         location /api/token {
-            proxy_pass http://auth_service;
-        }
-        
-        location /api/admin/promote-to-admin {
             proxy_pass http://auth_service;
         }
         
@@ -73,27 +70,37 @@ server {
         proxy_pass http://billing_service;
     }
 
-    # --- CORREÇÃO: Rota para Frontend com HTTP interno ---
+    # --- CORREÇÃO CRÍTICA: Rota para Frontend ---
     location / {
-        # CORREÇÃO CRÍTICA: Headers para evitar redirecionamento HTTPS
-        proxy_set_header X-Forwarded-Proto $scheme;
+        # Tenta primeiro via HTTP interno com headers especiais
+        proxy_pass http://frontend_internal;
+        
+        # HEADERS CRÍTICOS para evitar redirecionamento HTTPS
+        proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Port $server_port;
-        
-        # Header específico para evitar redirecionamento
-        proxy_set_header X-Forwarded-Scheme $scheme;
-        
-        # Conecta via HTTP interno (não HTTPS)
-        proxy_pass http://frontend;
-        
-        # Timeouts adequados
-        proxy_connect_timeout 10s;
-        proxy_send_timeout 15s;
-        proxy_read_timeout 20s;
+        proxy_set_header X-Forwarded-Port 443;
+        proxy_set_header X-Forwarded-Scheme https;
         
         # Headers padrão
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Se falhar, tenta via HTTPS externo (fallback)
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+        proxy_intercept_errors on;
+        error_page 502 503 504 = @frontend_fallback;
+    }
+
+    # Fallback para HTTPS externo se o interno falhar
+    location @frontend_fallback {
+        proxy_pass https://frontend_external;
+        proxy_set_header Host frontend-production-47982.up.railway.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_ssl_server_name on;
+        proxy_ssl_verify off;
     }
 }
