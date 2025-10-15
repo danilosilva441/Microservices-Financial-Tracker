@@ -44,6 +44,20 @@ echo "🚀 Iniciando configuração dinâmica do Nginx"
 echo "======================================="
 echo "✅ PORT definida como: $PORT"
 
+echo "🔍 Testando conectividade com o frontend..."
+if ping -c 3 ${FRONTEND_HOST} &> /dev/null; then
+    echo "✅ Conectividade com ${FRONTEND_HOST}: OK"
+else
+    echo "❌ Não é possível alcançar ${FRONTEND_HOST}"
+fi
+
+# Teste de porta
+if nc -z ${FRONTEND_HOST} ${FRONTEND_PORT} &> /dev/null; then
+    echo "✅ Porta ${FRONTEND_PORT} no ${FRONTEND_HOST}: OK"
+else
+    echo "❌ Porta ${FRONTEND_PORT} no ${FRONTEND_HOST}: FECHADA"
+fi
+
 echo "🔧 Gerando configuração do Nginx..."
 envsubst '${PORT} ${AUTH_SERVICE_HOST} ${AUTH_SERVICE_PORT} ${BILLING_SERVICE_HOST} ${BILLING_SERVICE_PORT} ${ANALYSIS_SERVICE_HOST} ${ANALYSIS_SERVICE_PORT} ${FRONTEND_HOST} ${FRONTEND_PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
 
