@@ -1,36 +1,125 @@
-upstream auth_service { server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}; }
-upstream billing_service { server ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT}; }
-upstream analysis_service { server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT}; }
-upstream frontend_internal { server ${FRONTEND_HOST}:${FRONTEND_PORT}; }
+# ======================================
+# 🌐 API GATEWAY - NGINX CONFIGURAÇÃO FINAL
+# ======================================
+# Versão: 2025-10-15
+# Ambiente: Railway com Private Networking
+# Função: Centralizar todo o tráfego (Frontend + APIs)
+# ======================================
 
+# --- Serviços Internos (via rede privada Railway) ---
+upstream auth_service {
+    server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
+}
+
+upstream billing_service {
+    server ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT};
+}
+
+upstream analysis_service {
+    server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
+}
+
+upstream frontend_internal {
+    server ${FRONTEND_HOST}:${FRONTEND_PORT};
+}
+
+# ==========================
+# 🔹 Servidor Principal
+# ==========================
 server {
     listen ${PORT};
     listen [::]:${PORT};
     server_name _;
 
-    # headers
+    # --- Headers padrão (para proxy reverso) ---
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
-    # rota api
+    # --- Logs ---
+    access_log /dev/stdout;
+    error_log /dev/stderr;
+
+    # --- Health Check (para Railway monitorar) ---
+    location /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "healthy\n";
+    }
+
+    # ==========================
+    # 🔸 Rotas de API
+    # ==========================
     location /api/ {
+        # --- Configurações CORS globais ---
         add_header 'Access-Control-Allow-Origin' "$http_origin" always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
-        add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,User-Agent,If-Modified-Since,Cache-Control,Range' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
 
-        if ($request_method = 'OPTIONS') { return 204; }
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
 
-        location /api/users { proxy_pass http://auth_service; }
-        location /api/token { proxy_pass http://auth_service; }
-        location /api/analysis { proxy_pass http://analysis_service; }
+        # --- Sub-rotas específicas ---
+        location /api/users {
+            proxy_pass http://auth_service;
+        }
 
+        location /api/token {
+            proxy_pass http://auth_service;
+        }
+
+        location /api/billing {
+            proxy_pass http://billing_service;
+        }
+
+        location /api/analysis {
+            proxy_pass http://analysis_service;
+        }
+
+        # --- Caso não seja rota específica, assume billing como padrão ---
         proxy_pass http://billing_service;
     }
 
-    # frontend
+    # ==========================
+    # 🔸 Frontend (Vue.js)
+    # ==========================
     location / {
+        # Servindo via rede privada interna
         proxy_pass http://frontend_internal;
+
+        # Headers padrão para compatibilidade com apps SPA
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Cache leve para assets estáticos
+        location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|ttf|svg|eot)$ {
+            expires 30d;
+            access_log off;
+            add_header Cache-Control "public";
+        }
+
+        # Redireciona tudo para o index.html (modo SPA)
+        error_page 404 = /index.html;
     }
+
+    # ==========================
+    # 🔸 Segurança extra
+    # ==========================
+    # Bloqueia acesso direto por IP
+    if ($host ~* "railway\.app$") {
+        add_header X-Frame-Options "SAMEORIGIN";
+        add_header X-Content-Type-Options "nosniff";
+        add_header X-XSS-Protection "1; mode=block";
+    }
+
+    # Timeout e buffers
+    proxy_connect_timeout 60s;
+    proxy_send_timeout 60s;
+    proxy_read_timeout 60s;
+    send_timeout 60s;
 }
