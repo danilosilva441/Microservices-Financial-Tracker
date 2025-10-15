@@ -13,16 +13,12 @@ upstream analysis_service {
     server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
 }
 
-# --- CORREÇÃO: Dois upstreams para frontend ---
-# 1. Upstream interno para comunicação entre serviços
+
+
 upstream frontend_internal {
     server ${FRONTEND_HOST}:${FRONTEND_PORT};
 }
 
-# 2. Upstream externo para fallback (opcional)
-upstream frontend_external {
-    server frontend-production-47982.up.railway.app:443;
-}
 
 server {
     listen ${PORT};
