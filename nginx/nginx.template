@@ -1,3 +1,6 @@
+# nginx/nginx.template (CORREÇÃO HTTPS)
+
+# --- Definição dos Endereços dos Serviços ---
 upstream auth_service {
     server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
 }
@@ -7,8 +10,10 @@ upstream billing_service {
 upstream analysis_service {
     server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
 }
+
+# --- CORREÇÃO: Frontend com HTTPS ---
 upstream frontend {
-    server ${FRONTEND_HOST}:${FRONTEND_PORT};
+    server ${FRONTEND_HOST}:443;
 }
 
 server {
@@ -31,13 +36,12 @@ server {
 
     # --- ROTA PARA A API ---
     location /api/ {
-        # Configurações específicas de CORS para a API:cite[9]
+        # Configurações CORS (mantenha as que você tinha)
         add_header 'Access-Control-Allow-Origin' "$http_origin" always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
         add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
 
-        # Responde a requisições OPTIONS (Preflight) diretamente:cite[2]
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Origin' "$http_origin";
             add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
@@ -48,7 +52,7 @@ server {
             return 204;
         }
 
-        # Roteamento baseado em prefixos (MAIS CONFIÁVEL que 'if'):cite[1]:cite[8]
+        # Roteamento da API
         location /api/users {
             proxy_pass http://auth_service;
         }
@@ -65,13 +69,27 @@ server {
             proxy_pass http://analysis_service;
         }
         
-        # Rota padrão para o resto da API vai para billing
         proxy_pass http://billing_service;
     }
 
-    # --- ROTA PARA O FRONTEND ---
+    # --- CORREÇÃO: Rota para Frontend com HTTPS ---
     location / {
-        proxy_pass http://frontend;
-        # Headers de proxy já estão definidos no nível do server
+        # Usa HTTPS para conectar com o frontend
+        proxy_pass https://frontend;
+        
+        # Headers importantes para HTTPS
+        proxy_set_header Host ${FRONTEND_HOST};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Configurações de SSL (importante para HTTPS interno)
+        proxy_ssl_server_name on;
+        proxy_ssl_verify off;  # Pode ligar depois se tiver certificados
+        
+        # Timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
     }
 }
