@@ -21,6 +21,12 @@ server {
     listen [::]:${PORT};
     server_name _;
 
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
     # --- Configurações de CORS e Headers Gerais ---
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
