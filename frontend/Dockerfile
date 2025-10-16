@@ -18,8 +18,8 @@ FROM nginx:1.25-alpine
 # Copia o resultado do build para o Nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copia a configuração do Nginx para o Vue Router funcionar
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copia o template do Nginx e usa envsubst para substituir variáveis de ambiente
+COPY nginx.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
