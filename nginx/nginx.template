@@ -1,6 +1,12 @@
-# nginx.template (SOLUÇÃO COMPLETA)
+# ======================================
+# 🌐 API GATEWAY - CONFIG FINAL PRIVADA
+# ======================================
+# Versão: 2025-10-15
+# Ambiente: Private Networking (Railway)
+# Função: Centralizar APIs + Frontend Vue
+# ======================================
 
-# --- Definição dos Endereços dos Serviços ---
+# --- Serviços Internos ---
 upstream auth_service {
     server ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT};
 }
@@ -13,90 +19,125 @@ upstream analysis_service {
     server ${ANALYSIS_SERVICE_HOST}:${ANALYSIS_SERVICE_PORT};
 }
 
-
-
 upstream frontend_internal {
     server ${FRONTEND_HOST}:${FRONTEND_PORT};
 }
 
-
+# ==========================
+# 🔹 Servidor Principal
+# ==========================
 server {
     listen ${PORT};
     listen [::]:${PORT};
     server_name _;
 
-    # --- Configurações de CORS e Headers Gerais ---
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    access_log /dev/stdout;
+    error_log /dev/stderr;
 
-    # --- Health Check ---
-    location /health {
+    # --------------------------
+    # ✅ HEALTHCHECK (Railway)
+    # --------------------------
+    location = /health {
         access_log off;
         add_header Content-Type text/plain;
         return 200 "healthy\n";
     }
 
-    # --- ROTA PARA A API (mantenha suas configurações) ---
+    # ==========================
+    # 🔸 ROTAS DE API
+    # ==========================
     location /api/ {
-        # Suas configurações CORS e roteamento da API...
-        add_header 'Access-Control-Allow-Origin' "$http_origin" always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
-        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
-        
-        if ($request_method = 'OPTIONS') {
-            # ... suas configurações OPTIONS
-            return 204;
-        }
-
-        # Seu roteamento da API...
-        location /api/users {
-            proxy_pass http://auth_service;
-        }
-        
-        location /api/token {
-            proxy_pass http://auth_service;
-        }
-        
-        location /api/analysis {
-            proxy_pass http://analysis_service;
-        }
-        
-        proxy_pass http://billing_service;
-    }
-
-    # --- CORREÇÃO CRÍTICA: Rota para Frontend ---
-    location / {
-        # Tenta primeiro via HTTP interno com headers especiais
-        proxy_pass http://frontend_internal;
-        
-        # HEADERS CRÍTICOS para evitar redirecionamento HTTPS
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Port 443;
-        proxy_set_header X-Forwarded-Scheme https;
-        
-        # Headers padrão
+        # --- Headers de Proxy ---
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        
-        # Se falhar, tenta via HTTPS externo (fallback)
-        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
-        proxy_intercept_errors on;
-        error_page 502 503 504 = @frontend_fallback;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # --- CORS ---
+        add_header 'Access-Control-Allow-Origin' "$http_origin" always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,User-Agent,If-Modified-Since,Cache-Control,Range' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' "$http_origin";
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+            add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,User-Agent,If-Modified-Since,Cache-Control,Range';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        # --- Subrotas específicas ---
+        location ~ ^/api/(users|token|admin) {
+            proxy_pass http://auth_service;
+        }
+
+        location ~ ^/api/(billing|operacoes) {
+            proxy_pass http://billing_service;
+        }
+
+        location ~ ^/api/analysis {
+            proxy_pass http://analysis_service;
+        }
+
+        # --- Rota fallback da API ---
+        proxy_pass http://billing_service;
     }
 
-    # Fallback para HTTPS externo se o interno falhar
-    location @frontend_fallback {
-        proxy_pass https://frontend_external;
-        proxy_set_header Host frontend-production-47982.up.railway.app;
+    # ==========================
+    # 🔸 FRONTEND SPA (Vue.js)
+    # ==========================
+    location / {
+        proxy_pass http://frontend_internal;
+        proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        proxy_ssl_server_name on;
-        proxy_ssl_verify off;
+
+        # 🔁 Fallback SPA para rotas do Vue Router
+        error_page 404 = /index.html;
+
+        # 🔒 Segurança adicional
+        add_header Cache-Control "no-cache";
+        add_header Pragma "no-cache";
+        add_header Expires 0;
+
+        # Caso o frontend esteja offline, mostra mensagem padrão
+        proxy_intercept_errors on;
+        error_page 502 503 504 =503 @frontend_offline;
     }
+
+    # ==========================
+    # 🔸 ERRO: FRONTEND OFFLINE
+    # ==========================
+    location @frontend_offline {
+        default_type text/html;
+        return 503 '
+            <html>
+                <head><title>Serviço Temporariamente Indisponível</title></head>
+                <body style="font-family:sans-serif;text-align:center;margin-top:20vh;">
+                    <h2>🚧 O frontend está temporariamente indisponível.</h2>
+                    <p>Tente novamente em alguns minutos.</p>
+                </body>
+            </html>';
+    }
+
+    # ==========================
+    # 🔸 SEGURANÇA E PERFORMANCE
+    # ==========================
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
+
+    proxy_connect_timeout 30s;
+    proxy_send_timeout 30s;
+    proxy_read_timeout 30s;
+    send_timeout 30s;
+
+    proxy_buffering on;
+    proxy_buffer_size 4k;
+    proxy_buffers 8 4k;
 }
