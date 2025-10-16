@@ -18,7 +18,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
         // IMPORTANTE: Substitua pela sua URL real da Railway
-        policy.WithOrigins("http://localhost:5173", "https://SEU_DOMINIO_DA_RAILWAY.up.railway.app")
+        policy.WithOrigins("http://localhost:5173", "https://apigatewayh.up.railway.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
