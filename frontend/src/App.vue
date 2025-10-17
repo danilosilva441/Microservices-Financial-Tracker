@@ -1,20 +1,19 @@
 <script setup>
 import { RouterView, RouterLink, useRoute } from 'vue-router'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from './stores/authStore'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const isMobileMenuOpen = ref(false)
 
-// Verifica se o usuário está realmente logado
-const isUserLoggedIn = computed(() => !!authStore.token && !!authStore.user)
-const isAdmin = computed(() => authStore.user?.role === 'admin' || false)
+// Verifica se o usuário está logado (qualquer rota que não seja 'login')
+const isUserLoggedIn = computed(() => route.name !== 'login')
+const isAdmin = computed(() => authStore.isAdmin)
 
-// Função de logout
+// Função de logout que chama a action da store
 function handleLogout() {
   authStore.logout()
-  handleMobileLinkClick()
 }
 
 // Fecha o menu mobile ao clicar em um link
@@ -29,25 +28,10 @@ function handleResize() {
   }
 }
 
-// Fecha menu ao pressionar ESC
-function handleEscapeKey(event) {
-  if (event.key === 'Escape' && isMobileMenuOpen.value) {
-    isMobileMenuOpen.value = false
-  }
-}
-
-onMounted(() => {
+// Adiciona listener de redimensionamento
+if (typeof window !== 'undefined') {
   window.addEventListener('resize', handleResize)
-  window.addEventListener('keydown', handleEscapeKey)
-  
-  // Verifica autenticação ao carregar o app
-  authStore.checkAuth()
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  window.removeEventListener('keydown', handleEscapeKey)
-})
+}
 </script>
 
 <template>
@@ -64,7 +48,6 @@ onUnmounted(() => {
         @click="isMobileMenuOpen = !isMobileMenuOpen"
         class="p-2 rounded-md hover:bg-neutral-light hover:bg-opacity-25 transition-colors"
         :class="{ 'bg-neutral-light bg-opacity-25': isMobileMenuOpen }"
-        aria-label="Toggle menu"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path 
@@ -106,7 +89,6 @@ onUnmounted(() => {
         <button 
           @click="isMobileMenuOpen = false"
           class="lg:hidden p-2 rounded-md hover:bg-neutral-light hover:bg-opacity-25 transition-colors"
-          aria-label="Close menu"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -157,7 +139,7 @@ onUnmounted(() => {
         </div>
         
         <button 
-          @click="handleLogout" 
+          @click="handleLogout; handleMobileLinkClick()" 
           class="w-full flex items-center px-4 py-3 rounded-md hover:bg-red-600 transition-colors text-left group"
         >
           <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,26 +154,7 @@ onUnmounted(() => {
     <main class="flex-1 lg:overflow-y-auto min-h-screen lg:min-h-0">
       <!-- Mobile Header Spacer -->
       <div class="lg:hidden h-16"></div>
-      
-      <!-- CORREÇÃO: Loading State APENAS para auth global -->
-      <div v-if="authStore.loading && !isUserLoggedIn" class="p-8 text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p class="mt-2 text-gray-600">Carregando...</p>
-      </div>
-      
-      <!-- CORREÇÃO: Error State APENAS para auth global -->
-      <div v-else-if="authStore.error && !isUserLoggedIn" class="p-4 bg-red-50 border border-red-200 rounded-md m-4">
-        <p class="text-red-800">{{ authStore.error }}</p>
-        <button 
-          @click="authStore.clearAuth()" 
-          class="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Tentar Novamente
-        </button>
-      </div>
-      
-      <!-- CORREÇÃO: Content SEMPRE renderizado quando logado -->
-      <RouterView v-else />
+      <RouterView />
     </main>
   </div>
 
@@ -229,7 +192,7 @@ onUnmounted(() => {
 }
 
 /* Previne scroll no body quando menu mobile está aberto */
-:global(body.menu-open) {
+body:has(.lg\\:hidden .fixed.translate-x-0) {
   overflow: hidden;
 }
 
@@ -241,11 +204,5 @@ onUnmounted(() => {
     height: 100vh;
     overflow-y: auto;
   }
-}
-
-/* Melhora a acessibilidade visual */
-.focus-visible:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
 }
 </style>
