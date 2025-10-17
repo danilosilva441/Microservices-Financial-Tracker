@@ -1,8 +1,8 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import api from '@/services/api';
-import { jwtDecode } from 'jwt-decode';
-import router from '@/router'; // Importa a instância do router
+import { jwtDecode } from 'jwt-decode'; // Agora isto vai funcionar
+import router from '@/router'; // Importa o "GPS"
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('authToken'));
@@ -13,7 +13,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (newToken) {
       user.value = jwtDecode(newToken);
       localStorage.setItem('authToken', newToken);
-      // Define o token no cabeçalho do Axios para todas as requisições futuras
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } else {
       user.value = null;
@@ -26,12 +25,11 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.post('/api/token', credentials);
       if (response.data && response.data.token) {
-        // --- LÓGICA CRUCIAL ---
-        // 1. Guarda o token e descodifica o utilizador
+        // 1. Guarda o token
         setUserAndToken(response.data.token); 
         
-        // 2. Navega para o dashboard após o sucesso
-        await router.push('/dashboard'); 
+        // 2. Comanda a navegação para o dashboard
+        await router.push('/dashboard'); // <-- A LINHA MÁGICA
         
         return true;
       }
@@ -48,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/');
   }
 
-  // Tenta carregar o token do localStorage ao iniciar
+  // Carrega o token ao iniciar
   const initialToken = localStorage.getItem('authToken');
   if (initialToken) {
     setUserAndToken(initialToken);
