@@ -84,7 +84,6 @@ services:
     container_name: frontend
     restart: always
 
-    
   api_gateway:
     build: ./nginx
     container_name: api_gateway
