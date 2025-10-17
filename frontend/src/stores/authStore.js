@@ -1,58 +1,56 @@
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
 import api from '@/services/api';
-import { useRouter } from 'vue-router';
+import { jwtDecode } from 'jwt-decode';
+import router from '@/router';
 
 export const useAuthStore = defineStore('auth', () => {
-  // State
   const token = ref(localStorage.getItem('authToken'));
-  const user = ref(null); // Guardará os dados decodificados do token
-  const router = useRouter();
+  const user = ref(token.value ? jwtDecode(token.value) : null);
 
-  // Getter para verificar se o usuário é Admin
-  const isAdmin = computed(() => {
-    return user.value?.role?.includes('Admin');
-  });
-
-  // Action para decodificar e salvar os dados do usuário
-  function setUserFromToken(jwt) {
-    if (!jwt) {
-        user.value = null;
-        return;
-    }
-    try {
-      const payload = JSON.parse(atob(jwt.split('.')[1]));
-      user.value = {
-        id: payload.sub,
-        email: payload.email,
-        // A claim de role pode ter nomes diferentes, então verificamos os dois
-        role: payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-      };
-    } catch (e) {
-      console.error("Erro ao decodificar token:", e);
-      user.value = null;
-    }
-  }
-
-  // Action de Login
-  async function login(credentials) {
-    const response = await api.post('/token', credentials);
-    const newToken = response.data.token;
-    localStorage.setItem('authToken', newToken);
+  function setUserAndToken(newToken) {
     token.value = newToken;
-    setUserFromToken(newToken);
+    if (newToken) {
+      user.value = jwtDecode(newToken);
+      localStorage.setItem('authToken', newToken);
+      // Define o token no cabeçalho do Axios para todas as requisições futuras
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    } else {
+      user.value = null;
+      localStorage.removeItem('authToken');
+      delete api.defaults.headers.common['Authorization'];
+    }
   }
 
-  // Action de Logout
+  async function login(credentials) {
+    try {
+      const response = await api.post('/api/token', credentials);
+      if (response.data && response.data.token) {
+        // --- LÓGICA CRUCIAL ---
+        // 1. Guarda o token e descodifica o utilizador
+        setUserAndToken(response.data.token); 
+        // 2. Navega para o dashboard
+        router.push('/dashboard'); 
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Erro no login:", error);
+      setUserAndToken(null);
+      return false;
+    }
+  }
+
   function logout() {
-    localStorage.removeItem('authToken');
-    token.value = null;
-    user.value = null;
-    router.push('/');
+    setUserAndToken(null);
+    router.push('/login');
   }
 
-  // Carrega o usuário do token ao iniciar a store
-  setUserFromToken(token.value);
+  // Tenta carregar o token do localStorage ao iniciar
+  const initialToken = localStorage.getItem('authToken');
+  if (initialToken) {
+    setUserAndToken(initialToken);
+  }
 
-  return { token, user, isAdmin, login, logout };
+  return { token, user, login, logout };
 });
