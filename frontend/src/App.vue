@@ -7,14 +7,14 @@ const route = useRoute()
 const authStore = useAuthStore()
 const isMobileMenuOpen = ref(false)
 
-// Verifica se o usuário está realmente logado
+// CORREÇÃO 1: Verifica se o usuário está realmente logado
 const isUserLoggedIn = computed(() => !!authStore.token && !!authStore.user)
-const isAdmin = computed(() => authStore.user?.role === 'admin' || false)
+const isAdmin = computed(() => authStore.user?.role === 'admin' || false) // CORREÇÃO 2: Verifica role do usuário
 
-// Função de logout
+// CORREÇÃO 3: Função de logout corrigida
 function handleLogout() {
   authStore.logout()
-  handleMobileLinkClick()
+  handleMobileLinkClick() // Fecha menu mobile após logout
 }
 
 // Fecha o menu mobile ao clicar em um link
@@ -29,16 +29,9 @@ function handleResize() {
   }
 }
 
-// Fecha menu ao pressionar ESC
-function handleEscapeKey(event) {
-  if (event.key === 'Escape' && isMobileMenuOpen.value) {
-    isMobileMenuOpen.value = false
-  }
-}
-
+// CORREÇÃO 4: Gerenciamento de event listeners melhorado
 onMounted(() => {
   window.addEventListener('resize', handleResize)
-  window.addEventListener('keydown', handleEscapeKey)
   
   // Verifica autenticação ao carregar o app
   authStore.checkAuth()
@@ -46,6 +39,20 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+})
+
+// CORREÇÃO 5: Fecha menu ao pressionar ESC
+function handleEscapeKey(event) {
+  if (event.key === 'Escape' && isMobileMenuOpen.value) {
+    isMobileMenuOpen.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleEscapeKey)
+})
+
+onUnmounted(() => {
   window.removeEventListener('keydown', handleEscapeKey)
 })
 </script>
@@ -173,24 +180,18 @@ onUnmounted(() => {
       <!-- Mobile Header Spacer -->
       <div class="lg:hidden h-16"></div>
       
-      <!-- CORREÇÃO: Loading State APENAS para auth global -->
-      <div v-if="authStore.loading && !isUserLoggedIn" class="p-8 text-center">
+      <!-- Loading State -->
+      <div v-if="authStore.loading" class="p-8 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <p class="mt-2 text-gray-600">Carregando...</p>
       </div>
       
-      <!-- CORREÇÃO: Error State APENAS para auth global -->
-      <div v-else-if="authStore.error && !isUserLoggedIn" class="p-4 bg-red-50 border border-red-200 rounded-md m-4">
+      <!-- Error State -->
+      <div v-else-if="authStore.error" class="p-4 bg-red-50 border border-red-200 rounded-md m-4">
         <p class="text-red-800">{{ authStore.error }}</p>
-        <button 
-          @click="authStore.clearAuth()" 
-          class="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Tentar Novamente
-        </button>
       </div>
       
-      <!-- CORREÇÃO: Content SEMPRE renderizado quando logado -->
+      <!-- Content -->
       <RouterView v-else />
     </main>
   </div>
@@ -229,7 +230,7 @@ onUnmounted(() => {
 }
 
 /* Previne scroll no body quando menu mobile está aberto */
-:global(body.menu-open) {
+body:has(.lg\\:hidden .fixed.translate-x-0) {
   overflow: hidden;
 }
 
