@@ -11,7 +11,17 @@ const authStore = useAuthStore();
 const isModalVisible = ref(false);
 const router = useRouter();
 
-// Usamos uma propriedade computada para acessar a lista de forma segura e reativa
+// CORREÇÃO: Criar computed property local para isAdmin
+const isAdmin = computed(() => authStore.isAdmin);
+
+// DEBUG: Verificar o estado (remova depois de testar)
+console.log('🔍 Debug OperacoesView:', {
+  user: authStore.user,
+  role: authStore.user?.role,
+  isAdmin: isAdmin.value,
+  authStoreIsAdmin: authStore.isAdmin
+});
+
 const operacoes = computed(() => operacoesStore.operacoes?.$values || []);
 
 onMounted(() => {
@@ -35,14 +45,14 @@ const calcularProgresso = (operacao) => {
 
 // Função para determinar a cor do progresso baseado no percentual
 const getCorProgresso = (percentual) => {
-    if (percentual >= 150) return 'bg-purple-600'; // Excelente desempenho
-    if (percentual >= 120) return 'bg-indigo-600'; // Ótimo desempenho
-    if (percentual >= 100) return 'bg-green-600';  // Meta batida
-    if (percentual >= 80) return 'bg-green-500';   // Quase lá
-    if (percentual >= 60) return 'bg-yellow-500';  // Em andamento
-    if (percentual >= 40) return 'bg-orange-500';  // Atenção
-    if (percentual >= 20) return 'bg-red-500';     // Crítico
-    return 'bg-red-600';                           // Muito crítico
+    if (percentual >= 150) return 'bg-purple-600';
+    if (percentual >= 120) return 'bg-indigo-600';
+    if (percentual >= 100) return 'bg-green-600';
+    if (percentual >= 80) return 'bg-green-500';
+    if (percentual >= 60) return 'bg-yellow-500';
+    if (percentual >= 40) return 'bg-orange-500';
+    if (percentual >= 20) return 'bg-red-500';
+    return 'bg-red-600';
 };
 
 // Função para determinar a cor do texto do percentual
@@ -110,8 +120,9 @@ const getTextoStatus = (operacao) => {
                     {{ operacoes.length }} operação{{ operacoes.length !== 1 ? 'es' : '' }} cadastrada{{ operacoes.length !== 1 ? 's' : '' }}
                 </p>
             </div>
+            <!-- CORREÇÃO: Usar a computed property local isAdmin -->
             <button 
-                v-if="authStore.isAdmin" 
+                v-if="isAdmin" 
                 @click="isModalVisible = true"
                 class="flex items-center justify-center bg-primary hover:bg-primary-dark text-white font-medium py-3 px-4 sm:py-2 sm:px-4 rounded-lg transition-colors duration-200 w-full sm:w-auto"
             >
@@ -294,8 +305,9 @@ const getTextoStatus = (operacao) => {
                 <p class="text-gray-500 mb-6 max-w-sm mx-auto">
                     Comece criando sua primeira operação para acompanhar seus faturamentos e metas.
                 </p>
+                <!-- CORREÇÃO: Usar a computed property local isAdmin -->
                 <button 
-                    v-if="authStore.isAdmin"
+                    v-if="isAdmin"
                     @click="isModalVisible = true"
                     class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-lg transition-colors inline-flex items-center"
                 >

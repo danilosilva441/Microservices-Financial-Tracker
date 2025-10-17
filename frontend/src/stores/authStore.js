@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'; // Importe o 'computed'
+import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import api from '@/services/api';
 import { jwtDecode } from 'jwt-decode';
@@ -6,9 +6,15 @@ import router from '@/router';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('authToken'));
-  const user = ref(null); // Será preenchido por setUserAndToken
+  const user = ref(null);
   const loading = ref(false);
   const error = ref(null);
+
+  // CORREÇÃO: isAdmin como computed property
+  const isAdmin = computed(() => {
+    const role = user.value?.role;
+    return role === 'Admin' || role === 'admin';
+  });
 
   function clearAuth() {
     token.value = null;
@@ -25,13 +31,11 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const decodedToken = jwtDecode(newToken);
         
-        // O .NET armazena o role nesta claim específica:
         const role = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
         
         user.value = {
           email: decodedToken.email,
           nameid: decodedToken.nameid,
-          // Garante que o role seja uma string única (Admin ou User)
           role: Array.isArray(role) ? role[0] : role 
         };
         
@@ -39,6 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         error.value = null;
         console.log('🔑 Token definido com sucesso para utilizador:', user.value);
+        console.log('👑 isAdmin:', isAdmin.value); // Debug
 
       } catch (decodeError) {
         console.error('❌ Erro ao descodificar token:', decodeError);
@@ -48,10 +53,6 @@ export const useAuthStore = defineStore('auth', () => {
       clearAuth();
     }
   }
-
-  // --- COMPUTED PROPERTY PARA VERIFICAR SE É ADMIN ---
-  // Esta lógica fica centralizada aqui
-  const isAdmin = computed(() => user.value?.role === 'Admin' || user.value?.role === 'admin');
 
   async function login(credentials) {
     loading.value = true;
@@ -74,7 +75,7 @@ export const useAuthStore = defineStore('auth', () => {
         setUserAndToken(response.data.token);
         
         console.log('✅ Login bem-sucedido, redirecionando...');
-        await router.push('/dashboard'); // O redirecionamento que faltava
+        await router.push('/dashboard');
         
         return { success: true };
       } else {
@@ -135,7 +136,7 @@ export const useAuthStore = defineStore('auth', () => {
     user, 
     loading, 
     error,
-    isAdmin, // <-- CORREÇÃO: Exporta o 'isAdmin'
+    isAdmin, // ✅ CORRIGIDO: computed property
     login, 
     logout, 
     checkAuth,
