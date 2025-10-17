@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue'; // Importe o 'computed'
 import { defineStore } from 'pinia';
 import api from '@/services/api';
 import { jwtDecode } from 'jwt-decode';
@@ -6,27 +6,9 @@ import router from '@/router';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('authToken'));
-  const user = ref(token.value ? jwtDecode(token.value) : null);
+  const user = ref(null); // Será preenchido por setUserAndToken
   const loading = ref(false);
   const error = ref(null);
-
-  function setUserAndToken(newToken) {
-    token.value = newToken;
-    if (newToken) {
-      try {
-        user.value = jwtDecode(newToken);
-        localStorage.setItem('authToken', newToken);
-        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-        error.value = null;
-        console.log('🔑 Token definido com sucesso para usuário:', user.value);
-      } catch (decodeError) {
-        console.error('❌ Erro ao decodificar token:', decodeError);
-        clearAuth();
-      }
-    } else {
-      clearAuth();
-    }
-  }
 
   function clearAuth() {
     token.value = null;
@@ -36,6 +18,40 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
     console.log('🔒 Auth limpo');
   }
+
+  function setUserAndToken(newToken) {
+    token.value = newToken;
+    if (newToken) {
+      try {
+        const decodedToken = jwtDecode(newToken);
+        
+        // O .NET armazena o role nesta claim específica:
+        const role = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+        
+        user.value = {
+          email: decodedToken.email,
+          nameid: decodedToken.nameid,
+          // Garante que o role seja uma string única (Admin ou User)
+          role: Array.isArray(role) ? role[0] : role 
+        };
+        
+        localStorage.setItem('authToken', newToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        error.value = null;
+        console.log('🔑 Token definido com sucesso para utilizador:', user.value);
+
+      } catch (decodeError) {
+        console.error('❌ Erro ao descodificar token:', decodeError);
+        clearAuth();
+      }
+    } else {
+      clearAuth();
+    }
+  }
+
+  // --- COMPUTED PROPERTY PARA VERIFICAR SE É ADMIN ---
+  // Esta lógica fica centralizada aqui
+  const isAdmin = computed(() => user.value?.role === 'Admin' || user.value?.role === 'admin');
 
   async function login(credentials) {
     loading.value = true;
@@ -47,12 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
         email: credentials.email
       });
 
-      const response = await api.post('/api/token', credentials, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      const response = await api.post('/api/token', credentials);
 
       console.log('📨 Resposta recebida:', {
         status: response.status,
@@ -63,36 +74,24 @@ export const useAuthStore = defineStore('auth', () => {
         setUserAndToken(response.data.token);
         
         console.log('✅ Login bem-sucedido, redirecionando...');
-        await router.push('/dashboard');
+        await router.push('/dashboard'); // O redirecionamento que faltava
         
         return { success: true };
       } else {
         error.value = 'Token não recebido na resposta';
         return { success: false, error: error.value };
       }
-    } catch (error) {
-      console.error('❌ Erro completo no login:', error);
+    } catch (err) {
+      console.error('❌ Erro completo no login:', err);
       
-      let errorMessage = 'Erro ao fazer login';
-      
-      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
-        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
-      } else if (error.response) {
-        // Servidor respondeu com erro
-        errorMessage = error.response.data?.message || `Erro ${error.response.status}: ${error.response.statusText}`;
-      } else if (error.request) {
-        // Requisição foi feita mas não houve resposta
-        errorMessage = 'Servidor não respondeu. Verifique se o backend está rodando.';
+      let errorMessage = 'Login ou senha inválidos.';
+      if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Erro de conexão. O servidor parece estar offline.';
       }
       
       error.value = errorMessage;
       clearAuth();
-      
-      return { 
-        success: false, 
-        error: errorMessage,
-        details: error.response?.data 
-      };
+      return { success: false, error: errorMessage };
     } finally {
       loading.value = false;
     }
@@ -108,7 +107,6 @@ export const useAuthStore = defineStore('auth', () => {
     const storedToken = localStorage.getItem('authToken');
     if (storedToken) {
       try {
-        // Verifica se o token não está expirado
         const decoded = jwtDecode(storedToken);
         const currentTime = Date.now() / 1000;
         
@@ -129,17 +127,15 @@ export const useAuthStore = defineStore('auth', () => {
     return false;
   }
 
-  // Verifica autenticação ao inicializar
-  const initialToken = localStorage.getItem('authToken');
-  if (initialToken) {
-    checkAuth();
-  }
+  // Verifica autenticação ao inicializar a store
+  checkAuth();
 
   return { 
     token, 
     user, 
     loading, 
-    error, 
+    error,
+    isAdmin, // <-- CORREÇÃO: Exporta o 'isAdmin'
     login, 
     logout, 
     checkAuth,
