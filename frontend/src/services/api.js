@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Cria a instância do axios
 const api = axios.create({
-  // Usa a variável de ambiente VITE_API_URL. Se ela não existir (no ambiente local),
-  // usa 'http://localhost:8080' como padrão.
+  // 1. Tenta usar a variável de ambiente VITE_API_URL (para produção).
+  // 2. Se ela não existir, usa 'http://localhost:8080' (para desenvolvimento local).
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
 });
 
