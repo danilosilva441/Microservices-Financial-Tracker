@@ -1,17 +1,32 @@
 import axios from 'axios';
 
-// Cria a instância do axios
+// Detecção automática do ambiente
+const getBaseURL = () => {
+  // Se estamos em produção (domínio não é localhost)
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // Usa o mesmo domínio do frontend para o backend (assumindo que estão no mesmo projeto)
+    return `https://${window.location.hostname}`;
+  }
+  // Fallback para desenvolvimento
+  return import.meta.env.VITE_API_URL || 'http://localhost:8080';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache',
     'Pragma': 'no-cache'
   },
-  timeout: 10000 // 10 segundos
+  timeout: 15000
 });
 
-// Interceptor para adicionar o token JWT em todas as requisições
+// Log para debug (mostrará qual URL está sendo usada)
+console.log('🚀 API Base URL Configurada:', api.defaults.baseURL);
+console.log('🌐 Hostname Atual:', window.location.hostname);
+console.log('🔧 Ambiente:', import.meta.env.MODE);
+
+// ... resto do código permanece igual
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -19,9 +34,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log para debug (remova em produção)
-    console.log(`🚀 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.data || '');
-    
+    console.log(`🚀 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
@@ -30,30 +43,23 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor de resposta para tratamento global de erros
+// Interceptor de resposta
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ ${response.status} ${response.config.url}`, response.data);
+    console.log(`✅ ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
     console.error('❌ Erro na resposta:', {
-      url: error.config?.url,
+      url: error.config?.baseURL + error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
-      data: error.response?.data,
       message: error.message
     });
 
-    // Tratamento para token expirado
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken');
       delete api.defaults.headers.common['Authorization'];
-      
-      // Redirecionar para login se estiver em uma rota protegida
-      if (window.location.pathname !== '/') {
-        window.location.href = '/';
-      }
     }
 
     return Promise.reject(error);
