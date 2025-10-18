@@ -101,21 +101,6 @@ const bottomOperacoes = computed(() =>
   [...desempenhoOperacoes.value].reverse().slice(0, 3)
 );
 
-// Total de operações ativas vs inativas
-const statsOperacoes = computed(() => ({
-  ativas: operacoes.value.filter(op => op.isAtivo).length,
-  inativas: operacoes.value.filter(op => !op.isAtivo).length,
-  total: operacoes.value.length
-}));
-
-// Calcula a média de atingimento de meta
-const mediaAtingimento = computed(() => {
-  const operacoesComMeta = desempenhoOperacoes.value.filter(op => op.metaMensal > 0);
-  return operacoesComMeta.length > 0 
-    ? operacoesComMeta.reduce((sum, op) => sum + op.percentualAtingido, 0) / operacoesComMeta.length
-    : 0;
-});
-
 // --- DADOS PARA OS GRÁFICOS ---
 
 const chartOptions = {
@@ -316,7 +301,7 @@ const projecaoChartData = computed(() => ({
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
               <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Faturamento Total</h3>
-              <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-dark break-words leading-tight">
+              <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-dark number-format">
                 {{ formatCurrency(faturamentoTotal) }}
               </p>
               <p class="text-xs text-gray-500 mt-2">
@@ -336,11 +321,11 @@ const projecaoChartData = computed(() => ({
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
               <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Meta Atingida</h3>
-              <p class="text-xl sm:text-2xl lg:text-3xl font-bold break-words leading-tight" 
+              <p class="text-xl sm:text-2xl lg:text-3xl font-bold number-format" 
                  :class="percentualMeta >= 100 ? 'text-green-500' : percentualMeta >= 70 ? 'text-yellow-500' : 'text-red-500'">
                 {{ percentualMeta.toFixed(1) }}%
               </p>
-              <p class="text-xs text-gray-500 mt-2 break-words">
+              <p class="text-xs text-gray-500 mt-2 number-format">
                 {{ formatCurrency(faturamentoTotal) }} / {{ formatCurrency(metaTotal) }}
               </p>
             </div>
@@ -358,11 +343,11 @@ const projecaoChartData = computed(() => ({
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
               <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Projeção do Mês</h3>
-              <p class="text-xl sm:text-2xl lg:text-3xl font-bold break-words leading-tight" 
+              <p class="text-xl sm:text-2xl lg:text-3xl font-bold number-format" 
                  :class="vaiBaterMeta === 'alta' ? 'text-green-500' : vaiBaterMeta === 'media' ? 'text-orange-500' : 'text-red-500'">
                 {{ percentualProjetado.toFixed(1) }}%
               </p>
-              <p class="text-xs text-gray-500 mt-2 break-words">
+              <p class="text-xs text-gray-500 mt-2 number-format">
                 {{ formatCurrency(projecaoFinalMes) }} projetado
               </p>
             </div>
@@ -378,34 +363,14 @@ const projecaoChartData = computed(() => ({
         </div>
       </div>
 
-      <!-- Segunda Linha de KPIs -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
-        <!-- Operações Ativas -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-lg shadow-card border-l-4 border-purple-500">
-          <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0">
-              <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Operações Ativas</h3>
-              <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-dark break-words leading-tight">
-                {{ statsOperacoes.ativas }}/{{ statsOperacoes.total }}
-              </p>
-              <p class="text-xs text-gray-500 mt-2">
-                {{ Math.round((statsOperacoes.ativas / statsOperacoes.total) * 100) }}% ativas
-              </p>
-            </div>
-            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 ml-3">
-              <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
+      <!-- Segunda Linha de KPIs - Removido Operações Ativas -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
         <!-- Média Diária Atual -->
         <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-lg shadow-card border-l-4 border-blue-400">
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
               <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Média Diária Atual</h3>
-              <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 break-words leading-tight">
+              <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 number-format">
                 {{ formatCurrency(mediaDiariaAtual) }}
               </p>
               <p class="text-xs text-gray-500 mt-2">por dia</p>
@@ -424,7 +389,7 @@ const projecaoChartData = computed(() => ({
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
               <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Saldo Restante</h3>
-              <p class="text-xl sm:text-2xl lg:text-3xl font-bold break-words leading-tight" 
+              <p class="text-xl sm:text-2xl lg:text-3xl font-bold number-format" 
                  :class="(metaTotal - faturamentoTotal) > 0 ? 'text-red-500' : 'text-green-500'">
                 {{ formatCurrency(metaTotal - faturamentoTotal) }}
               </p>
@@ -448,7 +413,7 @@ const projecaoChartData = computed(() => ({
             <div class="flex-1 min-w-0">
               <h3 class="text-xs sm:text-sm lg:text-base text-gray-500 mb-2">Previsão & Dias</h3>
               <div class="flex items-center space-x-3">
-                <p class="text-xl sm:text-2xl lg:text-3xl font-bold break-words leading-tight" 
+                <p class="text-xl sm:text-2xl lg:text-3xl font-bold number-format" 
                    :class="vaiBaterMeta === 'alta' ? 'text-green-500' : vaiBaterMeta === 'media' ? 'text-orange-500' : 'text-red-500'">
                   {{ vaiBaterMeta === 'alta' ? 'Alta' : vaiBaterMeta === 'media' ? 'Média' : 'Baixa' }}
                 </p>
@@ -584,10 +549,12 @@ const projecaoChartData = computed(() => ({
   white-space: nowrap;
 }
 
-/* Melhora a quebra de palavras para valores longos */
-.break-words {
+/* Formatação específica para números - CORREÇÃO APLICADA */
+.number-format {
+  word-break: break-word;
   overflow-wrap: break-word;
-  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 /* Melhora a legibilidade em telas muito pequenas */
@@ -604,5 +571,38 @@ const projecaoChartData = computed(() => ({
 /* Ajustes específicos para valores monetários longos */
 .leading-tight {
   line-height: 1.25;
+}
+
+/* Ajustes específicos para os cards de KPI */
+.min-w-0 {
+  min-width: 0;
+}
+
+/* Melhora o espaçamento em telas muito pequenas */
+@media (max-width: 340px) {
+  .text-xl {
+    font-size: 1.125rem;
+  }
+  
+  .text-2xl {
+    font-size: 1.375rem;
+  }
+  
+  .text-3xl {
+    font-size: 1.5rem;
+  }
+}
+
+/* Ajustes específicos para valores monetários em telas pequenas */
+@media (max-width: 480px) {
+  .number-format {
+    font-size: 1.1rem !important;
+    line-height: 1.3;
+  }
+}
+
+/* Garante que os números se ajustem corretamente */
+.font-bold {
+  word-break: break-word;
 }
 </style>

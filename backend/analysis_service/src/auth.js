@@ -17,16 +17,22 @@ const authApi = axios.create({
 async function getAuthToken() {
     try {
         console.log(`AnalysisService: A autenticar no endereço: ${authServiceUrl}`);
+        console.log(`AnalysisService: Usando email: ${process.env.SYSTEM_EMAIL}`);
+        
         const response = await authApi.post('/api/token', {
             email: process.env.SYSTEM_EMAIL,
             password: process.env.SYSTEM_PASSWORD,
         });
+        
         console.log('AnalysisService: Autenticado com sucesso.');
         return response.data.token;
     } catch (error) {
-        // Regista o erro de forma mais detalhada para facilitar a depuração
-        const errorMessage = error.response?.data?.title || error.response?.data || error.message;
-        console.error('AnalysisService: Falha ao autenticar.', errorMessage);
+        // Log mais detalhado
+        console.error('AnalysisService: Falha ao autenticar.');
+        console.error('Status:', error.response?.status);
+        console.error('Data:', error.response?.data);
+        console.error('URL:', error.config?.url);
+        
         return null;
     }
 }
