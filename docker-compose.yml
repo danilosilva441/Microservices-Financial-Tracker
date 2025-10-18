@@ -69,8 +69,9 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres_db:5432/analysis_db
       PORT: 3000
-      SYSTEM_EMAIL: system@internal.service
+      SYSTEM_EMAIL: ${SYSTEM_EMAIL}
       SYSTEM_PASSWORD: ${SYSTEM_PASSWORD}
+      AUTH_SERVICE_URL: http://auth_service:8080
       BILLING_SERVICE_URL: http://billing_service:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]

@@ -1,23 +1,23 @@
-# Usa uma imagem base oficial e leve do Node.js
-FROM node:18-alpine
+FROM node:20-alpine
 
-# Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# Instala o 'curl', necessário para o healthcheck do Docker Compose funcionar
+# Instala o curl, necessário para o nosso script
 RUN apk add --no-cache curl
 
-# Copia os arquivos de dependência primeiro para aproveitar o cache do Docker
 COPY package*.json ./
-
-# Instala as dependências do projeto
 RUN npm install
 
-# Copia todo o restante do código da aplicação (a pasta 'src')
 COPY . .
 
-# Expõe a porta que nosso serviço usará para o healthcheck
+# --- CORREÇÃO AQUI ---
+# Copia o script da sua nova localização local
+COPY scripts/create-system-user.sh /app/create-system-user.sh
+
+# Dá permissão de execução ao script
+RUN chmod +x /app/create-system-user.sh
+
 EXPOSE 3000
 
-# Comando para iniciar a aplicação quando o contêiner subir
-CMD [ "npm", "start" ]
+# Comando final: executa o script de configuração E DEPOIS inicia a aplicação Node.js
+CMD ["/bin/sh", "-c", "/app/create-system-user.sh && npm start"]
