@@ -10,12 +10,6 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
   const error = ref(null);
 
-  // CORREÇÃO: isAdmin como computed property
-  const isAdmin = computed(() => {
-    const role = user.value?.role;
-    return role === 'Admin' || role === 'admin';
-  });
-
   function clearAuth() {
     token.value = null;
     user.value = null;
@@ -30,20 +24,40 @@ export const useAuthStore = defineStore('auth', () => {
     if (newToken) {
       try {
         const decodedToken = jwtDecode(newToken);
+        console.log('🔍 Token decodificado:', decodedToken);
         
-        const role = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+        // Busca flexível pela role
+        let userRoles = [];
         
+        const possibleRoleClaims = [
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+          "role",
+          "roles",
+          "Role",
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"
+        ];
+        
+        for (const claim of possibleRoleClaims) {
+          if (decodedToken[claim]) {
+            userRoles = Array.isArray(decodedToken[claim]) 
+              ? decodedToken[claim] 
+              : [decodedToken[claim]];
+            console.log(`✅ Roles encontradas na claim: ${claim}`, userRoles);
+            break;
+          }
+        }
+
         user.value = {
-          email: decodedToken.email,
+          email: decodedToken.email || decodedToken.sub,
           nameid: decodedToken.nameid,
-          role: Array.isArray(role) ? role[0] : role 
+          roles: userRoles // Agora armazenamos como array
         };
+        
+        console.log('👤 Utilizador definido:', user.value);
         
         localStorage.setItem('authToken', newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         error.value = null;
-        console.log('🔑 Token definido com sucesso para utilizador:', user.value);
-        console.log('👑 isAdmin:', isAdmin.value); // Debug
 
       } catch (decodeError) {
         console.error('❌ Erro ao descodificar token:', decodeError);
@@ -54,29 +68,41 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // CORREÇÃO PRINCIPAL: Verificação correta para arrays
+  const isAdmin = computed(() => {
+    if (!user.value || !user.value.roles || user.value.roles.length === 0) {
+      console.log('❌ Sem roles definidas');
+      return false;
+    }
+    
+    console.log('🔍 Verificando roles:', user.value.roles);
+    
+    // Verifica se qualquer uma das roles é 'Admin' (case insensitive)
+    const isAdmin = user.value.roles.some(role => 
+      role.toString().toLowerCase() === 'admin'
+    );
+    
+    console.log('👑 É admin?', isAdmin);
+    return isAdmin;
+  });
+
+  // Para compatibilidade, mantemos também a propriedade role
+  const userRole = computed(() => {
+    if (!user.value || !user.value.roles || user.value.roles.length === 0) {
+      return null;
+    }
+    return user.value.roles[0]; // Retorna a primeira role
+  });
+
   async function login(credentials) {
     loading.value = true;
     error.value = null;
     
     try {
-      console.log('🔐 Iniciando processo de login...', {
-        url: api.defaults.baseURL + '/api/token',
-        email: credentials.email
-      });
-
       const response = await api.post('/api/token', credentials);
-
-      console.log('📨 Resposta recebida:', {
-        status: response.status,
-        data: response.data
-      });
-
       if (response.data && response.data.token) {
         setUserAndToken(response.data.token);
-        
-        console.log('✅ Login bem-sucedido, redirecionando...');
         await router.push('/dashboard');
-        
         return { success: true };
       } else {
         error.value = 'Token não recebido na resposta';
@@ -84,12 +110,10 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (err) {
       console.error('❌ Erro completo no login:', err);
-      
       let errorMessage = 'Login ou senha inválidos.';
       if (err.code === 'ERR_NETWORK') {
         errorMessage = 'Erro de conexão. O servidor parece estar offline.';
       }
-      
       error.value = errorMessage;
       clearAuth();
       return { success: false, error: errorMessage };
@@ -128,18 +152,11 @@ export const useAuthStore = defineStore('auth', () => {
     return false;
   }
 
-  // Verifica autenticação ao inicializar a store
+  console.log('🔄 Inicializando auth store...');
   checkAuth();
 
   return { 
-    token, 
-    user, 
-    loading, 
-    error,
-    isAdmin, // ✅ CORRIGIDO: computed property
-    login, 
-    logout, 
-    checkAuth,
-    clearAuth 
+    token, user, loading, error, isAdmin, userRole,
+    login, logout, checkAuth, clearAuth 
   };
 });
