@@ -4,7 +4,7 @@ import api from '@/services/api';
 
 export const useOperacoesStore = defineStore('operacoes', () => {
   // State
-  const operacoes = ref(null); // Inicia como nulo para diferenciar do estado "vazio"
+  const operacoes = ref(null);
   const isLoading = ref(false);
   const error = ref(null);
   const operacaoAtual = ref(null);
@@ -14,12 +14,15 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await api.get('/operacoes');
-      // Salva o objeto de resposta completo, pois o componente acessa '$values'
+      console.log('📦 Buscando operações...');
+      // --- CORREÇÃO AQUI ---
+      const response = await api.get('/api/operacoes');
+      console.log('✅ Operações recebidas:', response.data);
       operacoes.value = response.data;
     } catch (err) {
-      console.error('Erro ao buscar operações:', err);
+      console.error('❌ Erro ao buscar operações:', err);
       error.value = 'Não foi possível carregar os dados das operações.';
+      throw err; // Propaga o erro
     } finally {
       isLoading.value = false;
     }
@@ -29,14 +32,47 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await api.post('/operacoes', operacaoData);
+      console.log('📦 Criando operação:', operacaoData);
+      
+      const dadosValidados = {
+        nome: operacaoData.nome?.trim(),
+        descricao: operacaoData.descricao?.trim() || '',
+        metaMensal: parseFloat(operacaoData.metaMensal) || 0,
+        isAtivo: operacaoData.isAtivo !== undefined ? operacaoData.isAtivo : true
+      };
+
+      if (!dadosValidados.nome) {
+        throw new Error('Nome da operação é obrigatório');
+      }
+
+      console.log('📤 Enviando dados validados:', dadosValidados);
+      
+      // --- CORREÇÃO AQUI ---
+      const response = await api.post('/api/operacoes', dadosValidados);
+      console.log('✅ Operação criada com sucesso:', response.data);
+      
       // Recarrega a lista para garantir consistência
       await fetchOperacoes();
-      return true;
+      return { success: true, data: response.data };
+      
     } catch (err) {
-      error.value = err.response?.data?.title || err.response?.data || 'Erro desconhecido ao criar operação.';
-      console.error('Erro ao criar operação:', error.value);
-      return false;
+      console.error('❌ Erro detalhado ao criar operação:', err);
+      
+      if (err.response?.status === 405) {
+        error.value = 'Método não permitido. Verifique se o endpoint está correto (ex: falta /api/).';
+      } else if (err.response?.status === 401) {
+        error.value = 'Não autorizado. Faça login novamente.';
+      } else if (err.response?.status === 403) {
+        error.value = 'Acesso negado. Você não tem permissão para criar operações.';
+      } else if (err.response?.data) {
+        error.value = err.response.data.title || err.response.data;
+      } else if (err.message) {
+        error.value = err.message;
+      } else {
+        error.value = 'Erro desconhecido ao criar operação.';
+      }
+      
+      return { success: false, error: error.value };
     } finally {
       isLoading.value = false;
     }
@@ -47,11 +83,13 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     error.value = null;
     operacaoAtual.value = null;
     try {
-      const response = await api.get(`/operacoes/${id}`);
+      // --- CORREÇÃO AQUI ---
+      const response = await api.get(`/api/operacoes/${id}`);
       operacaoAtual.value = response.data;
     } catch (err) {
-      console.error(`Erro ao buscar operação ${id}:`, err);
+      console.error(`❌ Erro ao buscar operação ${id}:`, err);
       error.value = 'Não foi possível carregar os dados da operação.';
+      throw err;
     } finally {
       isLoading.value = false;
     }
@@ -59,21 +97,30 @@ export const useOperacoesStore = defineStore('operacoes', () => {
 
   async function addFaturamento(operacaoId, faturamentoData) {
     try {
-      const response = await api.post(`/operacoes/${operacaoId}/faturamentos`, faturamentoData);
+      console.log('💰 Adicionando faturamento:', { operacaoId, faturamentoData });
+      // --- CORREÇÃO AQUI ---
+      const response = await api.post(`/api/operacoes/${operacaoId}/faturamentos`, faturamentoData);
+      
       if (operacaoAtual.value && operacaoAtual.value.id === operacaoId) {
+        if (!operacaoAtual.value.faturamentos) {
+          operacaoAtual.value.faturamentos = { $values: [] };
+        }
         operacaoAtual.value.faturamentos.$values.push(response.data);
       }
+      return response.data;
     } catch (err) {
-      console.error('Erro ao adicionar faturamento:', err);
+      console.error('❌ Erro ao adicionar faturamento:', err);
       error.value = 'Não foi possível adicionar o faturamento.';
-      // Lança o erro para o componente poder tratá-lo
       throw err;
     }
   }
 
   async function deleteFaturamento(operacaoId, faturamentoId) {
     try {
-      await api.delete(`/operacoes/${operacaoId}/faturamentos/${faturamentoId}`);
+      console.log('🗑️ Excluindo faturamento:', { operacaoId, faturamentoId });
+      // --- CORREÇÃO AQUI ---
+      await api.delete(`/api/operacoes/${operacaoId}/faturamentos/${faturamentoId}`);
+      
       if (operacaoAtual.value && operacaoAtual.value.id === operacaoId) {
         const index = operacaoAtual.value.faturamentos.$values.findIndex(f => f.id === faturamentoId);
         if (index !== -1) {
@@ -81,26 +128,32 @@ export const useOperacoesStore = defineStore('operacoes', () => {
         }
       }
     } catch (err) {
-      console.error('Erro ao excluir faturamento:', err);
+      console.error('❌ Erro ao excluir faturamento:', err);
       error.value = 'Não foi possível excluir o faturamento.';
+      throw err;
     }
   }
+
   async function deleteOperacao(operacaoId) {
     isLoading.value = true;
     error.value = null;
     try {
-      await api.delete(`/operacoes/${operacaoId}`);
+      console.log('🗑️ Excluindo operação:', operacaoId);
+      // --- CORREÇÃO AQUI ---
+      await api.delete(`/api/operacoes/${operacaoId}`);
 
-      // Remove a operação da lista local para a UI atualizar instantaneamente
-      const index = operacoes.value.$values.findIndex(op => op.id === operacaoId);
-      if (index !== -1) {
-        operacoes.value.$values.splice(index, 1);
+      // Remove a operação da lista local
+      if (operacoes.value && operacoes.value.$values) {
+        const index = operacoes.value.$values.findIndex(op => op.id === operacaoId);
+        if (index !== -1) {
+          operacoes.value.$values.splice(index, 1);
+        }
       }
-      return true; // Retorna sucesso
+      return true;
     } catch (err) {
+      console.error('❌ Erro ao excluir operação:', err);
       error.value = err.response?.data || 'Erro ao excluir operação.';
-      console.error('Erro ao excluir operação:', error.value);
-      return false; // Retorna falha
+      return false;
     } finally {
       isLoading.value = false;
     }

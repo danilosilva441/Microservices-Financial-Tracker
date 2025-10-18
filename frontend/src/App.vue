@@ -1,19 +1,32 @@
 <script setup>
 import { RouterView, RouterLink, useRoute } from 'vue-router'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from './stores/authStore'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const isMobileMenuOpen = ref(false)
 
-// Verifica se o usuário está logado (qualquer rota que não seja 'login')
-const isUserLoggedIn = computed(() => route.name !== 'login')
+// DEBUG - para verificar o estado
+const debugInfo = computed(() => ({
+  user: authStore.user,
+  roles: authStore.user?.roles,
+  isAdmin: authStore.isAdmin,
+  hasToken: !!authStore.token
+}))
+
+onMounted(() => {
+  console.log('🔍 DEBUG App:', debugInfo.value)
+})
+
+// CORREÇÃO: Verifica se está logado baseado no token da store
+const isUserLoggedIn = computed(() => !!authStore.token)
 const isAdmin = computed(() => authStore.isAdmin)
 
 // Função de logout que chama a action da store
 function handleLogout() {
   authStore.logout()
+  isMobileMenuOpen.value = false // Fecha o menu ao fazer logout
 }
 
 // Fecha o menu mobile ao clicar em um link
@@ -29,9 +42,13 @@ function handleResize() {
 }
 
 // Adiciona listener de redimensionamento
-if (typeof window !== 'undefined') {
+onMounted(() => {
   window.addEventListener('resize', handleResize)
-}
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <template>
@@ -122,24 +139,35 @@ if (typeof window !== 'undefined') {
           Operações
         </RouterLink>
 
-        <!-- Área Admin (se necessário) -->
+        <!-- CORREÇÃO: Área Admin - Agora usando a computed property corrigida -->
         <div v-if="isAdmin" class="pt-4 mt-4 border-t border-gray-700">
           <p class="px-4 py-2 text-xs text-gray-400 uppercase tracking-wider">Administração</p>
-          <!-- Adicione links admin aqui se necessário -->
+          <RouterLink 
+            to="/solicitacoes" 
+            class="flex items-center px-4 py-3 lg:py-2 rounded-md hover:bg-neutral-light hover:bg-opacity-25 transition-colors group"
+            :class="{ 'bg-neutral-light bg-opacity-25': route.path.startsWith('/solicitacoes') }"
+            @click="handleMobileLinkClick"
+          >
+            <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Solicitações
+          </RouterLink>
         </div>
       </nav>
       
       <!-- User Area -->
       <div class="p-4 border-t border-gray-700 space-y-3">
-        <div class="px-4 py-2 text-sm text-gray-300 flex items-center">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="px-4 py-2 text-sm text-gray-300 flex items-center truncate">
+          <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
           </svg>
-          {{ authStore.user?.email || 'Usuário' }}
+          <span class="truncate">{{ authStore.user?.email || 'Utilizador' }}</span>
+          <span v-if="isAdmin" class="ml-2 px-2 py-1 text-xs bg-blue-600 rounded-full">Admin</span>
         </div>
         
         <button 
-          @click="handleLogout; handleMobileLinkClick()" 
+          @click="handleLogout" 
           class="w-full flex items-center px-4 py-3 rounded-md hover:bg-red-600 transition-colors text-left group"
         >
           <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">

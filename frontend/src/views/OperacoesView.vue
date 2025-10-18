@@ -14,7 +14,7 @@ const router = useRouter();
 // CORREÇÃO: Criar computed property local para isAdmin
 const isAdmin = computed(() => authStore.isAdmin);
 
-// DEBUG: Verificar o estado (remova depois de testar)
+// DEBUG: Verificar o estado
 console.log('🔍 Debug OperacoesView:', {
   user: authStore.user,
   role: authStore.user?.role,
@@ -28,9 +28,27 @@ onMounted(() => {
     operacoesStore.fetchOperacoes();
 });
 
+// CORREÇÃO: Função handleSave melhorada com tratamento de erro
 async function handleSave(operacaoData) {
-    await operacoesStore.createOperacao(operacaoData);
-    isModalVisible.value = false;
+    console.log('💾 Salvando operação:', operacaoData);
+    
+    const result = await operacoesStore.createOperacao(operacaoData);
+    
+    if (result.success) {
+        console.log('✅ Operação criada com sucesso');
+        isModalVisible.value = false;
+        
+        // Mostrar mensagem de sucesso (opcional)
+        // Você pode adicionar um toast/notification aqui
+    } else {
+        console.error('❌ Erro ao criar operação:', result.error);
+        
+        // Mostrar mensagem de erro para o usuário
+        alert(`Erro ao criar operação: ${result.error}`);
+        
+        // Não fecha o modal em caso de erro, para o usuário corrigir os dados
+        // O modal permanece aberto para correções
+    }
 }
 
 function goToDetalhes(operacaoId) {
@@ -131,6 +149,16 @@ const getTextoStatus = (operacao) => {
                 </svg>
                 Nova Operação
             </button>
+        </div>
+
+        <!-- Mensagem de Erro -->
+        <div v-if="operacoesStore.error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-red-700 text-sm">{{ operacoesStore.error }}</p>
+            </div>
         </div>
 
         <!-- Loading State -->
@@ -319,7 +347,12 @@ const getTextoStatus = (operacao) => {
             </div>
         </div>
 
-        <OperacaoModal :is-visible="isModalVisible" @close="isModalVisible = false" @save="handleSave" />
+        <OperacaoModal 
+            :is-visible="isModalVisible" 
+            @close="isModalVisible = false" 
+            @save="handleSave"
+            :is-loading="operacoesStore.isLoading"
+        />
     </div>
 </template>
 
