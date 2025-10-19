@@ -8,10 +8,11 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 RUN npm install
 
+# Copia todo o código-fonte (src, etc.)
 COPY . .
 
-# --- CORREÇÃO AQUI ---
 # Copia o script da sua nova localização local
+# (procura por ./scripts/create-system-user.sh)
 COPY scripts/create-system-user.sh /app/create-system-user.sh
 
 # Dá permissão de execução ao script
