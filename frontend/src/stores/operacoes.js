@@ -28,6 +28,25 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     }
   }
 
+ // NOVA FUNÇÃO: Busca dados processados do dashboard
+  async function fetchDashboardData() {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      console.log('📊 Buscando dados processados do dashboard...');
+      // Chama o AnalysisService que já tem os cálculos
+      const response = await api.get('/api/analysis/dashboard');
+      console.log('✅ Dados do dashboard recebidos:', response.data);
+      return response.data;
+    } catch (err) {
+      console.error('❌ Erro ao buscar dados do dashboard:', err);
+      error.value = 'Não foi possível carregar os dados do dashboard.';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   async function createOperacao(operacaoData) {
     isLoading.value = true;
     error.value = null;
@@ -166,6 +185,7 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     operacaoAtual,
     fetchOperacoes,
     createOperacao,
+    fetchDashboardData,
     fetchOperacaoById,
     addFaturamento,
     deleteFaturamento,
