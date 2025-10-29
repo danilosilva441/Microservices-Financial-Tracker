@@ -15,8 +15,12 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     error.value = null;
     try {
       console.log('📦 Buscando operações...');
+<<<<<<< Updated upstream
       // --- CORREÇÃO AQUI ---
       const response = await api.get('/api/operacoes');
+=======
+      const response = await api.get('/operacoes');
+>>>>>>> Stashed changes
       console.log('✅ Operações recebidas:', response.data);
       operacoes.value = response.data;
     } catch (err) {
@@ -34,6 +38,10 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     try {
       console.log('📦 Criando operação:', operacaoData);
       
+<<<<<<< Updated upstream
+=======
+      // VALIDAÇÃO: Garante que os dados obrigatórios estão presentes
+>>>>>>> Stashed changes
       const dadosValidados = {
         nome: operacaoData.nome?.trim(),
         descricao: operacaoData.descricao?.trim() || '',
@@ -41,14 +49,22 @@ export const useOperacoesStore = defineStore('operacoes', () => {
         isAtivo: operacaoData.isAtivo !== undefined ? operacaoData.isAtivo : true
       };
 
+<<<<<<< Updated upstream
+=======
+      // Verifica se o nome está presente
+>>>>>>> Stashed changes
       if (!dadosValidados.nome) {
         throw new Error('Nome da operação é obrigatório');
       }
 
       console.log('📤 Enviando dados validados:', dadosValidados);
       
+<<<<<<< Updated upstream
       // --- CORREÇÃO AQUI ---
       const response = await api.post('/api/operacoes', dadosValidados);
+=======
+      const response = await api.post('/operacoes', dadosValidados);
+>>>>>>> Stashed changes
       console.log('✅ Operação criada com sucesso:', response.data);
       
       // Recarrega a lista para garantir consistência
@@ -58,8 +74,16 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     } catch (err) {
       console.error('❌ Erro detalhado ao criar operação:', err);
       
+<<<<<<< Updated upstream
       if (err.response?.status === 405) {
         error.value = 'Método não permitido. Verifique se o endpoint está correto (ex: falta /api/).';
+=======
+      // Mensagens de erro mais específicas
+      if (err.response?.status === 405) {
+        error.value = 'Método não permitido. Verifique se o endpoint está correto.';
+      } else if (err.response?.status === 404) {
+        error.value = 'Endpoint não encontrado.';
+>>>>>>> Stashed changes
       } else if (err.response?.status === 401) {
         error.value = 'Não autorizado. Faça login novamente.';
       } else if (err.response?.status === 403) {
@@ -98,8 +122,12 @@ export const useOperacoesStore = defineStore('operacoes', () => {
   async function addFaturamento(operacaoId, faturamentoData) {
     try {
       console.log('💰 Adicionando faturamento:', { operacaoId, faturamentoData });
+<<<<<<< Updated upstream
       // --- CORREÇÃO AQUI ---
       const response = await api.post(`/api/operacoes/${operacaoId}/faturamentos`, faturamentoData);
+=======
+      const response = await api.post(`/operacoes/${operacaoId}/faturamentos`, faturamentoData);
+>>>>>>> Stashed changes
       
       if (operacaoAtual.value && operacaoAtual.value.id === operacaoId) {
         if (!operacaoAtual.value.faturamentos) {
@@ -118,8 +146,12 @@ export const useOperacoesStore = defineStore('operacoes', () => {
   async function deleteFaturamento(operacaoId, faturamentoId) {
     try {
       console.log('🗑️ Excluindo faturamento:', { operacaoId, faturamentoId });
+<<<<<<< Updated upstream
       // --- CORREÇÃO AQUI ---
       await api.delete(`/api/operacoes/${operacaoId}/faturamentos/${faturamentoId}`);
+=======
+      await api.delete(`/operacoes/${operacaoId}/faturamentos/${faturamentoId}`);
+>>>>>>> Stashed changes
       
       if (operacaoAtual.value && operacaoAtual.value.id === operacaoId) {
         const index = operacaoAtual.value.faturamentos.$values.findIndex(f => f.id === faturamentoId);
@@ -139,8 +171,12 @@ export const useOperacoesStore = defineStore('operacoes', () => {
     error.value = null;
     try {
       console.log('🗑️ Excluindo operação:', operacaoId);
+<<<<<<< Updated upstream
       // --- CORREÇÃO AQUI ---
       await api.delete(`/api/operacoes/${operacaoId}`);
+=======
+      await api.delete(`/operacoes/${operacaoId}`);
+>>>>>>> Stashed changes
 
       // Remove a operação da lista local
       if (operacoes.value && operacoes.value.$values) {

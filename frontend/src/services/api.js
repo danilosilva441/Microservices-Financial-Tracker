@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Detecção automática do ambiente - Versão segura para build
 const getBaseURL = () => {
+<<<<<<< Updated upstream
   // Verifica se estamos no browser (runtime)
   if (typeof window !== 'undefined') {
     // Se estamos em produção (domínio não é localhost)
@@ -14,6 +15,13 @@ const getBaseURL = () => {
     // Durante o build (Node.js), retorna uma string vazia ou o valor da env var
     return process.env.VITE_API_URL || 'http://localhost:8080';
   }
+=======
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `https://${window.location.hostname}`;
+  }
+  // Em desenvolvimento, use o proxy do Vite para evitar CORS
+  return import.meta.env.MODE === 'development' ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:8080');
+>>>>>>> Stashed changes
 };
 
 const api = axios.create({
@@ -26,6 +34,7 @@ const api = axios.create({
   timeout: 15000
 });
 
+<<<<<<< Updated upstream
 // DEBUG CORS - Só executa no browser
 if (typeof window !== 'undefined') {
   console.log('🚀 API Base URL Configurada:', api.defaults.baseURL);
@@ -33,10 +42,19 @@ if (typeof window !== 'undefined') {
   console.log('🔧 Ambiente:', import.meta.env.MODE);
   console.log('📍 Origin:', window.location.origin);
 }
+=======
+// DEBUG CORS - Logs detalhados
+console.log('🚀 API Base URL Configurada:', api.defaults.baseURL);
+console.log('🌐 Hostname Atual:', window.location.hostname);
+console.log('🔧 Ambiente:', import.meta.env.MODE);
+console.log('📍 Origin:', window.location.origin);
+console.log('🔗 URL Completa:', window.location.href);
+>>>>>>> Stashed changes
 
 // Interceptor de request MELHORADO
 api.interceptors.request.use(
   (config) => {
+<<<<<<< Updated upstream
     // Só tenta acessar localStorage no browser
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken');
@@ -57,6 +75,25 @@ api.interceptors.request.use(
       });
     }
     
+=======
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Token JWT adicionado aos headers');
+    } else {
+      console.warn('⚠️ Nenhum token JWT encontrado no localStorage');
+    }
+    
+    console.log(`🚀 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+      headers: {
+        ...config.headers,
+        // Não logar o token completo por segurança
+        Authorization: config.headers.Authorization ? 'Bearer ***' : undefined
+      },
+      data: config.data
+    });
+    
+>>>>>>> Stashed changes
     return config;
   },
   (error) => {
@@ -68,6 +105,7 @@ api.interceptors.request.use(
 // Interceptor de resposta MELHORADO para debug CORS
 api.interceptors.response.use(
   (response) => {
+<<<<<<< Updated upstream
     if (typeof window !== 'undefined') {
       console.log(`✅ ${response.status} ${response.config.url}`, {
         data: response.data
@@ -140,6 +178,75 @@ api.interceptors.response.use(
           code: error.code
         });
       }
+=======
+    console.log(`✅ ${response.status} ${response.config.url}`, {
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    // Detecção específica de erro CORS
+    const isCorsError = !error.response && (
+      error.message.includes('Network Error') || 
+      error.message.includes('Failed to fetch') ||
+      error.code === 'ERR_NETWORK'
+    );
+    
+    if (isCorsError) {
+      console.error('🚫 ERRO CORS DETECTADO:', {
+        message: error.message,
+        code: error.code,
+        config: {
+          url: error.config?.baseURL + error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
+      console.log('💡 SOLUÇÕES PARA CORS:');
+      console.log('1. Configure CORS no backend para permitir sua origem');
+      console.log('2. Verifique se o backend está rodando');
+      console.log('3. Use um proxy no vite.config.js');
+      
+    } else if (error.response?.status === 405) {
+      console.error('🔒 ERRO 405 - MÉTODO NÃO PERMITIDO:', {
+        url: error.config?.baseURL + error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        headers: error.response?.headers,
+        data: error.response?.data
+      });
+      
+      console.log('💡 SOLUÇÕES PARA 405:');
+      console.log('1. Verifique se o endpoint suporta o método ' + error.config?.method);
+      console.log('2. Verifique CORS no backend (preflight OPTIONS)');
+      console.log('3. Verifique se a rota está correta no backend');
+      
+    } else if (error.response?.status === 401) {
+      console.error('🔐 ERRO 401 - NÃO AUTORIZADO:', {
+        url: error.config?.url,
+        message: 'Token pode ter expirado ou ser inválido'
+      });
+      
+      localStorage.removeItem('authToken');
+      delete api.defaults.headers.common['Authorization'];
+      
+      // Redirecionar para login se estiver em uma SPA
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
+    } else {
+      console.error('❌ Erro na resposta:', {
+        url: error.config?.baseURL + error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        code: error.code
+      });
+>>>>>>> Stashed changes
     }
 
     return Promise.reject(error);
@@ -148,9 +255,12 @@ api.interceptors.response.use(
 
 // Função para testar a conexão com o backend
 export const testBackendConnection = async () => {
+<<<<<<< Updated upstream
   // Só executa no browser
   if (typeof window === 'undefined') return false;
   
+=======
+>>>>>>> Stashed changes
   try {
     console.log('🧪 Testando conexão com o backend...');
     const response = await api.get('/');
@@ -163,7 +273,11 @@ export const testBackendConnection = async () => {
 };
 
 // Testar conexão automaticamente em desenvolvimento
+<<<<<<< Updated upstream
 if (typeof window !== 'undefined' && import.meta.env.MODE === 'development') {
+=======
+if (import.meta.env.MODE === 'development') {
+>>>>>>> Stashed changes
   setTimeout(() => {
     testBackendConnection();
   }, 1000);
