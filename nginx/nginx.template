@@ -70,18 +70,23 @@ server {
             return 204;
         }
 
-        # --- Subrotas específicas ---
+        # --- Subrotas específicas (ORDEM É IMPORTANTE!) ---
+    
+        # 1. Analysis Service PRIMEIRO
+        location ~ ^/api/analysis {
+            proxy_pass http://analysis_service;
+        }
+
+        # 2. Auth Service
         location ~ ^/api/(users|token|admin) {
             proxy_pass http://auth_service;
         }
 
+        # 3. Billing Service  
         location ~ ^/api/(billing|operacoes) {
             proxy_pass http://billing_service;
         }
 
-        location ~ ^/api/analysis {
-            proxy_pass http://analysis_service;
-        }
 
         # --- Rota fallback da API ---
         proxy_pass http://billing_service;

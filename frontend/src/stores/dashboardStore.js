@@ -15,10 +15,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
     try {
       console.log('📊 DashboardStore: Carregando dados processados...');
       
-      // 1. Chama o endpoint do AnalysisService que já faz todo o trabalho
+      // ✅ URL CORRETA: /api/analysis/dashboard-data
       const response = await api.get('/api/analysis/dashboard-data');
       
-      data.value = response.data.data; // Armazena o objeto { kpis, desempenho, graficos, operacoes }
+      // ✅ Ajuste: a resposta vem com a estrutura que você definiu no backend
+      data.value = response.data.data; // { kpis, desempenho, graficos, operacoes }
       console.log('✅ DashboardStore: Dados carregados:', data.value);
       
       return data.value;
@@ -31,18 +32,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
-  // getters (acesso fácil aos dados)
+  // getters
   const kpis = computed(() => data.value?.kpis || {});
   const desempenho = computed(() => data.value?.desempenho || {});
   const graficos = computed(() => data.value?.graficos || {});
-  const operacoes = computed(() => data.value?.operacoes || []); // Lista de operações (se o backend enviar)
+  const operacoes = computed(() => data.value?.operacoes || []);
 
   return { 
     data, 
     isLoading, 
     error, 
     fetchDashboardData,
-    // Exporta os dados já processados
     kpis,
     desempenho,
     graficos,
