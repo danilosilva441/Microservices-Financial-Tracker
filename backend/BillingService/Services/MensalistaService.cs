@@ -1,48 +1,58 @@
-using BillingService.DTO;
+// Caminho: backend/BillingService/Services/MensalistaService.cs
+using BillingService.DTOs;
 using BillingService.Models;
-using BillingService.Repositories;
+using BillingService.Repositories.Interfaces; // IMPORTANTE
+using BillingService.Services.Interfaces; // IMPORTANTE
 
 namespace BillingService.Services;
 
-public class MensalistaService
+// 1. MUDANÇA: Herda da interface v2.0
+public class MensalistaService : IMensalistaService
 {
-    private readonly MensalistaRepository _repository;
-    private readonly OperacaoRepository _operacaoRepository;
+    // 2. MUDANÇA: Injeta INTERFACES v2.0
+    private readonly IMensalistaRepository _repository;
+    private readonly IUnidadeRepository _unidadeRepository;
 
-    public MensalistaService(MensalistaRepository repository, OperacaoRepository operacaoRepository)
+    public MensalistaService(IMensalistaRepository repository, IUnidadeRepository unidadeRepository)
     {
         _repository = repository;
-        _operacaoRepository = operacaoRepository;
+        _unidadeRepository = unidadeRepository;
     }
 
-    public async Task<IEnumerable<Mensalista>> GetAllMensalistasAsync(Guid operacaoId, Guid userId)
+    // 3. MUDANÇA: Assinatura v2.0 (unidadeId, tenantId)
+    public async Task<IEnumerable<Mensalista>> GetAllMensalistasAsync(Guid unidadeId, Guid tenantId)
     {
-        // Valida se o admin tem acesso a esta operação antes de listar os mensalistas
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        // 4. MUDANÇA: Chama o método v2.0 do repositório
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            // Retorna lista vazia se não houver permissão, para não vazar informação.
             return new List<Mensalista>();
         }
-        return await _repository.GetAllByOperacaoIdAsync(operacaoId);
+        
+        // 5. MUDANÇA: Chama o método v2.0 do repositório
+        // (Nota: Isso vai quebrar o MensalistaRepository, que corrigiremos a seguir)
+        return await _repository.GetAllByUnidadeIdAsync(unidadeId);
     }
 
-    public async Task<(Mensalista? mensalista, string? errorMessage)> CreateMensalistaAsync(Guid operacaoId, CreateMensalistaDto mensalistaDto, Guid userId)
+    // 6. MUDANÇA: Assinatura v2.0
+    public async Task<(Mensalista? mensalista, string? errorMessage)> CreateMensalistaAsync(Guid unidadeId, CreateMensalistaDto mensalistaDto, Guid tenantId)
     {
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        // 7. MUDANÇA: Chama o método v2.0
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            return (null, "Operação não encontrada ou não pertence ao usuário.");
+            return (null, "Unidade não encontrada ou não pertence a este Tenant.");
         }
 
         var novoMensalista = new Mensalista
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId, // <-- v2.0
             Nome = mensalistaDto.Nome,
             CPF = mensalistaDto.CPF,
             ValorMensalidade = mensalistaDto.ValorMensalidade,
-            OperacaoId = operacaoId,
-            EmpresaId = mensalistaDto.EmpresaId,
+            UnidadeId = unidadeId, // <-- v2.0 (substitui OperacaoId)
+            // EmpresaId = ... // <-- v1.0 (REMOVIDO)
             IsAtivo = true
         };
 
@@ -51,16 +61,19 @@ public class MensalistaService
         return (novoMensalista, null);
     }
 
-    public async Task<(bool success, string? errorMessage)> UpdateMensalistaAsync(Guid operacaoId, Guid mensalistaId, UpdateMensalistaDto mensalistaDto, Guid userId)
+    // 8. MUDANÇA: Assinatura v2.0
+    public async Task<(bool success, string? errorMessage)> UpdateMensalistaAsync(Guid unidadeId, Guid mensalistaId, UpdateMensalistaDto mensalistaDto, Guid tenantId)
     {
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        // 9. MUDANÇA: Chama o método v2.0
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            return (false, "Operação não encontrada ou não pertence ao usuário.");
+            return (false, "Unidade não encontrada ou não pertence a este Tenant.");
         }
 
         var mensalistaExistente = await _repository.GetByIdAsync(mensalistaId);
-        if (mensalistaExistente == null || mensalistaExistente.OperacaoId != operacaoId)
+        // 10. MUDANÇA: v2.0
+        if (mensalistaExistente == null || mensalistaExistente.UnidadeId != unidadeId)
         {
             return (false, "Mensalista não encontrado nesta operação.");
         }
@@ -69,23 +82,26 @@ public class MensalistaService
         mensalistaExistente.CPF = mensalistaDto.CPF;
         mensalistaExistente.ValorMensalidade = mensalistaDto.ValorMensalidade;
         mensalistaExistente.IsAtivo = mensalistaDto.IsAtivo;
-        mensalistaExistente.EmpresaId = mensalistaDto.EmpresaId;
+        // EmpresaId = ... // <-- v1.0 (REMOVIDO)
 
         _repository.Update(mensalistaExistente);
         await _repository.SaveChangesAsync();
         return (true, null);
     }
 
-    public async Task<(bool success, string? errorMessage)> DeactivateMensalistaAsync(Guid operacaoId, Guid mensalistaId, Guid userId)
+    // 11. MUDANÇA: Assinatura v2.0
+    public async Task<(bool success, string? errorMessage)> DeactivateMensalistaAsync(Guid unidadeId, Guid mensalistaId, Guid tenantId)
     {
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        // 12. MUDANÇA: Chama o método v2.0
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            return (false, "Operação não encontrada ou não pertence ao usuário.");
+            return (false, "Unidade não encontrada ou não pertence a este Tenant.");
         }
 
         var mensalistaExistente = await _repository.GetByIdAsync(mensalistaId);
-        if (mensalistaExistente == null || mensalistaExistente.OperacaoId != operacaoId)
+        // 13. MUDANÇA: v2.0
+        if (mensalistaExistente == null || mensalistaExistente.UnidadeId != unidadeId)
         {
             return (false, "Mensalista não encontrado nesta operação.");
         }

@@ -1,17 +1,30 @@
+// Caminho: backend/BillingService/Models/Meta.cs
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using BillingService.Models; // 1. IMPORTANTE: Adiciona o using local
 
 namespace BillingService.Models
 {
-    public class Meta
+    // 2. MUDANÇA: Herda do BaseEntity (ganha Id e TenantId)
+    public class Meta : BaseEntity
     {
-        public Guid Id { get; set; }
+        // Id e TenantId vêm da BaseEntity
+        
         public int Mes { get; set; }
         public int Ano { get; set; }
 
         [Required]
         public decimal ValorAlvo { get; set; }
         
-        // Chave estrangeira para o usuário
-        public Guid UserId { get; set; }
+        // --- 3. MUDANÇA (v2.0) ---
+        // A Meta agora está ligada à Unidade, não ao Usuário
+        [Required]
+        public Guid UnidadeId { get; set; }
+
+        [ForeignKey("UnidadeId")]
+        public virtual Unidade Unidade { get; set; } = null!;
+
+        // --- 4. REMOVIDO (v1.0) ---
+        // public Guid UserId { get; set; } 
     }
 }

@@ -1,20 +1,30 @@
+// Caminho: backend/BillingService/Models/Mensalista.cs
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using BillingService.Models; // 1. IMPORTANTE: Adiciona o using local
 
-namespace BillingService.Models;
-
-public class Mensalista
+namespace BillingService.Models
 {
-    public Guid Id { get; set; }
-    [Required]
-    public required string Nome { get; set; }
-    public string? CPF { get; set; }
-    public decimal ValorMensalidade { get; set; }
-    public bool IsAtivo { get; set; } = true;
+    // 2. MUDANÇA: Herda do BaseEntity local (para ganhar Id e TenantId)
+    public class Mensalista : BaseEntity 
+    {
+        [Required]
+        public string Nome { get; set; } = null!;
 
-    // Chaves Estrangeiras
-    public Guid OperacaoId { get; set; }
-    public Operacao Operacao { get; set; } = null!;
+        public string? CPF { get; set; }
+        
+        [Required]
+        public decimal ValorMensalidade { get; set; }
+        
+        public bool IsAtivo { get; set; } = true;
 
-    public Guid? EmpresaId { get; set; } // Anulável, para mensalistas pessoa física
-    public Empresa? Empresa { get; set; }
+        // --- 3. MUDANÇA (v2.0) ---
+        // Renomeado de OperacaoId para UnidadeId
+        [Required]
+        public Guid UnidadeId { get; set; }
+        
+        // --- 4. MUDANÇA (v2.0) ---
+        [ForeignKey("UnidadeId")]
+        public virtual Unidade Unidade { get; set; } = null!; // Renomeado para Unidade
+    }
 }

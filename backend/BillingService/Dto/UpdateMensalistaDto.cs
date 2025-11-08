@@ -1,14 +1,18 @@
+// Caminho: backend/BillingService/DTOs/UpdateMensalistaDto.cs
 using System.ComponentModel.DataAnnotations;
 
-namespace BillingService.DTO;
-
-public class UpdateMensalistaDto
+namespace BillingService.DTOs
 {
-    [Required]
-    public required string Nome { get; set; }
-    public string? CPF { get; set; }
-    [Required]
-    public decimal ValorMensalidade { get; set; }
-    public bool IsAtivo { get; set; }
-    public Guid? EmpresaId { get; set; }
+    public class UpdateMensalistaDto
+    {
+        [Required]
+        public string Nome { get; set; } = null!;
+        public string? CPF { get; set; }
+        [Required]
+        [Range(0.01, double.MaxValue)]
+        public decimal ValorMensalidade { get; set; }
+        [Required]
+        public bool IsAtivo { get; set; }
+        // EmpresaId (v1.0) foi removido
+    }
 }

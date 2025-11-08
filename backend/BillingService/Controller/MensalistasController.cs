@@ -1,5 +1,6 @@
-using BillingService.DTO;
-using BillingService.Services;
+// Caminho: backend/BillingService/Controller/MensalistasController.cs
+using BillingService.DTOs; // 1. IMPORTANTE: DTOs
+using BillingService.Services.Interfaces; // 2. IMPORTANTE: Interfaces
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -7,13 +8,15 @@ using System.Security.Claims;
 namespace BillingService.Controllers;
 
 [ApiController]
-[Route("api/operacoes/{operacaoId}/mensalistas")]
-[Authorize(Roles = "Admin")]
+// 3. MUDANÇA: Rota v2.0
+[Route("api/unidades/{unidadeId}/mensalistas")] 
+[Authorize(Roles = "Admin, Gerente")] // Atualizado
 public class MensalistasController : ControllerBase
 {
-    private readonly MensalistaService _mensalistaService;
+    // 4. MUDANÇA: Injeta a INTERFACE v2.0
+    private readonly IMensalistaService _mensalistaService;
 
-    public MensalistasController(MensalistaService mensalistaService)
+    public MensalistasController(IMensalistaService mensalistaService)
     {
         _mensalistaService = mensalistaService;
     }
@@ -25,20 +28,29 @@ public class MensalistasController : ControllerBase
         return Guid.Parse(userIdClaim);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll(Guid operacaoId)
+    // 5. NOVO: Helper v2.0
+    private Guid GetTenantId()
     {
-        var userId = GetUserId();
-        var mensalistas = await _mensalistaService.GetAllMensalistasAsync(operacaoId, userId);
+        var tenantIdClaim = User.FindFirst("tenantId")?.Value;
+        if (tenantIdClaim == null) throw new InvalidOperationException("Tenant ID (tenantId) not found in token.");
+        return Guid.Parse(tenantIdClaim);
+    }
+
+    [HttpGet]
+    // 6. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> GetAll(Guid unidadeId)
+    {
+        var tenantId = GetTenantId();
+        var mensalistas = await _mensalistaService.GetAllMensalistasAsync(unidadeId, tenantId);
         return Ok(mensalistas);
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create(Guid operacaoId, [FromBody] CreateMensalistaDto mensalistaDto)
+    // 7. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> Create(Guid unidadeId, [FromBody] CreateMensalistaDto mensalistaDto)
     {
-        var userId = GetUserId();
-        var (novoMensalista, errorMessage) = await _mensalistaService.CreateMensalistaAsync(operacaoId, mensalistaDto, userId);
+        var tenantId = GetTenantId();
+        var (novoMensalista, errorMessage) = await _mensalistaService.CreateMensalistaAsync(unidadeId, mensalistaDto, tenantId);
 
         if (errorMessage != null)
         {
@@ -49,11 +61,11 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPut("{mensalistaId}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(Guid operacaoId, Guid mensalistaId, [FromBody] UpdateMensalistaDto mensalistaDto)
+    // 8. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> Update(Guid unidadeId, Guid mensalistaId, [FromBody] UpdateMensalistaDto mensalistaDto)
     {
-        var userId = GetUserId();
-        var (success, errorMessage) = await _mensalistaService.UpdateMensalistaAsync(operacaoId, mensalistaId, mensalistaDto, userId);
+        var tenantId = GetTenantId();
+        var (success, errorMessage) = await _mensalistaService.UpdateMensalistaAsync(unidadeId, mensalistaId, mensalistaDto, tenantId);
 
         if (!success)
         {
@@ -64,11 +76,11 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPatch("{mensalistaId}/desativar")]
-    [Authorize(Roles = "Admin")] // Apenas Admins podem desativar mensalistas
-    public async Task<IActionResult> Deactivate(Guid operacaoId, Guid mensalistaId)
+    // 9. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> Deactivate(Guid unidadeId, Guid mensalistaId)
     {
-        var userId = GetUserId();
-        var (success, errorMessage) = await _mensalistaService.DeactivateMensalistaAsync(operacaoId, mensalistaId, userId);
+        var tenantId = GetTenantId();
+        var (success, errorMessage) = await _mensalistaService.DeactivateMensalistaAsync(unidadeId, mensalistaId, tenantId);
 
         if (!success)
         {
