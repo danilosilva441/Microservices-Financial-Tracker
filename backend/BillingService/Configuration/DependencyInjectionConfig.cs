@@ -19,6 +19,7 @@ namespace BillingService.Configuration
             services.AddScoped<IMetaRepository, MetaRepository>();
             services.AddScoped<IMensalistaRepository, MensalistaRepository>();
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
+            services.AddScoped<IFaturamentoDiarioRepository, FaturamentoDiarioRepository>();
             
 
 
@@ -31,6 +32,7 @@ namespace BillingService.Configuration
             services.AddScoped<IMetaService, MetaService>();
             services.AddScoped<IMensalistaService, MensalistaService>();
             services.AddScoped<IExpenseService, ExpenseService>();
+            services.AddScoped<IFaturamentoDiarioService, FaturamentoDiarioService>();
             
 
             return services;

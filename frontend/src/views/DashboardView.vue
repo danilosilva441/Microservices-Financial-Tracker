@@ -1,17 +1,6 @@
 <script setup>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-import { onMounted, computed, ref } from 'vue';
-<<<<<<< Updated upstream
-// 1. Importa a NOVA dashboardStore
-import { useDashboardStore } from '@/stores/dashboardStore'; 
-=======
-import { useOperacoesStore } from '@/stores/operacoes';
-=======
 import { onMounted, computed, ref, watch } from 'vue';
 import { useDashboardStore } from '@/stores/dashboardStore'; 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 import { formatCurrency } from '@/utils/formatters';
 
 // Importações do Chart.js
@@ -31,54 +20,28 @@ import {
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement);
 
-<<<<<<< Updated upstream
-// 2. Usa a dashboardStore
-const dashboardStore = useDashboardStore();
-const timeframe = ref('month');
-
-// 3. Busca os dados ao montar
-=======
-<<<<<<< Updated upstream
-const operacoesStore = useOperacoesStore();
-const timeframe = ref('month'); // month, quarter, year
-
-// Busca os dados quando o componente é montado
-=======
 const dashboardStore = useDashboardStore();
 const timeframe = ref('month');
 const showAdvancedMetrics = ref(false);
 const exportLoading = ref(false);
 
 // Busca os dados ao montar
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 onMounted(() => {
   dashboardStore.fetchDashboardData();
 });
 
-<<<<<<< Updated upstream
-// 4. Acede aos dados PRONTOS vindos da store
-=======
-<<<<<<< Updated upstream
-// --- CÁLCULOS PARA OS KPIs E GRÁFICOS ---
-=======
 // Watch para timeframe
 watch(timeframe, (newTimeframe) => {
   dashboardStore.fetchDashboardData(newTimeframe);
 });
 
 // Acede aos dados PRONTOS vindos da store
->>>>>>> Stashed changes
 const isLoading = computed(() => dashboardStore.isLoading);
 const error = computed(() => dashboardStore.error);
 const kpis = computed(() => dashboardStore.kpis || {});
 const desempenho = computed(() => dashboardStore.desempenho || { top: [], bottom: [] });
 const graficos = computed(() => dashboardStore.graficos || {});
 const operacoes = computed(() => dashboardStore.operacoes || []);
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 
 // Helper para verificar se há dados
 const hasData = computed(() => {
@@ -87,22 +50,6 @@ const hasData = computed(() => {
          Object.keys(graficos.value).length > 0;
 });
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-// Calcula o desempenho por operação
-const desempenhoOperacoes = computed(() =>
-  operacoes.value.map(op => ({
-    ...op,
-    percentualAtingido: op.metaMensal > 0 ? ((op.projecaoFaturamento || 0) / op.metaMensal) * 100 : 0,
-    diferenca: (op.projecaoFaturamento || 0) - op.metaMensal,
-    // Projeção individual
-    mediaDiaria: diaAtual.value > 0 ? (op.projecaoFaturamento || 0) / diaAtual.value : 0,
-    projecaoFinal: diaAtual.value > 0 ? ((op.projecaoFaturamento || 0) / diaAtual.value) * totalDiasMes.value : 0,
-    percentualProjetado: op.metaMensal > 0 ? (((op.projecaoFaturamento || 0) / diaAtual.value) * totalDiasMes.value / op.metaMensal) * 100 : 0
-  })).sort((a, b) => b.percentualAtingido - a.percentualAtingido)
-);
-=======
 // Métricas Avançadas de BI
 const advancedMetrics = computed(() => {
   const baseKpis = kpis.value;
@@ -174,7 +121,6 @@ const exportarDadosBI = async () => {
   }
 };
 
->>>>>>> Stashed changes
 // --- OPÇÕES DOS GRÁFICOS ---
 const getResponsiveFontSize = () => {
   const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
@@ -182,10 +128,6 @@ const getResponsiveFontSize = () => {
   if (width < 1024) return 10;
   return 12;
 };
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 
 const getResponsivePadding = () => {
   const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
@@ -359,6 +301,39 @@ const projecaoChartData = computed(() => {
   };
 });
 
+// Dados para gráficos de BI
+const tendenciaChartData = computed(() => ({
+  labels: ['Realizado', 'Necessário'],
+  datasets: [
+    {
+      label: 'Média Diária',
+      data: [kpis.value.mediaDiariaAtual || 0, kpis.value.mediaDiariaNecessaria || 0],
+      backgroundColor: ['#10b981', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#10b981' : '#ef4444'],
+      borderColor: ['#059669', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#059669' : '#dc2626'],
+      borderWidth: 1
+    }
+  ]
+}));
+
+const eficienciaChartData = computed(() => ({
+  labels: advancedMetrics.value.eficienciaOperacional.map(op => op.nome),
+  datasets: [
+    {
+      label: 'Eficiência (%)',
+      data: advancedMetrics.value.eficienciaOperacional.map(op => op.contribuicao),
+      backgroundColor: advancedMetrics.value.eficienciaOperacional.map(op => 
+        op.contribuicao >= 100 ? '#10b981' : 
+        op.contribuicao >= 70 ? '#f59e0b' : '#ef4444'
+      ),
+      borderColor: advancedMetrics.value.eficienciaOperacional.map(op => 
+        op.contribuicao >= 100 ? '#059669' : 
+        op.contribuicao >= 70 ? '#d97706' : '#dc2626'
+      ),
+      borderWidth: 1
+    }
+  ]
+}));
+
 // Funções auxiliares para cores baseadas no status
 const getStatusColor = (status) => {
   switch (status) {
@@ -377,300 +352,18 @@ const getStatusBorderColor = (status) => {
     default: return '#d97706';
   }
 };
-<<<<<<< Updated upstream
 </script>
 
 <template>
-  <div class="p-3 sm:p-4 lg:p-6 xl:p-8 modern-dashboard">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-=======
-
-// Gráfico de projeção futura
-const projecaoChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'bottom',
-      labels: {
-        boxWidth: 10,
-        font: {
-          size: window.innerWidth < 640 ? 9 : window.innerWidth < 1024 ? 10 : 12
-        },
-        padding: window.innerWidth < 640 ? 8 : 12
-      }
-    }
-  },
-  scales: {
-    x: {
-      ticks: {
-        font: {
-          size: window.innerWidth < 640 ? 9 : window.innerWidth < 1024 ? 10 : 12
-        }
-      }
-    },
-    y: {
-      ticks: {
-        font: {
-          size: window.innerWidth < 640 ? 9 : window.innerWidth < 1024 ? 10 : 12
-        },
-        callback: function(value) {
-          if (value >= 1000000) {
-            return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
-          }
-          if (value >= 1000) {
-            return 'R$ ' + (value / 1000).toFixed(0) + 'K';
-          }
-          return 'R$ ' + value;
-        }
-      }
-    }
-  }
-};
-
-// Dados para o Gráfico de Barras (Meta vs. Realizado)
-const barChartData = computed(() => ({
-  labels: operacoes.value.map(op => op.nome),
-  datasets: [
-    {
-      label: 'Meta Mensal',
-      backgroundColor: '#a7f3d0',
-      borderColor: '#059669',
-      borderWidth: 1,
-      data: operacoes.value.map(op => op.metaMensal)
-    },
-    {
-      label: 'Faturamento Realizado',
-      backgroundColor: '#38bdf8',
-      borderColor: '#0284c7',
-      borderWidth: 1,
-      data: operacoes.value.map(op => op.projecaoFaturamento || 0)
-    }
-  ]
-}));
-
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-// Dados para o Gráfico de Pizza (Distribuição do Faturamento)
-const pieChartData = computed(() => ({
-  labels: operacoes.value.map(op => op.nome),
-  datasets: [
-    {
-      backgroundColor: ['#4ade80', '#38bdf8', '#f87171', '#fbbf24', '#a78bfa', '#f472b6', '#60a5fa', '#34d399', '#f59e0b', '#ef4444'],
-      data: operacoes.value.map(op => op.projecaoFaturamento || 0)
-    }
-  ]
-}));
-=======
-// Dados para gráficos de BI
-const tendenciaChartData = computed(() => ({
-  labels: ['Realizado', 'Necessário'],
-  datasets: [
-    {
-      label: 'Média Diária',
-      data: [kpis.value.mediaDiariaAtual || 0, kpis.value.mediaDiariaNecessaria || 0],
-      backgroundColor: ['#10b981', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#10b981' : '#ef4444'],
-      borderColor: ['#059669', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#059669' : '#dc2626'],
-      borderWidth: 1
-    }
-  ]
-}));
-
-const eficienciaChartData = computed(() => ({
-  labels: advancedMetrics.value.eficienciaOperacional.map(op => op.nome),
-  datasets: [
-    {
-      label: 'Eficiência (%)',
-      data: advancedMetrics.value.eficienciaOperacional.map(op => op.contribuicao),
-      backgroundColor: advancedMetrics.value.eficienciaOperacional.map(op => 
-        op.contribuicao >= 100 ? '#10b981' : 
-        op.contribuicao >= 70 ? '#f59e0b' : '#ef4444'
-      ),
-      borderColor: advancedMetrics.value.eficienciaOperacional.map(op => 
-        op.contribuicao >= 100 ? '#059669' : 
-        op.contribuicao >= 70 ? '#d97706' : '#dc2626'
-      ),
-      borderWidth: 1
-    }
-  ]
-}));
-
-// --- DADOS PARA OS GRÁFICOS ---
-const barChartData = computed(() => {
-  const data = graficos.value.barChartData; 
-  if (!data || !data.labels || !data.datasets) {
-    return { 
-      labels: [], 
-      datasets: [
-        {
-          label: 'Meta Mensal',
-          backgroundColor: '#a7f3d0',
-          borderColor: '#059669',
-          borderWidth: 1,
-          data: []
-        },
-        {
-          label: 'Faturamento Realizado',
-          backgroundColor: '#38bdf8',
-          borderColor: '#0284c7',
-          borderWidth: 1,
-          data: []
-        }
-      ]
-    };
-  }
-  
-  return {
-    labels: data.labels,
-    datasets: [
-      {
-        label: 'Meta Mensal',
-        backgroundColor: '#a7f3d0',
-        borderColor: '#059669',
-        borderWidth: 1,
-        data: data.datasets[0]?.data || []
-      },
-      {
-        label: 'Faturamento Realizado',
-        backgroundColor: '#38bdf8',
-        borderColor: '#0284c7',
-        borderWidth: 1,
-        data: data.datasets[1]?.data || []
-      }
-    ]
-  };
-});
->>>>>>> Stashed changes
-=======
-// Dados para gráficos de BI
-const tendenciaChartData = computed(() => ({
-  labels: ['Realizado', 'Necessário'],
-  datasets: [
-    {
-      label: 'Média Diária',
-      data: [kpis.value.mediaDiariaAtual || 0, kpis.value.mediaDiariaNecessaria || 0],
-      backgroundColor: ['#10b981', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#10b981' : '#ef4444'],
-      borderColor: ['#059669', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#059669' : '#dc2626'],
-      borderWidth: 1
-    }
-  ]
-}));
-
-const eficienciaChartData = computed(() => ({
-  labels: advancedMetrics.value.eficienciaOperacional.map(op => op.nome),
-  datasets: [
-    {
-      label: 'Eficiência (%)',
-      data: advancedMetrics.value.eficienciaOperacional.map(op => op.contribuicao),
-      backgroundColor: advancedMetrics.value.eficienciaOperacional.map(op => 
-        op.contribuicao >= 100 ? '#10b981' : 
-        op.contribuicao >= 70 ? '#f59e0b' : '#ef4444'
-      ),
-      borderColor: advancedMetrics.value.eficienciaOperacional.map(op => 
-        op.contribuicao >= 100 ? '#059669' : 
-        op.contribuicao >= 70 ? '#d97706' : '#dc2626'
-      ),
-      borderWidth: 1
-    }
-  ]
-}));
-
-// --- DADOS PARA OS GRÁFICOS ---
-const barChartData = computed(() => {
-  const data = graficos.value.barChartData; 
-  if (!data || !data.labels || !data.datasets) {
-    return { 
-      labels: [], 
-      datasets: [
-        {
-          label: 'Meta Mensal',
-          backgroundColor: '#a7f3d0',
-          borderColor: '#059669',
-          borderWidth: 1,
-          data: []
-        },
-        {
-          label: 'Faturamento Realizado',
-          backgroundColor: '#38bdf8',
-          borderColor: '#0284c7',
-          borderWidth: 1,
-          data: []
-        }
-      ]
-    };
-  }
-  
-  return {
-    labels: data.labels,
-    datasets: [
-      {
-        label: 'Meta Mensal',
-        backgroundColor: '#a7f3d0',
-        borderColor: '#059669',
-        borderWidth: 1,
-        data: data.datasets[0]?.data || []
-      },
-      {
-        label: 'Faturamento Realizado',
-        backgroundColor: '#38bdf8',
-        borderColor: '#0284c7',
-        borderWidth: 1,
-        data: data.datasets[1]?.data || []
-      }
-    ]
-  };
-});
->>>>>>> Stashed changes
-
-// Dados para o Gráfico de Projeção
-const projecaoChartData = computed(() => ({
-  labels: ['Realizado até Hoje', 'Projeção do Mês'],
-  datasets: [
-    {
-      label: 'Valor',
-      backgroundColor: ['#38bdf8', vaiBaterMeta.value === 'alta' ? '#10b981' : vaiBaterMeta.value === 'media' ? '#f59e0b' : '#ef4444'],
-      borderColor: ['#0284c7', vaiBaterMeta.value === 'alta' ? '#059669' : vaiBaterMeta.value === 'media' ? '#d97706' : '#dc2626'],
-      borderWidth: 1,
-      data: [faturamentoTotal.value, projecaoFinalMes.value]
-    },
-    {
-      label: 'Meta',
-      type: 'line',
-      borderColor: '#6b7280',
-      borderWidth: 2,
-      borderDash: [5, 5],
-      fill: false,
-      data: [metaTotal.value, metaTotal.value],
-      pointRadius: 0
-    }
-  ]
-}));
-</script>
-
-<template>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  <div class="p-3 sm:p-4 lg:p-6 xl:p-8">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-      <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-dark mb-2 sm:mb-0">Dashboard Geral</h1>
-      <div class="flex items-center space-x-2">
-        <select v-model="timeframe" class="text-xs sm:text-sm border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto">
-=======
   <div class="p-3 sm:p-4 lg:p-6 xl:p-8 modern-dashboard">
     <!-- Header Modernizado -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
->>>>>>> Stashed changes
       <div class="header-content">
         <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-dark mb-2 sm:mb-0 modern-title">
           Dashboard Geral
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
-<<<<<<< Updated upstream
-          Visão geral do desempenho e métricas
-=======
           Visão geral do desempenho e métricas avançadas de BI
->>>>>>> Stashed changes
         </p>
       </div>
       <div class="controls-container flex items-center space-x-2 mt-2 sm:mt-0">
@@ -678,10 +371,6 @@ const projecaoChartData = computed(() => ({
           v-model="timeframe" 
           class="modern-select text-xs sm:text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm hover:shadow-md w-full sm:w-auto"
         >
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
           <option value="month">Este Mês</option>
           <option value="quarter">Este Trimestre</option>
           <option value="year">Este Ano</option>
@@ -693,24 +382,9 @@ const projecaoChartData = computed(() => ({
         >
           {{ exportLoading ? 'Exportando...' : 'Exportar BI' }}
         </button>
-        <button 
-          @click="exportarDadosBI"
-          :disabled="exportLoading"
-          class="modern-button px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-xs sm:text-sm"
-        >
-          {{ exportLoading ? 'Exportando...' : 'Exportar BI' }}
-        </button>
       </div>
     </div>
 
-<<<<<<< Updated upstream
-    <div v-if="isLoading" class="text-center py-8 sm:py-12 modern-loading">
-      <div class="inline-block animate-spin rounded-full h-8 sm:h-10 w-8 sm:w-10 border-b-2 border-blue-500 mb-3 sm:mb-4"></div>
-=======
-<<<<<<< Updated upstream
-    <div v-if="operacoesStore.isLoading" class="text-center py-8 sm:py-12">
-      <div class="inline-block animate-spin rounded-full h-6 sm:h-8 w-6 sm:w-8 border-b-2 border-blue-500 mb-3 sm:mb-4"></div>
-=======
     <!-- Botão para métricas avançadas -->
     <div class="flex justify-center mb-6">
       <button 
@@ -726,8 +400,6 @@ const projecaoChartData = computed(() => ({
 
     <div v-if="isLoading" class="text-center py-8 sm:py-12 modern-loading">
       <div class="inline-block animate-spin rounded-full h-8 sm:h-10 w-8 sm:w-10 border-b-2 border-blue-500 mb-3 sm:mb-4"></div>
->>>>>>> Stashed changes
->>>>>>> Stashed changes
       <p class="text-gray-600 text-sm sm:text-base">Carregando dados...</p>
     </div>
 
@@ -870,12 +542,6 @@ const projecaoChartData = computed(() => ({
         </div>
       </div>
 
-<<<<<<< Updated upstream
-      <!-- Gráficos -->
-=======
-<<<<<<< Updated upstream
-      <!-- Gráficos Principais - Com projeção -->
-=======
       <!-- Métricas Avançadas de BI -->
       <div v-if="showAdvancedMetrics" class="modern-card bg-white rounded-xl shadow-card p-6 mb-6 lg:mb-8">
         <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-3">Métricas Avançadas de Business Intelligence</h3>
@@ -952,8 +618,6 @@ const projecaoChartData = computed(() => ({
       </div>
 
       <!-- Gráficos Principais -->
->>>>>>> Stashed changes
->>>>>>> Stashed changes
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
         <div class="modern-card xl:col-span-2 bg-white p-3 sm:p-4 lg:p-5 rounded-xl shadow-card hover:shadow-lg transition-all duration-300">
           <h3 class="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Meta vs. Faturamento</h3>
@@ -1035,7 +699,6 @@ const projecaoChartData = computed(() => ({
 </template>
 
 <style scoped>
-/* (O CSS permanece igual - já estava correto) */
 .modern-dashboard {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
