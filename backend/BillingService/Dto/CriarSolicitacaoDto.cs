@@ -1,16 +1,21 @@
-namespace BillingService.DTOs;
+// Caminho: backend/BillingService/DTOs/CriarSolicitacaoDto.cs
+using System.ComponentModel.DataAnnotations;
 
-public class CriarSolicitacaoDto
+namespace BillingService.DTOs
 {
-    public Guid FaturamentoId { get; set; }
-    public required string Tipo { get; set; }
-    public required string Motivo { get; set; }
-    public string? DadosAntigos { get; set; }
-    public string? DadosNovos { get; set; }
-}
+    public class CriarSolicitacaoDto
+    {
+        // 1. MUDANÇA (v2.0): Renomeado de FaturamentoId
+        [Required]
+        public Guid FaturamentoParcialId { get; set; }
 
-public class DadosNovosDto
-{
-    public decimal Valor { get; set; }
-    public DateTime Data { get; set; }
+        [Required]
+        public string Tipo { get; set; } = "alteracao"; // "alteracao" ou "remocao"
+
+        [Required]
+        public string Motivo { get; set; } = null!;
+
+        public string? DadosAntigos { get; set; } // JSON
+        public string? DadosNovos { get; set; }   // JSON
+    }
 }

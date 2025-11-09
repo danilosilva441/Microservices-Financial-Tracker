@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BillingService.Migrations
 {
     [DbContext(typeof(BillingDbContext))]
-    [Migration("20251108124635_V2_Refactor_TenantId_And_ExpenseModule")]
-    partial class V2_Refactor_TenantId_And_ExpenseModule
+    [Migration("20251109163912_V2_Schema_Inicial")]
+    partial class V2_Schema_Inicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -48,10 +48,10 @@ namespace BillingService.Migrations
                     b.Property<DateTime>("ExpenseDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("OperacaoId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TenantId")
+                    b.Property<Guid>("UnidadeId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -61,9 +61,9 @@ namespace BillingService.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("OperacaoId");
-
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("UnidadeId");
 
                     b.ToTable("Expenses");
                 });
@@ -117,9 +117,6 @@ namespace BillingService.Migrations
                     b.Property<DateTime>("DataVencimento")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("MesReferencia")
                         .HasColumnType("integer");
 
@@ -127,7 +124,7 @@ namespace BillingService.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -155,30 +152,36 @@ namespace BillingService.Migrations
                     b.Property<DateOnly>("Data")
                         .HasColumnType("date");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
+                    b.Property<decimal>("FundoDeCaixa")
+                        .HasColumnType("numeric");
 
-                    b.Property<Guid>("OperacaoId")
+                    b.Property<string>("Observacoes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid>("UnidadeId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("ValorTotalConsolidado")
+                    b.Property<decimal?>("ValorAtm")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ValorBoletosMensalistas")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OperacaoId");
-
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("UnidadeId");
 
                     b.ToTable("FaturamentosDiarios");
                 });
@@ -192,6 +195,9 @@ namespace BillingService.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("FaturamentoDiarioId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("HoraFim")
                         .HasColumnType("timestamp with time zone");
 
@@ -201,20 +207,14 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("MetodoPagamentoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OperacaoId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Origem")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -225,9 +225,9 @@ namespace BillingService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MetodoPagamentoId");
+                    b.HasIndex("FaturamentoDiarioId");
 
-                    b.HasIndex("OperacaoId");
+                    b.HasIndex("MetodoPagamentoId");
 
                     b.HasIndex("TenantId");
 
@@ -249,17 +249,14 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("OperacaoId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid>("UnidadeId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -270,9 +267,9 @@ namespace BillingService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OperacaoId");
-
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("UnidadeId");
 
                     b.ToTable("Mensalistas");
                 });
@@ -289,13 +286,10 @@ namespace BillingService.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("Mes")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -326,15 +320,12 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -345,62 +336,6 @@ namespace BillingService.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("MetodosPagamento");
-                });
-
-            modelBuilder.Entity("BillingService.Models.Operacao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DataFim")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Descricao")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Endereco")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsAtiva")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal>("MetaMensal")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal?>("ProjecaoFaturamento")
-                        .HasColumnType("numeric");
-
-                    b.Property<bool>("TemMensalistas")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("Operacoes");
                 });
 
             modelBuilder.Entity("BillingService.Models.SolicitacaoAjuste", b =>
@@ -430,9 +365,6 @@ namespace BillingService.Migrations
                     b.Property<Guid>("FaturamentoParcialId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Motivo")
                         .IsRequired()
                         .HasColumnType("text");
@@ -444,7 +376,7 @@ namespace BillingService.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Tipo")
@@ -463,15 +395,86 @@ namespace BillingService.Migrations
                     b.ToTable("SolicitacoesAjuste");
                 });
 
+            modelBuilder.Entity("BillingService.Models.Unidade", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AceitaCartaoCredito")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AceitaCartaoDebito")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AceitaPix")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AceitaSemParar")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataFim")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DataInicio")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Endereco")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsAtiva")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("LancaAtm")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("LancaBoletosMensalista")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MetaMensal")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("ProjecaoFaturamento")
+                        .HasColumnType("numeric");
+
+                    b.Property<bool>("TemMensalistas")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Unidades");
+                });
+
             modelBuilder.Entity("BillingService.Models.UsuarioOperacao", b =>
                 {
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("OperacaoId")
+                    b.Property<Guid>("UnidadeId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -480,9 +483,6 @@ namespace BillingService.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("RoleInOperation")
                         .IsRequired()
                         .HasColumnType("text");
@@ -490,9 +490,9 @@ namespace BillingService.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("TenantId", "UserId", "OperacaoId");
+                    b.HasKey("TenantId", "UserId", "UnidadeId");
 
-                    b.HasIndex("OperacaoId");
+                    b.HasIndex("UnidadeId");
 
                     b.ToTable("UsuarioOperacoes");
                 });
@@ -505,56 +505,56 @@ namespace BillingService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BillingService.Models.Operacao", "Operacao")
+                    b.HasOne("BillingService.Models.Unidade", "Unidade")
                         .WithMany()
-                        .HasForeignKey("OperacaoId")
+                        .HasForeignKey("UnidadeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Category");
 
-                    b.Navigation("Operacao");
+                    b.Navigation("Unidade");
                 });
 
             modelBuilder.Entity("BillingService.Models.FaturamentoDiario", b =>
                 {
-                    b.HasOne("BillingService.Models.Operacao", "Operacao")
+                    b.HasOne("BillingService.Models.Unidade", "Unidade")
                         .WithMany()
-                        .HasForeignKey("OperacaoId")
+                        .HasForeignKey("UnidadeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Operacao");
+                    b.Navigation("Unidade");
                 });
 
             modelBuilder.Entity("BillingService.Models.FaturamentoParcial", b =>
                 {
+                    b.HasOne("BillingService.Models.FaturamentoDiario", "FaturamentoDiario")
+                        .WithMany("FaturamentosParciais")
+                        .HasForeignKey("FaturamentoDiarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("BillingService.Models.MetodoPagamento", "MetodoPagamento")
                         .WithMany()
                         .HasForeignKey("MetodoPagamentoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BillingService.Models.Operacao", "Operacao")
-                        .WithMany("FaturamentosParciais")
-                        .HasForeignKey("OperacaoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("FaturamentoDiario");
 
                     b.Navigation("MetodoPagamento");
-
-                    b.Navigation("Operacao");
                 });
 
             modelBuilder.Entity("BillingService.Models.Mensalista", b =>
                 {
-                    b.HasOne("BillingService.Models.Operacao", "Operacao")
+                    b.HasOne("BillingService.Models.Unidade", "Unidade")
                         .WithMany()
-                        .HasForeignKey("OperacaoId")
+                        .HasForeignKey("UnidadeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Operacao");
+                    b.Navigation("Unidade");
                 });
 
             modelBuilder.Entity("BillingService.Models.SolicitacaoAjuste", b =>
@@ -570,13 +570,13 @@ namespace BillingService.Migrations
 
             modelBuilder.Entity("BillingService.Models.UsuarioOperacao", b =>
                 {
-                    b.HasOne("BillingService.Models.Operacao", "Operacao")
+                    b.HasOne("BillingService.Models.Unidade", "Unidade")
                         .WithMany()
-                        .HasForeignKey("OperacaoId")
+                        .HasForeignKey("UnidadeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Operacao");
+                    b.Navigation("Unidade");
                 });
 
             modelBuilder.Entity("BillingService.Models.ExpenseCategory", b =>
@@ -584,7 +584,7 @@ namespace BillingService.Migrations
                     b.Navigation("Expenses");
                 });
 
-            modelBuilder.Entity("BillingService.Models.Operacao", b =>
+            modelBuilder.Entity("BillingService.Models.FaturamentoDiario", b =>
                 {
                     b.Navigation("FaturamentosParciais");
                 });

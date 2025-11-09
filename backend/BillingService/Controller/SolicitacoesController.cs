@@ -1,6 +1,7 @@
+// Caminho: backend/BillingService/Controller/SolicitacoesController.cs
 using BillingService.DTOs;
 using BillingService.Models;
-using BillingService.Services.Interfaces; // 1. MUDANÇA: Adiciona o using da interface
+using BillingService.Services.Interfaces; 
 using BillingService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +14,9 @@ namespace BillingService.Controllers;
 [Authorize]
 public class SolicitacoesController : ControllerBase
 {
-    // 2. MUDANÇA: Injeta a INTERFACE
     private readonly ISolicitacaoService _service;
 
-    public SolicitacoesController(ISolicitacaoService service) // <-- MUDANÇA AQUI
+    public SolicitacoesController(ISolicitacaoService service) 
     {
         _service = service;
     }
@@ -33,8 +33,8 @@ public class SolicitacoesController : ControllerBase
         
         var novaSolicitacao = new SolicitacaoAjuste
         {
-            // 3. CORREÇÃO: Comentamos a propriedade v1.0 que não existe mais (CS0117)
-            // FaturamentoId = dto.FaturamentoId, 
+            // 3. CORRIGIDO (v2.0): Descomentado e atualizado
+            FaturamentoParcialId = dto.FaturamentoParcialId, 
             
             Tipo = dto.Tipo,
             Motivo = dto.Motivo,
@@ -43,14 +43,12 @@ public class SolicitacoesController : ControllerBase
             Status = "PENDENTE"
         };
         
-        // O código abaixo vai falhar em tempo de execução, mas vai COMPILAR.
-        // Precisaremos refatorar o _service.CriarSolicitacaoAsync depois.
         var solicitacaoCriada = await _service.CriarSolicitacaoAsync(novaSolicitacao, userId);
         return Ok(solicitacaoCriada);
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin  , Gerente")]
+    [Authorize(Roles = "Admin, Gerente")] // Corrigido para "Gerente"
     public async Task<IActionResult> GetSolicitacoes()
     {
         var solicitacoes = await _service.GetSolicitacoesAsync();
@@ -63,7 +61,7 @@ public class SolicitacoesController : ControllerBase
     }
 
     [HttpPatch("{id}/revisar")]
-    [Authorize(Roles = "Admin, Gerente")]
+    [Authorize(Roles = "Admin, Gerente")] // Corrigido para "Gerente"
     public async Task<IActionResult> RevisarSolicitacao(Guid id, [FromBody] RevisaoDto revisao)
     {
         var (success, errorMessage) = await _service.RevisarSolicitacaoAsync(id, revisao.Acao, GetUserId());
