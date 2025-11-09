@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Repositories;
 
-public class MetaRepository
+public class MetaRepository : Interfaces.IMetaRepository
 {
     private readonly BillingDbContext _context;
 

@@ -8,7 +8,7 @@ namespace BillingService.Controllers;
 
 [ApiController]
 [Route("api/operacoes/{operacaoId}/mensalistas")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin , Gerente, Financeiro")] // Apenas usuários com essas funções podem acessar
 public class MensalistasController : ControllerBase
 {
     private readonly MensalistaService _mensalistaService;
@@ -34,7 +34,7 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Gerente, Financeiro")]
     public async Task<IActionResult> Create(Guid operacaoId, [FromBody] CreateMensalistaDto mensalistaDto)
     {
         var userId = GetUserId();
@@ -49,7 +49,7 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPut("{mensalistaId}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Gerente, Financeiro")]
     public async Task<IActionResult> Update(Guid operacaoId, Guid mensalistaId, [FromBody] UpdateMensalistaDto mensalistaDto)
     {
         var userId = GetUserId();
@@ -64,7 +64,7 @@ public class MensalistasController : ControllerBase
     }
 
     [HttpPatch("{mensalistaId}/desativar")]
-    [Authorize(Roles = "Admin")] // Apenas Admins podem desativar mensalistas
+    [Authorize(Roles = "Admin, Gerente, Financeiro")] // Apenas Admins, Gerentes ou Financeiros podem desativar mensalistas
     public async Task<IActionResult> Deactivate(Guid operacaoId, Guid mensalistaId)
     {
         var userId = GetUserId();

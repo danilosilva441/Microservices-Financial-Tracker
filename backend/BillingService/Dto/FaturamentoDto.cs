@@ -1,13 +1,38 @@
 using System.ComponentModel.DataAnnotations;
-namespace BillingService.DTO;
 
-public class FaturamentoDto // Ou CreateFaturamentoDto
+namespace BillingService.DTO
 {
-    [Required]
-    [Range(0.01, double.MaxValue)]
-    public decimal Valor { get; set; }
-    [Required]
-    public DateTime Data { get; set; }
-    [Required]
-    public required string Origem { get; set; } = "AVULSO"; // Valor padrão
+    // DTO para CRIAR um FaturamentoParcial (substitui o FaturamentoDto)
+    public class FaturamentoParcialCreateDto
+    {
+        [Required]
+        public decimal Valor { get; set; }
+
+        [Required]
+        public DateTime HoraInicio { get; set; } // NOVO (substitui 'Data')
+
+        [Required]
+        public DateTime HoraFim { get; set; } // NOVO
+
+        [Required]
+        public Guid MetodoPagamentoId { get; set; } // NOVO
+
+        public string Origem { get; set; } = "AVULSO";
+    }
+
+    // DTO para ATUALIZAR um FaturamentoParcial (substitui o UpdateFaturamentoDto)
+    public class FaturamentoParcialUpdateDto
+    {
+        [Required]
+        public decimal Valor { get; set; }
+        
+        [Required]
+        public DateTime HoraInicio { get; set; } // NOVO
+        
+        [Required]
+        public DateTime HoraFim { get; set; } // NOVO
+        
+        [Required]
+        public Guid MetodoPagamentoId { get; set; } // NOVO
+    }
 }

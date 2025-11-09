@@ -1,19 +1,23 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BillingService.Models;
-
-public class Fatura
+namespace BillingService.Models
 {
-    public Guid Id { get; set; }
-    public int MesReferencia { get; set; }
-    public int AnoReferencia { get; set; }
-    public decimal ValorTotal { get; set; }
-    public DateTime DataVencimento { get; set; }
-    [Required]
-    public required string Status { get; set; } = "PENDENTE"; // PENDENTE, PAGO, ATRASADO
-    public DateTime? DataPagamento { get; set; }
+    public class Fatura : BaseEntity
+    {
+        public int MesReferencia { get; set; }
+        public int AnoReferencia { get; set; }
+        
+        [Required]
+        public decimal ValorTotal { get; set; }
+        
+        public DateTime DataVencimento { get; set; }
+        
+        [Required]
+        public string Status { get; set; } = "PENDENTE"; // PENDENTE, PAGO, ATRASADO
+        
+        public DateTime? DataPagamento { get; set; }
 
-    // Chave Estrangeira
-    public Guid EmpresaId { get; set; }
-    public Empresa Empresa { get; set; } = null!;
+        // MUDANÇA: Propriedade de navegação 'Empresa' removida
+    }
 }

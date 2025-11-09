@@ -1,48 +1,51 @@
 using BillingService.DTO;
 using BillingService.Models;
-using BillingService.Repositories;
+using BillingService.Repositories.Interfaces; 
+using BillingService.Services.Interfaces; 
 
 namespace BillingService.Services;
 
-public class MensalistaService
+public class MensalistaService : IMensalistaService 
 {
-    private readonly MensalistaRepository _repository;
-    private readonly OperacaoRepository _operacaoRepository;
+    private readonly IMensalistaRepository _repository;
+    private readonly IUnidadeRepository _unidadeRepository;
 
-    public MensalistaService(MensalistaRepository repository, OperacaoRepository operacaoRepository)
+    public MensalistaService(IMensalistaRepository repository, IUnidadeRepository unidadeRepository) 
     {
         _repository = repository;
-        _operacaoRepository = operacaoRepository;
+        _unidadeRepository = unidadeRepository;
     }
-
-    public async Task<IEnumerable<Mensalista>> GetAllMensalistasAsync(Guid operacaoId, Guid userId)
+    
+    // 1. MUDANÇA (v2.0): Parâmetro renomeado para 'unidadeId'
+    public async Task<IEnumerable<Mensalista>> GetAllMensalistasAsync(Guid unidadeId, Guid tenantId)
     {
-        // Valida se o admin tem acesso a esta operação antes de listar os mensalistas
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            // Retorna lista vazia se não houver permissão, para não vazar informação.
             return new List<Mensalista>();
         }
-        return await _repository.GetAllByOperacaoIdAsync(operacaoId);
+        
+        // 2. CORREÇÃO (v2.0): Chamando o método v2.0 (corrige o erro CS1061)
+        return await _repository.GetAllByUnidadeIdAsync(unidadeId); 
     }
-
-    public async Task<(Mensalista? mensalista, string? errorMessage)> CreateMensalistaAsync(Guid operacaoId, CreateMensalistaDto mensalistaDto, Guid userId)
+    
+    // 3. MUDANÇA (v2.0): Parâmetro renomeado para 'unidadeId'
+    public async Task<(Mensalista? mensalista, string? errorMessage)> CreateMensalistaAsync(Guid unidadeId, CreateMensalistaDto mensalistaDto, Guid tenantId)
     {
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            return (null, "Operação não encontrada ou não pertence ao usuário.");
+            return (null, "Unidade não encontrada ou não pertence a este Tenant.");
         }
 
         var novoMensalista = new Mensalista
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId, 
             Nome = mensalistaDto.Nome,
             CPF = mensalistaDto.CPF,
             ValorMensalidade = mensalistaDto.ValorMensalidade,
-            OperacaoId = operacaoId,
-            EmpresaId = mensalistaDto.EmpresaId,
+            UnidadeId = unidadeId, // (Já estava correto)
             IsAtivo = true
         };
 
@@ -50,17 +53,18 @@ public class MensalistaService
         await _repository.SaveChangesAsync();
         return (novoMensalista, null);
     }
-
-    public async Task<(bool success, string? errorMessage)> UpdateMensalistaAsync(Guid operacaoId, Guid mensalistaId, UpdateMensalistaDto mensalistaDto, Guid userId)
+    
+    // 4. MUDANÇA (v2.0): Parâmetro renomeado para 'unidadeId'
+    public async Task<(bool success, string? errorMessage)> UpdateMensalistaAsync(Guid unidadeId, Guid mensalistaId, UpdateMensalistaDto mensalistaDto, Guid tenantId)
     {
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            return (false, "Operação não encontrada ou não pertence ao usuário.");
+            return (false, "Unidade não encontrada ou não pertence a este Tenant.");
         }
 
         var mensalistaExistente = await _repository.GetByIdAsync(mensalistaId);
-        if (mensalistaExistente == null || mensalistaExistente.OperacaoId != operacaoId)
+        if (mensalistaExistente == null || mensalistaExistente.UnidadeId != unidadeId)
         {
             return (false, "Mensalista não encontrado nesta operação.");
         }
@@ -69,23 +73,23 @@ public class MensalistaService
         mensalistaExistente.CPF = mensalistaDto.CPF;
         mensalistaExistente.ValorMensalidade = mensalistaDto.ValorMensalidade;
         mensalistaExistente.IsAtivo = mensalistaDto.IsAtivo;
-        mensalistaExistente.EmpresaId = mensalistaDto.EmpresaId;
 
         _repository.Update(mensalistaExistente);
         await _repository.SaveChangesAsync();
         return (true, null);
     }
-
-    public async Task<(bool success, string? errorMessage)> DeactivateMensalistaAsync(Guid operacaoId, Guid mensalistaId, Guid userId)
+    
+    // 5. MUDANÇA (v2.0): Parâmetro renomeado para 'unidadeId'
+    public async Task<(bool success, string? errorMessage)> DeactivateMensalistaAsync(Guid unidadeId, Guid mensalistaId, Guid tenantId)
     {
-        var operacao = await _operacaoRepository.GetByIdAndUserIdAsync(operacaoId, userId);
-        if (operacao == null)
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
         {
-            return (false, "Operação não encontrada ou não pertence ao usuário.");
+            return (false, "Unidade não encontrada ou não pertence a este Tenant.");
         }
 
         var mensalistaExistente = await _repository.GetByIdAsync(mensalistaId);
-        if (mensalistaExistente == null || mensalistaExistente.OperacaoId != operacaoId)
+        if (mensalistaExistente == null || mensalistaExistente.UnidadeId != unidadeId)
         {
             return (false, "Mensalista não encontrado nesta operação.");
         }

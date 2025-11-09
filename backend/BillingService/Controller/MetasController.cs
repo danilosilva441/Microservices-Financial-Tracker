@@ -40,7 +40,7 @@ public class MetasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin , Gerente")]
     public async Task<IActionResult> SetMeta([FromBody] MetaDto metaDto)
     {
         var userId = GetUserId();

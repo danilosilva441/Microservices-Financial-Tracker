@@ -11,7 +11,9 @@
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.20",
           "Microsoft.AspNetCore.OpenApi": "8.0.20",
           "Microsoft.EntityFrameworkCore.Design": "8.0.6",
+          "MiniExcel": "1.41.4",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "8.0.4",
+          "SharedKernel": "1.0.0",
           "Swashbuckle.AspNetCore": "6.7.3"
         },
         "runtime": {
@@ -457,6 +459,14 @@
           }
         }
       },
+      "MiniExcel/1.41.4": {
+        "runtime": {
+          "lib/net8.0/MiniExcel.dll": {
+            "assemblyVersion": "1.41.4.0",
+            "fileVersion": "1.41.4.0"
+          }
+        }
+      },
       "Mono.TextTemplating/2.2.1": {
         "dependencies": {
           "System.CodeDom": "4.4.0"
@@ -634,7 +644,15 @@
           "System.Text.Encodings.Web": "8.0.0"
         }
       },
-      "System.Threading.Channels/6.0.0": {}
+      "System.Threading.Channels/6.0.0": {},
+      "SharedKernel/1.0.0": {
+        "runtime": {
+          "SharedKernel.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
     }
   },
   "libraries": {
@@ -867,6 +885,13 @@
       "path": "microsoft.openapi/1.6.14",
       "hashPath": "microsoft.openapi.1.6.14.nupkg.sha512"
     },
+    "MiniExcel/1.41.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-fQwTTA2awWICM4xqjkldGTkAEr+U8TfncNdd7CCdQIMo3khCXoFkA1F080Ts8el7oeuRNhRauYjQs8aU0Z6v9Q==",
+      "path": "miniexcel/1.41.4",
+      "hashPath": "miniexcel.1.41.4.nupkg.sha512"
+    },
     "Mono.TextTemplating/2.2.1": {
       "type": "package",
       "serviceable": true,
@@ -1027,6 +1052,11 @@
       "sha512": "sha512-TY8/9+tI0mNaUMgntOxxaq2ndTkdXqLSxvPmas7XEqOlv9lQtB7wLjYGd756lOaO7Dvb5r/WXhluM+0Xe87v5Q==",
       "path": "system.threading.channels/6.0.0",
       "hashPath": "system.threading.channels.6.0.0.nupkg.sha512"
+    },
+    "SharedKernel/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     }
   }
 }

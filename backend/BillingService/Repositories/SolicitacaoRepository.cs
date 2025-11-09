@@ -1,10 +1,11 @@
 using BillingService.Data;
 using BillingService.Models;
+using BillingService.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Repositories;
 
-public class SolicitacaoRepository
+public class SolicitacaoRepository : ISolicitacaoRepository 
 {
     private readonly BillingDbContext _context;
 
@@ -20,17 +21,21 @@ public class SolicitacaoRepository
 
     public async Task<List<SolicitacaoAjuste>> GetAllComDetalhesAsync()
     {
+        // --- 1. CORRIGIDO (v2.0) ---
+        // Descomentado e atualizado para usar a nova relação
         return await _context.SolicitacoesAjuste
-            .Include(s => s.Faturamento)
-            .ThenInclude(f => f.Operacao)
+            .Include(s => s.FaturamentoParcial) // <-- Corrigido
+            .ThenInclude(fp => fp.FaturamentoDiario) // <-- Corrigido (Buscando o "cabeçalho")
+                .ThenInclude(fd => fd.Unidade) // <-- Corrigido (Buscando a "unidade")
             .OrderByDescending(s => s.DataSolicitacao)
             .ToListAsync();
     }
 
     public async Task<SolicitacaoAjuste?> GetByIdComFaturamentoAsync(Guid id)
     {
+        // --- 2. CORRIGIDO (v2.0) ---
         return await _context.SolicitacoesAjuste
-            .Include(s => s.Faturamento)
+            .Include(s => s.FaturamentoParcial) // <-- Corrigido
             .FirstOrDefaultAsync(s => s.Id == id);
     }
 

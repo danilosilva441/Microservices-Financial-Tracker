@@ -1,31 +1,36 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BillingService.Models;
-
-public class SolicitacaoAjuste
+namespace BillingService.Models
 {
-    public Guid Id { get; set; }
+    public class SolicitacaoAjuste : BaseEntity
+    {
+        // Id e TenantId vêm da BaseEntity
 
-    [Required]
-    public Guid FaturamentoId { get; set; }
-    public Faturamento Faturamento { get; set; } = null!;
+        // MUDANÇA: Renomeado de FaturamentoId para FaturamentoParcialId
+        [Required]
+        public Guid FaturamentoParcialId { get; set; }
+        
+        [ForeignKey("FaturamentoParcialId")]
+        public FaturamentoParcial FaturamentoParcial { get; set; } = null!;
 
-    [Required]
-    public Guid SolicitanteId { get; set; } // O UserId de quem pediu
+        [Required]
+        public Guid SolicitanteId { get; set; } // O UserId de quem pediu (Já era Guid)
 
-    [Required]
-    public required string Tipo { get; set; } // "alteracao" ou "remocao"
+        [Required]
+        public string Tipo { get; set; } = "alteracao"; // "alteracao" ou "remocao"
 
-    [Required]
-    public required string Motivo { get; set; }
+        [Required]
+        public string Motivo { get; set; } = null!;
 
-    public string? DadosAntigos { get; set; } // JSON com os dados originais
-    public string? DadosNovos { get; set; }   // JSON com os dados propostos
+        public string? DadosAntigos { get; set; } // JSON
+        public string? DadosNovos { get; set; }   // JSON
 
-    [Required]
-    public required string Status { get; set; } = "PENDENTE"; // PENDENTE, APROVADA, REJEITADA
+        [Required]
+        public string Status { get; set; } = "PENDENTE"; // PENDENTE, APROVADA, REJEITADA
 
-    public Guid? AprovadorId { get; set; } // O UserId do Admin que revisou
-    public DateTime DataSolicitacao { get; set; } = DateTime.UtcNow;
-    public DateTime? DataRevisao { get; set; }
+        public Guid? AprovadorId { get; set; } // O UserId do Admin (Já era Guid)
+        public DateTime DataSolicitacao { get; set; } = DateTime.UtcNow;
+        public DateTime? DataRevisao { get; set; }
+    }
 }

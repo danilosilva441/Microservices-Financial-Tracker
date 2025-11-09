@@ -1,47 +1,36 @@
-using AuthService.Data;
+using AuthService.Services; // Importa o novo serviço
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "DEV")] // Em um sistema real, protegeríamos isso
 public class AdminController : ControllerBase
 {
-    private readonly AuthDbContext _context;
+    // 1. Injeta a INTERFACE do serviço
+    private readonly IAuthService _authService;
 
-    public AdminController(AuthDbContext context)
+    public AdminController(IAuthService authService)
     {
-        _context = context;
+        _authService = authService;
     }
 
     [HttpPost("promote-to-admin")]
     public async Task<IActionResult> PromoteToAdmin([FromBody] string userEmail)
     {
-        var user = await _context.Users
-            .Include(u => u.Roles)
-            .FirstOrDefaultAsync(u => u.Email == userEmail);
+        // 2. DELEGA toda a lógica para o serviço
+        var result = await _authService.PromoteToAdminAsync(userEmail);
 
-        if (user == null)
+        // 3. O Controller apenas decide o tipo de resposta (HTTP)
+        if (!result.Success)
         {
-            return NotFound("Usuário não encontrado.");
+            if (result.ErrorMessage.Contains("não encontrado"))
+                return NotFound(result.ErrorMessage);
+            
+            return StatusCode(500, result.ErrorMessage);
         }
 
-        var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
-        if (adminRole == null)
-        {
-            return StatusCode(500, "Perfil 'Admin' não encontrado no banco de dados.");
-        }
-
-        // Verifica se o usuário já é Admin para não adicionar de novo
-        if (!user.Roles.Any(r => r.Name == "Admin"))
-        {
-            user.Roles.Add(adminRole);
-            await _context.SaveChangesAsync();
-        }
-
-        return Ok($"Usuário {userEmail} foi promovido a Admin.");
+        return Ok(result.Data);
     }
 }

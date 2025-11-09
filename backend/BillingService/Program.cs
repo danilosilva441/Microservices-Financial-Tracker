@@ -1,6 +1,5 @@
-// --- CORREÇÃO AQUI: Os 'usings' agora apontam para BillingService ---
 using System.Text;
-using BillingService.Configuration;
+using BillingService.Configuration; // <-- A linha-chave que chama o arquivo de correção
 using BillingService.Data;
 using BillingService.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -17,7 +16,6 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
-        // IMPORTANTE: Substitua pela sua URL real da Railway
         policy.WithOrigins("http://localhost:5173", "https://apigatewayh.up.railway.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
@@ -25,7 +23,7 @@ builder.Services.AddCors(options =>
 });
 
 // --- 2. Configuração do Banco de Dados (Dinâmica) ---
-string? connectionString; // <-- CORREÇÃO AQUI: Adicionado '?' para indicar que pode ser nulo
+string? connectionString;
 var databaseUrl = builder.Configuration["DATABASE_URL"];
 
 if (!string.IsNullOrEmpty(databaseUrl))
@@ -50,6 +48,7 @@ builder.Services.AddDbContext<BillingDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // --- 3. Injeção de Dependência ---
+// Esta linha chama o arquivo ServiceCollectionExtensions.cs (o arquivo que vamos corrigir)
 builder.Services.AddBillingServices();
 
 // --- 4. Autenticação (Unificada) ---
@@ -136,7 +135,7 @@ static string ConvertDatabaseUrlToConnectionString(string databaseUrl)
     var port = uri.Port;
     var username = userInfo[0];
     var password = userInfo[1];
-    var database = "billing_db"; // Garante que se conecte ao banco de dados correto
+    var database = "billing_db"; 
     
     return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
 }

@@ -114,3 +114,6 @@ C:\My workspace\portfolio-microservices\backend\BillingService\obj\Debug\net8.0\
 C:\My workspace\portfolio-microservices\backend\BillingService\obj\Debug\net8.0\BillingService.pdb
 C:\My workspace\portfolio-microservices\backend\BillingService\obj\Debug\net8.0\BillingService.genruntimeconfig.cache
 C:\My workspace\portfolio-microservices\backend\BillingService\obj\Debug\net8.0\ref\BillingService.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\SharedKernel.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\SharedKernel.pdb
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\MiniExcel.dll

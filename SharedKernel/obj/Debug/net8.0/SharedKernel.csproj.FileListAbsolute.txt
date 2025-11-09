@@ -1,0 +1,12 @@
+C:\My workspace\portfolio-microservices\SharedKernel\bin\Debug\net8.0\SharedKernel.deps.json
+C:\My workspace\portfolio-microservices\SharedKernel\bin\Debug\net8.0\SharedKernel.dll
+C:\My workspace\portfolio-microservices\SharedKernel\bin\Debug\net8.0\SharedKernel.pdb
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.GeneratedMSBuildEditorConfig.editorconfig
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.AssemblyInfoInputs.cache
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.AssemblyInfo.cs
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.csproj.CoreCompileInputs.cache
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.sourcelink.json
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.dll
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\refint\SharedKernel.dll
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.pdb
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\ref\SharedKernel.dll

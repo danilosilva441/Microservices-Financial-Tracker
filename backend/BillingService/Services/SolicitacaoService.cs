@@ -1,25 +1,27 @@
 using BillingService.DTOs;
 using BillingService.Models;
-using BillingService.Repositories;
+using BillingService.Repositories.Interfaces; // <-- 1. MUDANÇA: Adiciona as Interfaces
+using BillingService.Services.Interfaces; // <-- 1. MUDANÇA: Adiciona as Interfaces
 using System.Text.Json;
 
 namespace BillingService.Services;
 
-public class SolicitacaoService
+public class SolicitacaoService : ISolicitacaoService // <-- Herda da Interface
 {
-    private readonly SolicitacaoRepository _repository;
-    private readonly FaturamentoRepository _faturamentoRepository;
-    private readonly OperacaoRepository _operacaoRepository;
+    // 2. MUDANÇA: Injetando INTERFACES v2.0
+    private readonly ISolicitacaoRepository _repository;
+    private readonly IFaturamentoParcialRepository _faturamentoRepository;
+    private readonly IUnidadeRepository _unidadeRepository;
 
     public SolicitacaoService(
-        SolicitacaoRepository repository,
-        FaturamentoRepository faturamentoRepository,
-        OperacaoRepository operacaoRepository
+        ISolicitacaoRepository repository,
+        IFaturamentoParcialRepository faturamentoRepository,
+        IUnidadeRepository unidadeRepository // <-- 3. MUDANÇA: Injeta a interface v2.0
     )
     {
         _repository = repository;
         _faturamentoRepository = faturamentoRepository;
-        _operacaoRepository = operacaoRepository;
+        _unidadeRepository = unidadeRepository;
     }
 
     public async Task<SolicitacaoAjuste> CriarSolicitacaoAsync(SolicitacaoAjuste solicitacao, Guid solicitanteId)
@@ -35,6 +37,7 @@ public class SolicitacaoService
     public async Task<IEnumerable<SolicitacaoAjusteDto>> GetSolicitacoesAsync()
     {
         var solicitacoes = await _repository.GetAllComDetalhesAsync();
+        
         // Mapeia a entidade para o DTO
         return solicitacoes.Select(s => new SolicitacaoAjusteDto
         {
@@ -47,18 +50,17 @@ public class SolicitacaoService
             DataSolicitacao = s.DataSolicitacao,
             Faturamento = new FaturamentoSimplesDto
             {
-                Id = s.Faturamento.Id,
-                // Atribui os valores corretos do faturamento
-                Data = s.Faturamento.Data,
-                Valor = s.Faturamento.Valor,
+                Id = s.FaturamentoParcial.Id,
+                Data = s.FaturamentoParcial.HoraInicio,
+                Valor = s.FaturamentoParcial.Valor,
                 Operacao = new OperacaoSimplesDto
                 {
-                    Id = s.Faturamento.Operacao.Id,
-                    Nome = s.Faturamento.Operacao.Nome
+                    // 4. MUDANÇA: Corrigindo o caminho da relação v2.0
+                    Id = s.FaturamentoParcial.FaturamentoDiario.Unidade.Id,
+                    Nome = s.FaturamentoParcial.FaturamentoDiario.Unidade.Nome
                 }
             }
         });
-
     }
 
     public async Task<(bool success, string? errorMessage)> RevisarSolicitacaoAsync(Guid id, string acao, Guid aprovadorId)
@@ -75,17 +77,15 @@ public class SolicitacaoService
         {
             if (solicitacao.Tipo.ToLower() == "remocao")
             {
-                solicitacao.Faturamento.IsAtivo = false;
+                solicitacao.FaturamentoParcial.IsAtivo = false;
             }
             else if (solicitacao.Tipo.ToLower() == "alteracao" && !string.IsNullOrEmpty(solicitacao.DadosNovos))
             {
-                // --- CORREÇÃO AQUI ---
-                // Usa o novo DTO para desserializar com segurança
                 var dadosNovos = JsonSerializer.Deserialize<DadosNovosDto>(solicitacao.DadosNovos);
                 if (dadosNovos != null)
                 {
-                    solicitacao.Faturamento.Valor = dadosNovos.Valor;
-                    solicitacao.Faturamento.Data = DateTime.SpecifyKind(dadosNovos.Data, DateTimeKind.Utc);
+                    solicitacao.FaturamentoParcial.Valor = dadosNovos.Valor;
+                    solicitacao.FaturamentoParcial.HoraInicio = DateTime.SpecifyKind(dadosNovos.Data, DateTimeKind.Utc);
                 }
             }
         }

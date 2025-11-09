@@ -1,10 +1,11 @@
 using BillingService.Data;
 using BillingService.Models;
+using BillingService.Repositories.Interfaces; // 1. IMPORTANTE: Adiciona o using
 using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Repositories;
 
-public class MensalistaRepository
+public class MensalistaRepository : IMensalistaRepository // 2. Herda da Interface
 {
     private readonly BillingDbContext _context;
 
@@ -13,10 +14,12 @@ public class MensalistaRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Mensalista>> GetAllByOperacaoIdAsync(Guid operacaoId)
+    // 3. CORRIGIDO (v2.0): Renomeado o método e o parâmetro
+    public async Task<IEnumerable<Mensalista>> GetAllByUnidadeIdAsync(Guid unidadeId)
     {
         return await _context.Mensalistas
-            .Where(m => m.OperacaoId == operacaoId)
+            // 4. CORRIGIDO (v2.0): Usa a propriedade UnidadeId
+            .Where(m => m.UnidadeId == unidadeId) 
             .ToListAsync();
     }
 

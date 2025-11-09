@@ -4,7 +4,7 @@ using BillingService.Repositories;
 
 namespace BillingService.Services;
 
-public class MetaService
+public class MetaService : Interfaces.IMetaService
 {
     private readonly MetaRepository _repository;
 

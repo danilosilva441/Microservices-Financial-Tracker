@@ -17,38 +17,99 @@ namespace AuthService.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("AuthService.Models.Role", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
 
                     b.ToTable("Roles");
 
                     b.HasData(
                         new
                         {
-                            Id = 1,
-                            Name = "User"
+                            Id = new Guid("a1b2c3d4-e5f6-7890-a1a1-a1a1a1a1a1a1"),
+                            Name = "User",
+                            NormalizedName = "USER"
                         },
                         new
                         {
-                            Id = 2,
-                            Name = "Admin"
+                            Id = new Guid("b2c3d4e5-f6a7-890b-b2b2-b2b2b2b2b2b2"),
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("c3d4e5f6-a7b8-90c1-c3c3-c3c3c3c3c3c3"),
+                            Name = "Dev",
+                            NormalizedName = "DEV"
+                        },
+                        new
+                        {
+                            Id = new Guid("d4e5f6a7-b8c9-01d2-d4d4-d4d4d4d4d4d4"),
+                            Name = "Gerente",
+                            NormalizedName = "GERENTE"
+                        },
+                        new
+                        {
+                            Id = new Guid("e5f6a7b8-c9d0-12e3-e5e5-e5e5e5e5e5e5"),
+                            Name = "Supervisor",
+                            NormalizedName = "SUPERVISOR"
+                        },
+                        new
+                        {
+                            Id = new Guid("f6a7b8c9-d0e1-23f4-f6f6-f6f6f6f6f6f6"),
+                            Name = "Lider",
+                            NormalizedName = "LIDER"
+                        },
+                        new
+                        {
+                            Id = new Guid("a7b8c9d0-e1f2-34a5-a7a7-a7a7a7a7a7a7"),
+                            Name = "Operador",
+                            NormalizedName = "OPERADOR"
                         });
+                });
+
+            modelBuilder.Entity("AuthService.Models.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("DataDeCriacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NomeDaEmpresa")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("StatusDaSubscricao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("AuthService.Models.User", b =>
@@ -65,15 +126,25 @@ namespace AuthService.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ReportsToUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ReportsToUserId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Users");
                 });
 
             modelBuilder.Entity("RoleUser", b =>
                 {
-                    b.Property<int>("RolesId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("RolesId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UsersId")
                         .HasColumnType("uuid");
@@ -82,7 +153,24 @@ namespace AuthService.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("RoleUser");
+                    b.ToTable("UserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("AuthService.Models.User", b =>
+                {
+                    b.HasOne("AuthService.Models.User", "ReportsToUser")
+                        .WithMany("Subordinates")
+                        .HasForeignKey("ReportsToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AuthService.Models.Tenant", "Tenant")
+                        .WithMany("Users")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ReportsToUser");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("RoleUser", b =>
@@ -98,6 +186,16 @@ namespace AuthService.Migrations
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("AuthService.Models.Tenant", b =>
+                {
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("AuthService.Models.User", b =>
+                {
+                    b.Navigation("Subordinates");
                 });
 #pragma warning restore 612, 618
         }

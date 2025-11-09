@@ -11,14 +11,17 @@ namespace BillingService.Security
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
 
+        // --- CORREÇÃO 1 (CS0618) ---
+        // Removemos o "ISystemClock clock" obsoleto dos parâmetros
         public JwtValidationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock,
+            // ISystemClock clock, // <-- REMOVIDO
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration)
-            : base(options, logger, encoder, clock)
+            // E removemos o "clock" da chamada base
+            : base(options, logger, encoder) // <-- MUDANÇA AQUI
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
@@ -29,14 +32,14 @@ namespace BillingService.Security
             // Log para debug
             Logger.LogInformation("🔐 Iniciando validação JWT no BillingService...");
 
-            // Verifica se o header Authorization existe
-            if (!Request.Headers.ContainsKey("Authorization"))
+            // --- CORREÇÃO 2 (CS8604) ---
+            // Substituímos o "ContainsKey" e "Parse" por "TryParse".
+            // Isso é mais seguro e remove o aviso de nulidade.
+            if (!AuthenticationHeaderValue.TryParse(Request.Headers.Authorization, out var authHeader))
             {
-                Logger.LogInformation("❌ Header Authorization não encontrado");
+                Logger.LogInformation("❌ Header Authorization não encontrado ou mal formatado");
                 return AuthenticateResult.NoResult();
             }
-
-            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
             
             // Verifica se é um token Bearer
             if (authHeader.Scheme != "Bearer" || string.IsNullOrEmpty(authHeader.Parameter))
@@ -55,8 +58,8 @@ namespace BillingService.Security
                 
                 // URL do Auth Service - usa variável de ambiente ou valor padrão
                 var authServiceUrl = _configuration["AUTH_SERVICE_URL"] ?? 
-                                   Environment.GetEnvironmentVariable("AUTH_SERVICE_URL") ?? 
-                                   "http://microservices-financial-tracker.railway.internal:8080";
+                                     Environment.GetEnvironmentVariable("AUTH_SERVICE_URL") ?? 
+                                     "http://microservices-financial-tracker.railway.internal:8080";
                 
                 Logger.LogInformation($"🌐 Validando token com Auth Service: {authServiceUrl}");
 

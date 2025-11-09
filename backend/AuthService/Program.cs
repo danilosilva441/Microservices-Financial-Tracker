@@ -1,5 +1,7 @@
 using AuthService.Configuration;
 using AuthService.Data;
+using AuthService.Repositories; 
+using AuthService.Services; 
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -12,12 +14,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
         policy.WithOrigins(
-                "http://localhost:5173", 
+                "http://localhost:5173",
                 "https://apigateway-production-de54.up.railway.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials(); // se necessário
+            .AllowCredentials();
     });
 });
 
@@ -47,7 +49,16 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 // --- 3. Configuração Modular de Autenticação ---
 builder.Services.AddAuthConfiguration(builder.Configuration);
 
-// --- 4. Outros Serviços ---
+// --- 4. REGISTRO DOS NOVOS SERVIÇOS (Injeção de Dependência) ---
+// Adiciona os repositórios e serviços ao contêiner de DI
+// Usamos AddScoped para que sejam criados uma vez por requisição HTTP
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ITenantRepository, TenantRepository>();
+builder.Services.AddScoped<IAuthService, AuthService.Services.AuthService>();
+
+
+// --- 5. Outros Serviços ---
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -58,21 +69,20 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// --- 5. Pipeline de Middlewares ---
+// --- 6. Pipeline de Middlewares ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Ordem correta: Routing -> CORS -> Auth -> MapControllers
 app.UseRouting();
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// --- 6. Aplica as migrations na inicialização ---
+// --- 7. Aplica as migrations na inicialização ---
 try
 {
     using (var scope = app.Services.CreateScope())

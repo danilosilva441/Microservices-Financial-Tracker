@@ -1,74 +1,33 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using AuthService.Data;
-using AuthService.Models;
 using AuthService.DTO;
+using AuthService.Services; // Importa o novo serviço
 
 namespace AuthService.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // Rota será /api/token
+[Route("api/[controller]")]
 public class TokenController : ControllerBase
 {
-    private readonly AuthDbContext _context;
-    private readonly IConfiguration _configuration;
+    // 1. Injeta a INTERFACE do serviço
+    private readonly IAuthService _authService;
 
-    public TokenController(AuthDbContext context, IConfiguration configuration)
+    public TokenController(IAuthService authService)
     {
-        _context = context;
-        _configuration = configuration;
+        _authService = authService;
     }
 
     [HttpPost] // POST /api/token
     public async Task<IActionResult> Login([FromBody] UserDto request)
     {
-        var user = await _context.Users
-            .Include(u => u.Roles)
-            .FirstOrDefaultAsync(u => u.Email == request.Email);
+        // 2. DELEGA toda a lógica de login e geração de token para o serviço
+        var result = await _authService.LoginAsync(request);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        // 3. O Controller apenas decide o tipo de resposta (HTTP)
+        if (!result.Success)
         {
-            return Unauthorized("Credenciais inválidas.");
+            return Unauthorized(result.ErrorMessage);
         }
 
-        string token = GenerateJwtToken(user);
-        return Ok(new { token });
-    }
-
-    private string GenerateJwtToken(User user)
-    {
-        var jwtKey = _configuration["Jwt:Key"];
-        if (string.IsNullOrEmpty(jwtKey))
-        {
-            throw new InvalidOperationException("Chave JWT não está configurada.");
-        }
-        
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-
-        foreach (var role in user.Roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role.Name));
-        }
-
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddHours(8),
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return Ok(result.Data);
     }
 }

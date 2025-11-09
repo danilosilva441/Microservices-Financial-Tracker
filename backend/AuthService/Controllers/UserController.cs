@@ -1,50 +1,37 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using AuthService.Data;
 using AuthService.DTO;
-using AuthService.Models;
+using AuthService.Services; // Importa o novo serviço
 
 namespace AuthService.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // Rota será /api/users
+[Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly AuthDbContext _context;
+    // 1. Injeta a INTERFACE do serviço, não mais o DbContext
+    private readonly IAuthService _authService;
 
-    public UsersController(AuthDbContext context)
+    public UsersController(IAuthService authService)
     {
-        _context = context;
+        _authService = authService;
     }
 
     [HttpPost] // POST /api/users
     public async Task<IActionResult> Register([FromBody] UserDto request)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+        // 2. DELEGA toda a lógica para o serviço
+        var result = await _authService.RegisterAsync(request);
+
+        // 3. O Controller apenas decide o tipo de resposta (HTTP)
+        if (!result.Success)
         {
-            return BadRequest("Usuário com este email já existe.");
+            // Retorna o erro específico (ex: "Usuário já existe" ou "Perfil não encontrado")
+            if (result.ErrorMessage.Contains("Perfil"))
+                return StatusCode(500, result.ErrorMessage);
+            
+            return BadRequest(result.ErrorMessage);
         }
 
-        string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-        var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
-        if (userRole == null)
-        {
-            return StatusCode(500, "Perfil 'User' padrão não encontrado.");
-        }
-
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = request.Email,
-            PasswordHash = passwordHash,
-            Roles = new List<Role> { userRole }
-        };
-
-        await _context.Users.AddAsync(user);
-        await _context.SaveChangesAsync();
-
-        // Retorna um objeto anônimo para não expor o modelo User completo com o hash da senha
-        return StatusCode(201, new { UserId = user.Id, Email = user.Email });
+        return StatusCode(201, result.Data);
     }
 }
