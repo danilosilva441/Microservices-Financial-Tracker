@@ -1,11 +1,14 @@
 <script setup>
 import { onMounted, computed, ref, watch } from 'vue';
+import { onMounted, computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useOperacoesStore } from '@/stores/operacoes';
 import { formatCurrency } from '@/utils/formatters.js';
 import FaturamentoForm from '@/components/FaturamentoForm.vue';
 import { useAuthStore } from '@/stores/authStore';
 
+// Importações otimizadas do Chart.js
+import { Bar, Line, Pie } from 'vue-chartjs';
 // Importações otimizadas do Chart.js
 import { Bar, Line, Pie } from 'vue-chartjs';
 import {
@@ -19,15 +22,34 @@ import {
   LineElement,
   PointElement,
   ArcElement
+  PointElement,
+  ArcElement
 } from 'chart.js';
 
 // Registra os componentes do Chart.js
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, LineElement, PointElement, ArcElement);
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, LineElement, PointElement, ArcElement);
 
 const route = useRoute();
 const router = useRouter();
 const operacoesStore = useOperacoesStore();
 const authStore = useAuthStore();
+
+// Estados e Cache
+const cachedCalculations = ref(null);
+const lastCalculationTime = ref(0);
+const showFiltrosAvancados = ref(false);
+const exportLoading = ref(false);
+
+// Filtros para BI
+const filtros = ref({
+  dataInicio: '',
+  dataFim: '',
+  origem: '',
+  valorMinimo: '',
+  valorMaximo: '',
+  periodo: 'mensal' // mensal, semanal, diário
+});
 
 // Estados e Cache
 const cachedCalculations = ref(null);
@@ -59,6 +81,16 @@ watch(() => route.params.id, (newId) => {
 
 // Métodos
 const handleSaveFaturamento = async (faturamentoData) => {
+// Watch para recarregar quando o ID mudar
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    cachedCalculations.value = null;
+    operacoesStore.fetchOperacaoById(newId);
+  }
+});
+
+// Métodos
+const handleSaveFaturamento = async (faturamentoData) => {
   const operacaoId = route.params.id;
   const dadosCompletos = {
     ...faturamentoData,
@@ -67,7 +99,10 @@ const handleSaveFaturamento = async (faturamentoData) => {
   await operacoesStore.addFaturamento(operacaoId, dadosCompletos);
   cachedCalculations.value = null;
 };
+  cachedCalculations.value = null;
+};
 
+const handleDeleteOperacao = async () => {
 const handleDeleteOperacao = async () => {
   const operacaoId = operacaoAtual.value.id;
   if (window.confirm(`Tem certeza que deseja excluir a operação "${operacaoAtual.value.nome}"? Esta ação não pode ser desfeita.`)) {
@@ -79,12 +114,29 @@ const handleDeleteOperacao = async () => {
     }
   }
 };
+};
 
+const handleDeleteFaturamento = async (faturamentoId) => {
 const handleDeleteFaturamento = async (faturamentoId) => {
   if (window.confirm('Tem certeza que deseja excluir este faturamento?')) {
     await operacoesStore.deleteFaturamento(operacaoAtual.value.id, faturamentoId);
     cachedCalculations.value = null;
+    cachedCalculations.value = null;
   }
+};
+
+const limparFiltros = () => {
+  filtros.value = {
+    dataInicio: '',
+    dataFim: '',
+    origem: '',
+    valorMinimo: '',
+    valorMaximo: '',
+    periodo: 'mensal'
+  };
+};
+
+<<<<<<< Updated upstream
 };
 
 const limparFiltros = () => {
@@ -103,6 +155,34 @@ const limparFiltros = () => {
 const totalFaturado = computed(() => 
   operacaoAtual.value?.faturamentos?.$values?.reduce((total, f) => total + f.valor, 0) || 0
 );
+=======
+const exportarDados = async () => {
+  exportLoading.value = true;
+  try {
+    // Simular exportação - implementar conforme necessidade
+    const dados = kpis.value;
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dados-operacao-${operacaoAtual.value.nome}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Erro ao exportar dados:', error);
+    alert('Erro ao exportar dados');
+  } finally {
+    exportLoading.value = false;
+  }
+};
+>>>>>>> Stashed changes
+
+// --- CÁLCULOS OTIMIZADOS COM CACHE E ANÁLISES BI ---
+const operacaoAtual = computed(() => operacoesStore.operacaoAtual);
+
+<<<<<<< Updated upstream
 =======
 const exportarDados = async () => {
   exportLoading.value = true;
@@ -229,9 +309,15 @@ const calcularKPIs = () => {
   
   const faturamentoPorDia = Object.entries(faturamentosPorDia)
 >>>>>>> Stashed changes
+=======
+  
+  const faturamentoPorDia = Object.entries(faturamentosPorDia)
+>>>>>>> Stashed changes
     .map(([data, valor]) => ({ data, valor }))
     .sort((a, b) => new Date(a.data) - new Date(b.data));
 
+  // Progresso acumulado para gráfico de linha
+  const progressoAcumulado = [];
   // Progresso acumulado para gráfico de linha
   const progressoAcumulado = [];
   let acumulado = 0;
@@ -246,11 +332,17 @@ const calcularKPIs = () => {
   
   faturamentoPorDia.forEach(({ data, valor }) => {
 >>>>>>> Stashed changes
+=======
+  
+  faturamentoPorDia.forEach(({ data, valor }) => {
+>>>>>>> Stashed changes
     acumulado += valor;
+    progressoAcumulado.push({
     progressoAcumulado.push({
       data,
       valor,
       acumulado,
+      percentual: (acumulado / metaMensal) * 100
       percentual: (acumulado / metaMensal) * 100
     });
   });
@@ -366,8 +458,117 @@ const getResponsiveFontSize = () => {
 };
 
 const chartOptions = computed(() => ({
+=======
+  // Dados para gráficos
+  const barChartData = {
+    labels: faturamentoPorDia.map(item => item.data),
+    datasets: [
+      {
+        label: 'Faturamento Diário',
+        backgroundColor: '#38bdf8',
+        borderColor: '#0284c7',
+        borderWidth: 1,
+        data: faturamentoPorDia.map(item => item.valor)
+      }
+    ]
+  };
+
+  const lineChartData = {
+    labels: progressoAcumulado.map(item => item.data),
+    datasets: [
+      {
+        label: 'Progresso Acumulado',
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        data: progressoAcumulado.map(item => item.acumulado)
+      },
+      {
+        label: 'Meta Mensal',
+        borderColor: '#ef4444',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        fill: false,
+        data: progressoAcumulado.map(() => metaMensal)
+      }
+    ]
+  };
+
+  const pieChartData = {
+    labels: Object.keys(faturamentoPorOrigem),
+    datasets: [
+      {
+        data: Object.values(faturamentoPorOrigem),
+        backgroundColor: [
+          '#4ade80', '#38bdf8', '#f87171', '#fbbf24', 
+          '#a78bfa', '#f472b6', '#60a5fa', '#34d399'
+        ]
+      }
+    ]
+  };
+
+  const result = {
+    // KPIs Básicos
+    totalFaturado,
+    percentualMeta,
+    saldoRestante,
+    mediaDiariaNecessaria,
+    totalRegistros: faturamentosFiltrados.length,
+    
+    // Análises BI
+    mediaFaturamentoDiario,
+    tendencia,
+    diasDecorridos,
+    diasRestantes,
+    diasNoMes,
+    
+    // Dados para tabelas e gráficos
+    faturamentosOrdenados,
+    faturamentoPorDia,
+    progressoAcumulado,
+    faturamentoPorOrigem,
+    faturamentoSemanal,
+    
+    // Dados dos gráficos
+    barChartData,
+    lineChartData,
+    pieChartData
+  };
+
+  // Armazena em cache
+  cachedCalculations.value = result;
+  lastCalculationTime.value = now;
+
+  return result;
+};
+
+// Computed properties otimizadas
+const kpis = computed(() => calcularKPIs());
+
+// Origens únicas para o filtro
+const origensUnicas = computed(() => {
+  const origens = operacaoAtual.value?.faturamentos?.$values?.map(f => f.origem) || [];
+  return [...new Set(origens)];
+>>>>>>> Stashed changes
+});
+
+// Configurações responsivas dos gráficos
+const getResponsiveFontSize = () => {
+  const width = window.innerWidth;
+  if (width < 640) return 9;
+  if (width < 1024) return 10;
+  return 12;
+};
+
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  animation: {
+    duration: 800,
+    easing: 'easeInOutQuart'
+  },
   animation: {
     duration: 800,
     easing: 'easeInOutQuart'
@@ -377,7 +578,22 @@ const chartOptions = computed(() => ({
       position: 'bottom',
       labels: {
         boxWidth: 10,
+        boxWidth: 10,
         font: {
+          size: getResponsiveFontSize()
+        },
+        padding: window.innerWidth < 640 ? 8 : 12
+      }
+    },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          let label = context.dataset.label || '';
+          if (label) label += ': ';
+          if (context.parsed.y !== null) {
+            label += formatCurrency(context.parsed.y);
+          }
+          return label;
           size: getResponsiveFontSize()
         },
         padding: window.innerWidth < 640 ? 8 : 12
@@ -403,11 +619,15 @@ const chartOptions = computed(() => ({
           size: getResponsiveFontSize()
         },
         maxRotation: window.innerWidth < 640 ? 45 : 0
+          size: getResponsiveFontSize()
+        },
+        maxRotation: window.innerWidth < 640 ? 45 : 0
       }
     },
     y: {
       ticks: {
         font: {
+          size: getResponsiveFontSize()
           size: getResponsiveFontSize()
         },
 <<<<<<< Updated upstream
@@ -459,10 +679,53 @@ const pieChartOptions = computed(() => ({
       }
     }
   }
+=======
+        callback: function(value) {
+          if (value >= 1000000) {
+            return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+          }
+          if (value >= 1000) {
+            return 'R$ ' + (value / 1000).toFixed(0) + 'K';
+          }
+          return 'R$ ' + value;
+>>>>>>> Stashed changes
+        }
+      }
+    }
+  }
+}));
+
+const pieChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        boxWidth: 10,
+        font: {
+          size: getResponsiveFontSize()
+        },
+        padding: window.innerWidth < 640 ? 8 : 12
+      }
+    },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          const label = context.label || '';
+          const value = context.raw || 0;
+          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+          const percentage = Math.round((value / total) * 100);
+          return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+        }
+      }
+    }
+  }
 }));
 </script>
 
 <template>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
   <div class="p-4 sm:p-6 lg:p-8">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
@@ -510,14 +773,53 @@ const pieChartOptions = computed(() => ({
         </button>
       </div>
 >>>>>>> Stashed changes
+=======
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+    <!-- Header Modernizado -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 lg:mb-8">
+      <div class="header-content">
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 modern-title">
+          Detalhes da Operação
+        </h1>
+        <p class="text-gray-600 text-sm sm:text-base hidden sm:block">
+          Painel analítico completo com métricas avançadas
+        </p>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+        <button 
+          @click="exportarDados"
+          :disabled="exportLoading"
+          class="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          {{ exportLoading ? 'Exportando...' : 'Exportar Dados' }}
+        </button>
+        <button 
+          @click="router.push({ name: 'operacoes' })"
+          class="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Voltar para Operações
+        </button>
+      </div>
+>>>>>>> Stashed changes
     </div>
 
     <!-- Loading State -->
     <div v-if="operacoesStore.isLoading" class="text-center py-12 lg:py-16 modern-loading">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
       <p class="text-gray-600 text-lg">Carregando dados da operação...</p>
+    <!-- Loading State -->
+    <div v-if="operacoesStore.isLoading" class="text-center py-12 lg:py-16 modern-loading">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+      <p class="text-gray-600 text-lg">Carregando dados da operação...</p>
     </div>
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     <div v-else-if="operacaoAtual" class="space-y-6 sm:space-y-8">
       <!-- Dashboard de Progresso -->
@@ -527,9 +829,16 @@ const pieChartOptions = computed(() => ({
       <!-- Dashboard de KPIs -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
 >>>>>>> Stashed changes
+=======
+    <div v-else-if="operacaoAtual" class="space-y-6 lg:space-y-8">
+      <!-- Dashboard de KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+>>>>>>> Stashed changes
         <!-- Meta Atingida -->
         <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-green-500 hover-lift">
+        <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-green-500 hover-lift">
           <div class="flex items-center justify-between">
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             <div>
               <h3 class="text-sm sm:text-base text-gray-500 mb-2">Meta Atingida</h3>
@@ -550,8 +859,23 @@ const pieChartOptions = computed(() => ({
               </p>
               <p class="text-xs text-gray-500 mt-1 kpi-subtext truncate">
                 {{ formatCurrency(kpis.totalFaturado) }} / {{ formatCurrency(operacaoAtual.metaMensal) }}
+=======
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-500 mb-2">Meta Atingida</h3>
+              <p class="text-2xl lg:text-3xl font-bold kpi-value" 
+                 :class="{
+                   'text-green-500': kpis.percentualMeta >= 100,
+                   'text-yellow-500': kpis.percentualMeta >= 70 && kpis.percentualMeta < 100,
+                   'text-red-500': kpis.percentualMeta < 70
+                 }">
+                {{ kpis.percentualMeta.toFixed(1) }}%
+>>>>>>> Stashed changes
+              </p>
+              <p class="text-xs text-gray-500 mt-1 kpi-subtext truncate">
+                {{ formatCurrency(kpis.totalFaturado) }} / {{ formatCurrency(operacaoAtual.metaMensal) }}
               </p>
             </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -573,14 +897,21 @@ const pieChartOptions = computed(() => ({
 
         <!-- Saldo Restante -->
         <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-blue-500 hover-lift">
+        <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-blue-500 hover-lift">
           <div class="flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-500 mb-2">Saldo Restante</h3>
+              <p class="text-2xl lg:text-3xl font-bold text-blue-600 kpi-value">
+                {{ formatCurrency(kpis.saldoRestante) }}
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-semibold text-gray-500 mb-2">Saldo Restante</h3>
               <p class="text-2xl lg:text-3xl font-bold text-blue-600 kpi-value">
                 {{ formatCurrency(kpis.saldoRestante) }}
               </p>
               <p class="text-xs text-gray-500 mt-1 kpi-subtext">para bater a meta</p>
+              <p class="text-xs text-gray-500 mt-1 kpi-subtext">para bater a meta</p>
             </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -602,14 +933,21 @@ const pieChartOptions = computed(() => ({
 
         <!-- Média Diária Necessária -->
         <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-orange-500 hover-lift">
+        <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-orange-500 hover-lift">
           <div class="flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-500 mb-2">Média Diária</h3>
+              <p class="text-2xl lg:text-3xl font-bold text-orange-600 kpi-value">
+                {{ formatCurrency(kpis.mediaDiariaNecessaria) }}
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-semibold text-gray-500 mb-2">Média Diária</h3>
               <p class="text-2xl lg:text-3xl font-bold text-orange-600 kpi-value">
                 {{ formatCurrency(kpis.mediaDiariaNecessaria) }}
               </p>
               <p class="text-xs text-gray-500 mt-1 kpi-subtext">necessária por dia</p>
+              <p class="text-xs text-gray-500 mt-1 kpi-subtext">necessária por dia</p>
             </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -631,14 +969,21 @@ const pieChartOptions = computed(() => ({
 
         <!-- Total de Registros -->
         <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-purple-500 hover-lift">
+        <div class="modern-kpi-card bg-white p-4 lg:p-6 rounded-xl shadow-lg border-l-4 border-purple-500 hover-lift">
           <div class="flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-500 mb-2">Registros</h3>
+              <p class="text-2xl lg:text-3xl font-bold text-purple-600 kpi-value">
+                {{ kpis.totalRegistros }}
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-semibold text-gray-500 mb-2">Registros</h3>
               <p class="text-2xl lg:text-3xl font-bold text-purple-600 kpi-value">
                 {{ kpis.totalRegistros }}
               </p>
               <p class="text-xs text-gray-500 mt-1 kpi-subtext">faturamentos</p>
+              <p class="text-xs text-gray-500 mt-1 kpi-subtext">faturamentos</p>
             </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -659,6 +1004,7 @@ const pieChartOptions = computed(() => ({
         </div>
       </div>
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
       <!-- Gráficos de Progresso -->
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
@@ -771,6 +1117,7 @@ const pieChartOptions = computed(() => ({
       </div>
 
       <!-- Conteúdo Principal -->
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         <!-- Card de Informações da Operação -->
@@ -1169,8 +1516,94 @@ const pieChartOptions = computed(() => ({
   opacity: 0.8;
   font-size: 0.75rem;
   line-height: 1.2;
+/* Design System Moderno */
+.modern-title {
+  background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
+/* Cards com efeitos modernos */
+.modern-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* KPIs Cards */
+.modern-kpi-card {
+  transition: all 0.3s ease;
+}
+
+.modern-kpi-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Tipografia responsiva para KPIs */
+.kpi-value {
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.kpi-subtext {
+  opacity: 0.8;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+/* Animações */
+.modern-loading {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.modern-empty {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tabela moderna */
+.modern-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.modern-table thead {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.modern-table th {
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Botões interativos */
+.modern-delete-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Utilitários responsivos */
+@media (max-width: 640px) {
+  .kpi-value {
+    font-size: 1.25rem !important;
 /* Animações */
 .modern-loading {
   animation: fadeInUp 0.6s ease-out;
@@ -1297,5 +1730,53 @@ const pieChartOptions = computed(() => ({
 button:focus {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
+=======
+  
+  .modern-kpi-card {
+    padding: 1rem !important;
+>>>>>>> Stashed changes
+  }
 }
+
+@media (max-width: 480px) {
+  .kpi-value {
+    font-size: 1.1rem !important;
+  }
+}
+
+/* Scroll personalizado */
+.max-h-96 {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.max-h-96::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-96::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.max-h-96::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.max-h-96::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Estados de foco para acessibilidade */
+.modern-delete-btn:focus {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+</style>
 </style>

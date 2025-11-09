@@ -1,5 +1,6 @@
 <script setup>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { onMounted, computed, ref } from 'vue';
 <<<<<<< Updated upstream
 // 1. Importa a NOVA dashboardStore
@@ -449,6 +450,7 @@ const barChartData = computed(() => ({
 }));
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 // Dados para o Gráfico de Pizza (Distribuição do Faturamento)
 const pieChartData = computed(() => ({
   labels: operacoes.value.map(op => op.nome),
@@ -459,6 +461,86 @@ const pieChartData = computed(() => ({
     }
   ]
 }));
+=======
+// Dados para gráficos de BI
+const tendenciaChartData = computed(() => ({
+  labels: ['Realizado', 'Necessário'],
+  datasets: [
+    {
+      label: 'Média Diária',
+      data: [kpis.value.mediaDiariaAtual || 0, kpis.value.mediaDiariaNecessaria || 0],
+      backgroundColor: ['#10b981', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#10b981' : '#ef4444'],
+      borderColor: ['#059669', kpis.value.mediaDiariaAtual >= kpis.value.mediaDiariaNecessaria ? '#059669' : '#dc2626'],
+      borderWidth: 1
+    }
+  ]
+}));
+
+const eficienciaChartData = computed(() => ({
+  labels: advancedMetrics.value.eficienciaOperacional.map(op => op.nome),
+  datasets: [
+    {
+      label: 'Eficiência (%)',
+      data: advancedMetrics.value.eficienciaOperacional.map(op => op.contribuicao),
+      backgroundColor: advancedMetrics.value.eficienciaOperacional.map(op => 
+        op.contribuicao >= 100 ? '#10b981' : 
+        op.contribuicao >= 70 ? '#f59e0b' : '#ef4444'
+      ),
+      borderColor: advancedMetrics.value.eficienciaOperacional.map(op => 
+        op.contribuicao >= 100 ? '#059669' : 
+        op.contribuicao >= 70 ? '#d97706' : '#dc2626'
+      ),
+      borderWidth: 1
+    }
+  ]
+}));
+
+// --- DADOS PARA OS GRÁFICOS ---
+const barChartData = computed(() => {
+  const data = graficos.value.barChartData; 
+  if (!data || !data.labels || !data.datasets) {
+    return { 
+      labels: [], 
+      datasets: [
+        {
+          label: 'Meta Mensal',
+          backgroundColor: '#a7f3d0',
+          borderColor: '#059669',
+          borderWidth: 1,
+          data: []
+        },
+        {
+          label: 'Faturamento Realizado',
+          backgroundColor: '#38bdf8',
+          borderColor: '#0284c7',
+          borderWidth: 1,
+          data: []
+        }
+      ]
+    };
+  }
+  
+  return {
+    labels: data.labels,
+    datasets: [
+      {
+        label: 'Meta Mensal',
+        backgroundColor: '#a7f3d0',
+        borderColor: '#059669',
+        borderWidth: 1,
+        data: data.datasets[0]?.data || []
+      },
+      {
+        label: 'Faturamento Realizado',
+        backgroundColor: '#38bdf8',
+        borderColor: '#0284c7',
+        borderWidth: 1,
+        data: data.datasets[1]?.data || []
+      }
+    ]
+  };
+});
+>>>>>>> Stashed changes
 =======
 // Dados para gráficos de BI
 const tendenciaChartData = computed(() => ({
@@ -567,6 +649,7 @@ const projecaoChartData = computed(() => ({
 
 <template>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   <div class="p-3 sm:p-4 lg:p-6 xl:p-8">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
@@ -603,6 +686,13 @@ const projecaoChartData = computed(() => ({
           <option value="quarter">Este Trimestre</option>
           <option value="year">Este Ano</option>
         </select>
+        <button 
+          @click="exportarDadosBI"
+          :disabled="exportLoading"
+          class="modern-button px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-xs sm:text-sm"
+        >
+          {{ exportLoading ? 'Exportando...' : 'Exportar BI' }}
+        </button>
         <button 
           @click="exportarDadosBI"
           :disabled="exportLoading"

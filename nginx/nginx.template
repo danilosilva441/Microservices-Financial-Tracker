@@ -70,38 +70,26 @@ server {
             return 204;
         }
 
-<<<<<<< Updated upstream
+        # --- Bloco de Conflito Corrigido (v2.0) ---
+        
         # --- Subrotas específicas (ORDEM É IMPORTANTE!) ---
-    
+   
         # 1. Analysis Service PRIMEIRO
         location ~ ^/api/analysis {
             proxy_pass http://analysis_service;
         }
 
-        # 2. Auth Service
-=======
-<<<<<<< Updated upstream
-        # --- Subrotas específicas ---
->>>>>>> Stashed changes
-        location ~ ^/api/(users|token|admin) {
-=======
-        # --- Subrotas específicas (ORDEM É IMPORTANTE!) ---
-    
-        # 1. Analysis Service PRIMEIRO
-        location ~ ^/api/analysis {
-            proxy_pass http://analysis_service;
-        }
-
-        # 2. Auth Service
+        # 2. Auth Service (v2.0 - inclui /tenant)
         location ~ ^/api/(users|token|admin|tenant) {
->>>>>>> Stashed changes
             proxy_pass http://auth_service;
         }
 
-        # 3. Billing Service  
+        # 3. Billing Service (v2.0 - inclui /billing e /operacoes legada)
         location ~ ^/api/(billing|operacoes) {
             proxy_pass http://billing_service;
         }
+        
+        # --- Fim do Bloco Corrigido ---
 
 
         # --- Rota fallback da API ---
