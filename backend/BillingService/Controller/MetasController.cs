@@ -1,5 +1,6 @@
-using BillingService.DTO;
-using BillingService.Services;
+// Caminho: backend/BillingService/Controller/MetasController.cs
+using BillingService.DTOs;
+using BillingService.Services.Interfaces; // 1. IMPORTANTE: Usando Interfaces
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -7,29 +8,50 @@ using System.Security.Claims;
 namespace BillingService.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+// 2. MUDANÇA (v2.0): A rota agora está "aninhada" dentro da Unidade
+[Route("api/unidades/{unidadeId}/metas")] 
 [Authorize]
 public class MetasController : ControllerBase
 {
-    private readonly MetaService _metaService;
+    // 3. MUDANÇA: Injeta a INTERFACE v2.0
+    private readonly IMetaService _metaService;
 
-    public MetasController(MetaService metaService)
+    public MetasController(IMetaService metaService)
     {
         _metaService = metaService;
     }
 
-    private Guid GetUserId()
+    // 4. NOVO (v2.0): Helper para pegar o TenantId
+    private Guid GetTenantId()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null) throw new InvalidOperationException("User ID not found in token.");
-        return Guid.Parse(userIdClaim);
+        var tenantIdClaim = User.FindFirst("tenantId")?.Value;
+        if (tenantIdClaim == null) throw new InvalidOperationException("Tenant ID (tenantId) not found in token.");
+        return Guid.Parse(tenantIdClaim);
     }
 
+    // (O GetUserId() foi removido pois a lógica v2.0 não o utiliza aqui)
+
+    /// <summary>
+    /// Lista todas as metas de uma unidade específica.
+    /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetMeta([FromQuery] int mes, [FromQuery] int ano)
+    // 5. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> GetMetas(Guid unidadeId)
     {
-        var userId = GetUserId();
-        var meta = await _metaService.GetMetaAsync(userId, mes, ano);
+        var tenantId = GetTenantId();
+        var metas = await _metaService.GetMetasAsync(unidadeId, tenantId);
+        return Ok(metas);
+    }
+
+    /// <summary>
+    /// Busca uma meta específica pelo período (mês/ano).
+    /// </summary>
+    [HttpGet("periodo")] // Rota: /api/unidades/{unidadeId}/metas/periodo?mes=11&ano=2025
+    // 6. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> GetMetaPorPeriodo(Guid unidadeId, [FromQuery] int mes, [FromQuery] int ano)
+    {
+        var tenantId = GetTenantId();
+        var meta = await _metaService.GetMetaAsync(unidadeId, mes, ano, tenantId);
 
         if (meta == null)
         {
@@ -39,12 +61,25 @@ public class MetasController : ControllerBase
         return Ok(meta);
     }
 
+    /// <summary>
+    /// Cria ou atualiza a meta para um período.
+    /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin , Gerente")]
-    public async Task<IActionResult> SetMeta([FromBody] MetaDto metaDto)
+    [Authorize(Roles = "Admin, Gerente")] // Roles v2.0
+    // 7. MUDANÇA: Assinatura v2.0
+    public async Task<IActionResult> SetMeta(Guid unidadeId, [FromBody] MetaDto metaDto)
     {
-        var userId = GetUserId();
-        var metaSalva = await _metaService.SetMetaAsync(metaDto, userId);
+        var tenantId = GetTenantId();
+        var (metaSalva, errorMessage) = await _metaService.SetMetaAsync(unidadeId, metaDto, tenantId);
+        
+        if (errorMessage != null)
+        {
+            if (errorMessage.Contains("não encontrada"))
+                return NotFound(errorMessage); // Erro 404
+            
+            return BadRequest(errorMessage); // Erro 400
+        }
+        
         return Ok(metaSalva);
     }
 }

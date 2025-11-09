@@ -1,49 +1,71 @@
-using BillingService.DTO;
+// Caminho: backend/BillingService/Services/MetaService.cs
+using BillingService.DTOs;
 using BillingService.Models;
-using BillingService.Repositories;
+using BillingService.Repositories.Interfaces; // 1. IMPORTANTE: Usando Interfaces
+using BillingService.Services.Interfaces; // 1. IMPORTANTE: Usando Interfaces
 
 namespace BillingService.Services;
 
-public class MetaService : Interfaces.IMetaService
+public class MetaService : IMetaService // 2. Herda da interface
 {
-    private readonly MetaRepository _repository;
+    // 3. MUDANÇA: Injeta INTERFACES v2.0
+    private readonly IMetaRepository _repository;
+    private readonly IUnidadeRepository _unidadeRepository;
 
-    public MetaService(MetaRepository repository)
+    public MetaService(IMetaRepository repository, IUnidadeRepository unidadeRepository)
     {
         _repository = repository;
+        _unidadeRepository = unidadeRepository;
     }
 
-    public async Task<Meta?> GetMetaAsync(Guid userId, int mes, int ano)
+    // 4. MUDANÇA: Assinatura v2.0
+    public async Task<Meta?> GetMetaAsync(Guid unidadeId, int mes, int ano, Guid tenantId)
     {
-        return await _repository.GetByUserAndPeriodAsync(userId, mes, ano);
+        return await _repository.GetByUnidadeAndPeriodAsync(unidadeId, mes, ano, tenantId);
+    }
+    
+    // 5. NOVO (v2.0): Lista todas as metas
+    public async Task<IEnumerable<Meta>> GetMetasAsync(Guid unidadeId, Guid tenantId)
+    {
+        return await _repository.GetAllByUnidadeAsync(unidadeId, tenantId);
     }
 
-    public async Task<Meta> SetMetaAsync(MetaDto metaDto, Guid userId)
+    // 6. MUDANÇA: Assinatura v2.0
+    public async Task<(Meta? meta, string? errorMessage)> SetMetaAsync(Guid unidadeId, MetaDto metaDto, Guid tenantId)
     {
-        var metaExistente = await _repository.GetByUserAndPeriodAsync(userId, metaDto.Mes, metaDto.Ano);
+        // 7. NOVO (v2.0): Validação de Unidade
+        var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
+        if (unidade == null)
+        {
+            return (null, "Unidade não encontrada ou não pertence a este Tenant.");
+        }
+
+        // 8. MUDANÇA: Lógica v2.0
+        var metaExistente = await _repository.GetByUnidadeAndPeriodAsync(unidadeId, metaDto.Mes, metaDto.Ano, tenantId);
 
         if (metaExistente != null)
         {
-            // Se existe, atualiza o valor
             metaExistente.ValorAlvo = metaDto.ValorAlvo;
             _repository.Update(metaExistente);
             await _repository.SaveChangesAsync();
-            return metaExistente;
+            return (metaExistente, null);
         }
         else
         {
-            // Se não existe, cria uma nova
+            // 9. MUDANÇA: Cria o modelo v2.0
             var novaMeta = new Meta
             {
                 Id = Guid.NewGuid(),
+                TenantId = tenantId, // <-- v2.0
+                UnidadeId = unidadeId, // <-- v2.0
                 Mes = metaDto.Mes,
                 Ano = metaDto.Ano,
-                ValorAlvo = metaDto.ValorAlvo,
-                UserId = userId
+                ValorAlvo = metaDto.ValorAlvo
+                // UserId = userId // <-- v1.0 REMOVIDO
             };
             await _repository.AddAsync(novaMeta);
             await _repository.SaveChangesAsync();
-            return novaMeta;
+            return (novaMeta, null);
         }
     }
 }

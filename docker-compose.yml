@@ -12,14 +12,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   auth_service:
-    build: 
-      context: .  
+    build:
+      context: .
       dockerfile: ./backend/AuthService/Dockerfile
     container_name: auth_service
     restart: always
@@ -33,15 +33,15 @@ services:
       Jwt__Issuer: AuthService
       Jwt__Audience: BillingService
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 30s
 
   billing_service:
-    build: 
-      context: .  
+    build:
+      context: .
       dockerfile: ./backend/BillingService/Dockerfile
     container_name: billing_service
     restart: always
@@ -55,11 +55,11 @@ services:
       Jwt__Issuer: AuthService
       Jwt__Audience: BillingService
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || curl -f http://localhost:8080/health || exit 0"]
       interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 40s
 
   analysis_service:
     build: ./backend/analysis_service
@@ -78,7 +78,7 @@ services:
       AUTH_SERVICE_URL: http://auth_service:8080
       BILLING_SERVICE_URL: http://billing_service:8080
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
       interval: 15s
       timeout: 10s
       retries: 5

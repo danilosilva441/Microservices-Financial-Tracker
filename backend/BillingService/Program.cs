@@ -26,6 +26,8 @@ builder.Services.AddCors(options =>
 string? connectionString;
 var databaseUrl = builder.Configuration["DATABASE_URL"];
 
+Console.WriteLine($"🌍 DATABASE_URL detectada: {databaseUrl}");
+
 if (!string.IsNullOrEmpty(databaseUrl))
 {
     Console.WriteLine("📡 BillingService: Conectando ao PostgreSQL do Railway...");
@@ -37,7 +39,7 @@ else
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
-if(string.IsNullOrEmpty(connectionString))
+if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("String de conexão com o banco de dados não foi encontrada.");
 }
@@ -130,12 +132,12 @@ static string ConvertDatabaseUrlToConnectionString(string databaseUrl)
 {
     var uri = new Uri(databaseUrl);
     var userInfo = uri.UserInfo.Split(':');
-    
+
     var host = uri.Host;
     var port = uri.Port;
     var username = userInfo[0];
     var password = userInfo[1];
-    var database = "billing_db"; 
-    
+    var database = "billing_db";
+
     return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
 }
