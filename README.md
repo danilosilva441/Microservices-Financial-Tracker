@@ -1,14 +1,3 @@
-Status “em produção – v2.0 estável”
-
-Destaque da Grande Refatoração concluída
-
-Roadmap real da Fase 2 (v2.1)
-
-Ênfase na engenharia assistida por IA
-
-Tecnologias atualizadas (.NET 8, Vue 3, Node.js, TailwindCSS, PostgreSQL, Docker, Nginx)
-
-
 
 ---
 
