@@ -77,6 +77,11 @@ Com o MVP funcional, os próximos passos se concentram em expandir as funcionali
     [🚀] Testes Automatizados: Adicionar testes unitários (Vitest) e E2E (Cypress/Playwright).
     [🚀] Deploy: Publicar a aplicação completa em uma plataforma de nuvem como Railway, Heroku ou Azure.
 
+
+🧠 AI-Driven Development
+
+O desenvolvimento deste projeto foi conduzido utilizando técnicas de Engenharia Assistida por IA (AI-Augmented Development), integrando múltiplas ferramentas de IA (ChatGPT, Gemini e DeepSeek) para planejamento, arquitetura, codificação e otimização de desempenho.
+
 ---
 
 ## 👨‍💻 Autor
