@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Repositories;
 
-// 1. Renomeado e implementa a nova interface
 public class UnidadeRepository : IUnidadeRepository
 {
     private readonly BillingDbContext _context;
@@ -16,14 +15,14 @@ public class UnidadeRepository : IUnidadeRepository
         _context = context;
     }
 
-    // 2. MUDANÇA: Usa _context.Unidades e retorna Unidade
+    // --- Métodos v2.0 (Para Gerentes) ---
+
     public async Task<Unidade?> GetByIdAsync(Guid id, Guid tenantId)
     {
         return await _context.Unidades
             .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
     }
-
-    // 3. MUDANÇA: Usa _context.Unidades e retorna Unidade
+    
     public async Task<IEnumerable<Unidade>> GetAllAsync(Guid tenantId)
     {
         return await _context.Unidades
@@ -31,7 +30,16 @@ public class UnidadeRepository : IUnidadeRepository
             .ToListAsync();
     }
 
-    // 4. MUDANÇA: Recebe Unidade
+    // --- NOVO MÉTODO v2.0 (Para Admin/Sistema) ---
+    // (Implementação do método que adicionamos à interface)
+    public async Task<IEnumerable<Unidade>> GetAllAdminAsync()
+    {
+        // Busca TODAS as unidades, sem filtro de Tenant
+        return await _context.Unidades.ToListAsync();
+    }
+
+    // --- Métodos CRUD (Restantes) ---
+
     public async Task AddAsync(Unidade unidade)
     {
         await _context.Unidades.AddAsync(unidade);
@@ -41,14 +49,12 @@ public class UnidadeRepository : IUnidadeRepository
     {
         await _context.UsuarioOperacoes.AddAsync(vinculo);
     }
-
-    // 5. MUDANÇA: Recebe Unidade
+    
     public void Update(Unidade unidade)
     {
         _context.Unidades.Update(unidade);
     }
-
-    // 6. MUDANÇA: Recebe Unidade
+    
     public void Remove(Unidade unidade)
     {
         _context.Unidades.Remove(unidade);
@@ -61,7 +67,6 @@ public class UnidadeRepository : IUnidadeRepository
     
     public async Task<bool> UpdateProjecaoAsync(Guid id, decimal projecao)
     {
-        // 7. MUDANÇA: Busca em _context.Unidades
         var unidade = await _context.Unidades.FindAsync(id);
         if (unidade == null)
         {

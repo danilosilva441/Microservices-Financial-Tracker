@@ -9,6 +9,7 @@ namespace BillingService.Repositories.Interfaces
         // 2. Todos os métodos agora usam a classe "Unidade"
         Task<Unidade?> GetByIdAsync(Guid id, Guid tenantId);
         Task<IEnumerable<Unidade>> GetAllAsync(Guid tenantId);
+        Task<IEnumerable<Unidade>> GetAllAdminAsync(); // Busca TUDO, sem filtro de Tenant
         Task AddAsync(Unidade unidade);
         void Update(Unidade unidade);
         void Remove(Unidade unidade);

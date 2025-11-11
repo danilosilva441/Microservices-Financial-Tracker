@@ -193,10 +193,9 @@ namespace AuthService.Services
 
             // 3. Adiciona a claim CRÍTICA do TenantId
             //    (LÓGICA ATUALIZADA: checa se o TenantId não é o Guid "vazio")
-            if (user.TenantId != Guid.Empty)
+            if (user.TenantId.HasValue)
             {
-                // (LÓGICA ATUALIZADA: acessa o TenantId diretamente, sem ".Value")
-                claims.Add(new Claim("tenantId", user.TenantId.ToString()));
+                claims.Add(new Claim("tenantId", user.TenantId.Value.ToString()));
             }
 
             // 4. Adiciona as claims de Role
@@ -206,11 +205,11 @@ namespace AuthService.Services
             }
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(8), // Você pode alterar para 24h se quiser
-                signingCredentials: credentials);
+                            issuer: _configuration["Jwt:Issuer"],
+                            audience: _configuration["Jwt:Audience"],
+                            claims: claims,
+                            expires: DateTime.Now.AddHours(8),
+                            signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AuthService.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20251105234232_MakeTenantIdNullableOnUser")]
-    partial class MakeTenantIdNullableOnUser
+    [Migration("20251109190435_V2_Schema_Inicial_Auth")]
+    partial class V2_Schema_Inicial_Auth
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,6 +31,12 @@ namespace AuthService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -38,6 +44,12 @@ namespace AuthService.Migrations
                     b.Property<string>("NormalizedName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -50,44 +62,72 @@ namespace AuthService.Migrations
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-7890-a1a1-a1a1a1a1a1a1"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4061),
+                            IsDeleted = false,
                             Name = "User",
-                            NormalizedName = "USER"
+                            NormalizedName = "USER",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4064)
                         },
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a7-890b-b2b2-b2b2b2b2b2b2"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4080),
+                            IsDeleted = false,
                             Name = "Admin",
-                            NormalizedName = "ADMIN"
+                            NormalizedName = "ADMIN",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4081)
                         },
                         new
                         {
                             Id = new Guid("c3d4e5f6-a7b8-90c1-c3c3-c3c3c3c3c3c3"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4102),
+                            IsDeleted = false,
                             Name = "Dev",
-                            NormalizedName = "DEV"
+                            NormalizedName = "DEV",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4103)
                         },
                         new
                         {
                             Id = new Guid("d4e5f6a7-b8c9-01d2-d4d4-d4d4d4d4d4d4"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4107),
+                            IsDeleted = false,
                             Name = "Gerente",
-                            NormalizedName = "GERENTE"
+                            NormalizedName = "GERENTE",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4108)
                         },
                         new
                         {
                             Id = new Guid("e5f6a7b8-c9d0-12e3-e5e5-e5e5e5e5e5e5"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4112),
+                            IsDeleted = false,
                             Name = "Supervisor",
-                            NormalizedName = "SUPERVISOR"
+                            NormalizedName = "SUPERVISOR",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4112)
                         },
                         new
                         {
                             Id = new Guid("f6a7b8c9-d0e1-23f4-f6f6-f6f6f6f6f6f6"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4116),
+                            IsDeleted = false,
                             Name = "Lider",
-                            NormalizedName = "LIDER"
+                            NormalizedName = "LIDER",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4117)
                         },
                         new
                         {
                             Id = new Guid("a7b8c9d0-e1f2-34a5-a7a7-a7a7a7a7a7a7"),
+                            CreatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4121),
+                            IsDeleted = false,
                             Name = "Operador",
-                            NormalizedName = "OPERADOR"
+                            NormalizedName = "OPERADOR",
+                            TenantId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            UpdatedAt = new DateTime(2025, 11, 9, 19, 4, 33, 994, DateTimeKind.Utc).AddTicks(4121)
                         });
                 });
 
@@ -97,8 +137,14 @@ namespace AuthService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("DataDeCriacao")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("NomeDaEmpresa")
                         .IsRequired()
@@ -109,6 +155,12 @@ namespace AuthService.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -121,9 +173,15 @@ namespace AuthService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -132,8 +190,11 @@ namespace AuthService.Migrations
                     b.Property<Guid?>("ReportsToUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -169,7 +230,8 @@ namespace AuthService.Migrations
                     b.HasOne("AuthService.Models.Tenant", "Tenant")
                         .WithMany("Users")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("ReportsToUser");
 

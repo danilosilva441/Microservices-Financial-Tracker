@@ -28,6 +28,12 @@ namespace AuthService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -35,6 +41,12 @@ namespace AuthService.Migrations
                     b.Property<string>("NormalizedName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -47,44 +59,65 @@ namespace AuthService.Migrations
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-7890-a1a1-a1a1a1a1a1a1"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7300),
+                            IsDeleted = false,
                             Name = "User",
-                            NormalizedName = "USER"
+                            NormalizedName = "USER",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7303)
                         },
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a7-890b-b2b2-b2b2b2b2b2b2"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7322),
+                            IsDeleted = false,
                             Name = "Admin",
-                            NormalizedName = "ADMIN"
+                            NormalizedName = "ADMIN",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7323)
                         },
                         new
                         {
                             Id = new Guid("c3d4e5f6-a7b8-90c1-c3c3-c3c3c3c3c3c3"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7328),
+                            IsDeleted = false,
                             Name = "Dev",
-                            NormalizedName = "DEV"
+                            NormalizedName = "DEV",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7328)
                         },
                         new
                         {
                             Id = new Guid("d4e5f6a7-b8c9-01d2-d4d4-d4d4d4d4d4d4"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7332),
+                            IsDeleted = false,
                             Name = "Gerente",
-                            NormalizedName = "GERENTE"
+                            NormalizedName = "GERENTE",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7333)
                         },
                         new
                         {
                             Id = new Guid("e5f6a7b8-c9d0-12e3-e5e5-e5e5e5e5e5e5"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7337),
+                            IsDeleted = false,
                             Name = "Supervisor",
-                            NormalizedName = "SUPERVISOR"
+                            NormalizedName = "SUPERVISOR",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7338)
                         },
                         new
                         {
                             Id = new Guid("f6a7b8c9-d0e1-23f4-f6f6-f6f6f6f6f6f6"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7360),
+                            IsDeleted = false,
                             Name = "Lider",
-                            NormalizedName = "LIDER"
+                            NormalizedName = "LIDER",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7361)
                         },
                         new
                         {
                             Id = new Guid("a7b8c9d0-e1f2-34a5-a7a7-a7a7a7a7a7a7"),
+                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7365),
+                            IsDeleted = false,
                             Name = "Operador",
-                            NormalizedName = "OPERADOR"
+                            NormalizedName = "OPERADOR",
+                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7366)
                         });
                 });
 
@@ -94,8 +127,14 @@ namespace AuthService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("DataDeCriacao")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("NomeDaEmpresa")
                         .IsRequired()
@@ -106,6 +145,12 @@ namespace AuthService.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -118,9 +163,15 @@ namespace AuthService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -131,6 +182,9 @@ namespace AuthService.Migrations
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

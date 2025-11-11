@@ -1,51 +1,59 @@
 // Caminho: backend/BillingService/Services/UnidadeService.cs
-using BillingService.DTO;
+using BillingService.DTOs; // 1. IMPORTANTE: Usando DTOs (plural)
 using BillingService.Models;
-using BillingService.Repositories.Interfaces;
-using BillingService.Services.Interfaces;
+using BillingService.Repositories.Interfaces; 
+using BillingService.Services.Interfaces; 
 
 namespace BillingService.Services;
 
-// 1. Renomeado e implementa a nova interface
-public class UnidadeService : IUnidadeService
+// 2. Implementa a interface v2.0
+public class UnidadeService : IUnidadeService 
 {
-    // 2. Injeta a nova interface
     private readonly IUnidadeRepository _repository;
 
-    public UnidadeService(IUnidadeRepository repository) // <-- MUDANÇA AQUI
+    public UnidadeService(IUnidadeRepository repository)
     {
         _repository = repository;
     }
 
-    // 3. Renomeado e chama o método v2.0
-    public async Task<IEnumerable<Unidade>> GetAllUnidadesAsync(Guid tenantId)
+    // 3. NOVO (v2.0): Implementa o método para Gerentes
+    public async Task<IEnumerable<Unidade>> GetAllUnidadesByTenantAsync(Guid tenantId)
     {
         return await _repository.GetAllAsync(tenantId);
     }
 
-    // 4. Renomeado e cria uma Unidade
-    public async Task<Unidade> CreateUnidadeAsync(OperacaoDto operacaoDto, Guid userId, Guid tenantId)
+    // 4. NOVO (v2.0): Implementa o método para Admins/Sistema
+    public async Task<IEnumerable<Unidade>> GetAllUnidadesAdminAsync()
     {
-        var novaUnidade = new Unidade // <-- MUDANÇA AQUI
+        return await _repository.GetAllAdminAsync();
+    }
+
+    // 5. CORRIGIDO (v2.0): Usa o DTO "UnidadeDto"
+    public async Task<Unidade> CreateUnidadeAsync(UnidadeDto unidadeDto, Guid userId, Guid tenantId)
+    {
+        var novaUnidade = new Unidade 
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId, 
-            Nome = operacaoDto.Nome,
-            Descricao = operacaoDto.Descricao,
-            Endereco = operacaoDto.Endereco,
-            MetaMensal = operacaoDto.MetaMensal,
-            DataInicio = DateTime.SpecifyKind(operacaoDto.DataInicio, DateTimeKind.Utc),
-            DataFim = operacaoDto.DataFim.HasValue ? DateTime.SpecifyKind(operacaoDto.DataFim.Value, DateTimeKind.Utc) : null,
+            // 6. CORRIGIDO (v2.0): Mapeia do DTO "UnidadeDto"
+            Nome = unidadeDto.Nome,
+            Descricao = unidadeDto.Descricao,
+            Endereco = unidadeDto.Endereco,
+            MetaMensal = unidadeDto.MetaMensal,
+            DataInicio = DateTime.SpecifyKind(unidadeDto.DataInicio, DateTimeKind.Utc),
+            DataFim = unidadeDto.DataFim.HasValue ? DateTime.SpecifyKind(unidadeDto.DataFim.Value, DateTimeKind.Utc) : null,
             IsAtiva = true,
             UserId = userId
+            // TODO: Adicionar os novos campos de customização (AceitaPix, etc.) do modelo Unidade.cs
         };
-        await _repository.AddAsync(novaUnidade); // <-- MUDANÇA AQUI
+        await _repository.AddAsync(novaUnidade);
 
         var novoVinculo = new UsuarioOperacao
         {
             UserId = userId,
-            UnidadeId = novaUnidade.Id, // <-- Corrigido na refatoração anterior
-            TenantId = tenantId 
+            UnidadeId = novaUnidade.Id, 
+            TenantId = tenantId, 
+            RoleInOperation = "Gerente" // O criador é o Gerente
         };
         await _repository.AddUsuarioOperacaoLinkAsync(novoVinculo);
 
@@ -53,42 +61,43 @@ public class UnidadeService : IUnidadeService
 
         return novaUnidade;
     }
-
-    // 5. Renomeado
+    
     public async Task<Unidade?> GetUnidadeByIdAsync(Guid id, Guid tenantId)
     {
         return await _repository.GetByIdAsync(id, tenantId);
     }
 
-    // 6. Renomeado
-    public async Task<bool> UpdateUnidadeAsync(Guid id, UpdateOperacaoDto operacaoDto, Guid tenantId)
+    // 7. CORRIGIDO (v2.0): Usa o DTO "UpdateUnidadeDto"
+    public async Task<bool> UpdateUnidadeAsync(Guid id, UpdateUnidadeDto unidadeDto, Guid tenantId)
     {
-        var unidadeExistente = await _repository.GetByIdAsync(id, tenantId); // <-- MUDANÇA AQUI
+        var unidadeExistente = await _repository.GetByIdAsync(id, tenantId);
 
         if (unidadeExistente == null)
         {
             return false;
         }
 
-        unidadeExistente.Nome = operacaoDto.Nome;
-        unidadeExistente.Descricao = operacaoDto.Descricao;
-        unidadeExistente.Endereco = operacaoDto.Endereco;
-        unidadeExistente.MetaMensal = operacaoDto.MetaMensal;
-        unidadeExistente.DataInicio = DateTime.SpecifyKind(operacaoDto.DataInicio, DateTimeKind.Utc);
-        unidadeExistente.DataFim = operacaoDto.DataFim.HasValue
-            ? DateTime.SpecifyKind(operacaoDto.DataFim.Value, DateTimeKind.Utc)
+        // 8. CORRIGIDO (v2.0): Mapeia do DTO "UpdateUnidadeDto"
+        unidadeExistente.Nome = unidadeDto.Nome;
+        unidadeExistente.Descricao = unidadeDto.Descricao;
+        unidadeExistente.Endereco = unidadeDto.Endereco;
+        unidadeExistente.MetaMensal = unidadeDto.MetaMensal;
+        unidadeExistente.DataInicio = DateTime.SpecifyKind(unidadeDto.DataInicio, DateTimeKind.Utc);
+        unidadeExistente.DataFim = unidadeDto.DataFim.HasValue
+            ? DateTime.SpecifyKind(unidadeDto.DataFim.Value, DateTimeKind.Utc)
             : null;
+        
+        // TODO: Mapear os campos de customização (AceitaPix, etc.) se eles estiverem no DTO
 
-        _repository.Update(unidadeExistente); // <-- MUDANÇA AQUI
+        _repository.Update(unidadeExistente); 
         await _repository.SaveChangesAsync();
 
         return true;
     }
-
-    // 7. Renomeado
+    
     public async Task<bool> DeactivateUnidadeAsync(Guid id, Guid tenantId)
     {
-        var unidadeExistente = await _repository.GetByIdAsync(id, tenantId); // <-- MUDANÇA AQUI
+        var unidadeExistente = await _repository.GetByIdAsync(id, tenantId); 
 
         if (unidadeExistente == null)
         {
@@ -100,13 +109,12 @@ public class UnidadeService : IUnidadeService
         return true;
     }
     
-    // 8. Renomeado
     public async Task<bool> DeleteUnidadeAsync(Guid id, Guid tenantId)
     {
-        var unidadeExistente = await _repository.GetByIdAsync(id, tenantId); // <-- MUDANÇA AQUI
+        var unidadeExistente = await _repository.GetByIdAsync(id, tenantId); 
         if (unidadeExistente == null) return false;
 
-        _repository.Remove(unidadeExistente); // <-- MUDANÇA AQUI
+        _repository.Remove(unidadeExistente); 
         await _repository.SaveChangesAsync();
         return true;
     }
