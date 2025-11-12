@@ -4,7 +4,7 @@ WORKDIR /src
 
 # 1. Copia os .csproj (com caminhos completos da raiz)
 COPY ["SharedKernel/SharedKernel.csproj", "SharedKernel/"]
-COPY ["backend/BillingService/BillingService.csproj", "backend/BillingService/"]
+COPY ["./backend/BillingService/BillingService.csproj", "backend/BillingService/"]
 
 # 2. Restaura usando o caminho completo
 RUN dotnet restore "backend/BillingService/BillingService.csproj"
