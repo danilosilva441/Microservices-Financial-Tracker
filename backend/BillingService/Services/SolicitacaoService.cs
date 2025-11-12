@@ -3,6 +3,7 @@ using BillingService.Models;
 using BillingService.Repositories.Interfaces; // <-- 1. MUDANÇA: Adiciona as Interfaces
 using BillingService.Services.Interfaces; // <-- 1. MUDANÇA: Adiciona as Interfaces
 using System.Text.Json;
+using SharedKernel;
 
 namespace BillingService.Services;
 
@@ -37,7 +38,7 @@ public class SolicitacaoService : ISolicitacaoService // <-- Herda da Interface
     public async Task<IEnumerable<SolicitacaoAjusteDto>> GetSolicitacoesAsync()
     {
         var solicitacoes = await _repository.GetAllComDetalhesAsync();
-        
+
         // Mapeia a entidade para o DTO
         return solicitacoes.Select(s => new SolicitacaoAjusteDto
         {
@@ -66,7 +67,7 @@ public class SolicitacaoService : ISolicitacaoService // <-- Herda da Interface
     public async Task<(bool success, string? errorMessage)> RevisarSolicitacaoAsync(Guid id, string acao, Guid aprovadorId)
     {
         var solicitacao = await _repository.GetByIdComFaturamentoAsync(id);
-        if (solicitacao == null) return (false, "Solicitação não encontrada.");
+        if (solicitacao == null) return (false, ErrorMessages.GenericNotFound);
         if (solicitacao.Status != "PENDENTE") return (false, "Esta solicitação já foi revisada.");
 
         solicitacao.Status = acao.ToUpper();

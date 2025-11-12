@@ -2,7 +2,8 @@
 using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces; // 1. IMPORTANTE: Usando Interfaces
-using BillingService.Services.Interfaces; // 1. IMPORTANTE: Usando Interfaces
+using BillingService.Services.Interfaces;
+using SharedKernel; // 1. IMPORTANTE: Usando Interfaces
 
 namespace BillingService.Services;
 
@@ -37,7 +38,7 @@ public class MetaService : IMetaService // 2. Herda da interface
         var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
         if (unidade == null)
         {
-            return (null, "Unidade não encontrada ou não pertence a este Tenant.");
+            return (null, ErrorMessages.UnidadeNotFound);
         }
 
         // 8. MUDANÇA: Lógica v2.0

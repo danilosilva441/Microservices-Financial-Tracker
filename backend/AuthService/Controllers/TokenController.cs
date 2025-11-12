@@ -1,6 +1,7 @@
+// Caminho: backend/AuthService/Controllers/TokenController.cs
 using Microsoft.AspNetCore.Mvc;
 using AuthService.DTO;
-using AuthService.Services; // Importa o novo serviço
+using AuthService.Services.Interfaces; // 1. MUDANÇA: Namespace corrigido
 
 namespace AuthService.Controllers;
 
@@ -8,7 +9,7 @@ namespace AuthService.Controllers;
 [Route("api/[controller]")]
 public class TokenController : ControllerBase
 {
-    // 1. Injeta a INTERFACE do serviço
+    // A injeção do IAuthService está correta (o Login ainda vive aqui)
     private readonly IAuthService _authService;
 
     public TokenController(IAuthService authService)
@@ -19,10 +20,8 @@ public class TokenController : ControllerBase
     [HttpPost] // POST /api/token
     public async Task<IActionResult> Login([FromBody] UserDto request)
     {
-        // 2. DELEGA toda a lógica de login e geração de token para o serviço
         var result = await _authService.LoginAsync(request);
 
-        // 3. O Controller apenas decide o tipo de resposta (HTTP)
         if (!result.Success)
         {
             return Unauthorized(result.ErrorMessage);

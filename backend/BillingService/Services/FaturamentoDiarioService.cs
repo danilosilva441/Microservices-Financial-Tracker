@@ -4,6 +4,7 @@ using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using SharedKernel;
 using System.Linq;
 
 namespace BillingService.Services
@@ -26,14 +27,14 @@ namespace BillingService.Services
             var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
             if (unidade == null)
             {
-                return (null, "Unidade não encontrada.");
+                return (null, ErrorMessages.UnidadeNotFound);
             }
             
             // Valida se já existe um fechamento para este dia
             var existente = await _repository.GetByUnidadeAndDateAsync(unidadeId, dto.Data, tenantId);
             if (existente != null)
             {
-                return (null, "Já existe um fechamento submetido para esta data.");
+                return (null, ErrorMessages.FechamentoJaExiste);
             }
 
             var novoFechamento = new FaturamentoDiario
@@ -62,12 +63,12 @@ namespace BillingService.Services
             var fechamento = await _repository.GetByIdAsync(faturamentoDiarioId, tenantId);
             if (fechamento == null)
             {
-                return (null, "Fechamento não encontrado.");
+                return (null, ErrorMessages.FechamentoNotFound);
             }
 
             if (fechamento.Status == RegistroStatus.Aprovado && dto.Status == RegistroStatus.Pendente)
             {
-                return (null, "Não é permitido reverter um fechamento Aprovado para Pendente.");
+                return (null, ErrorMessages.NoAlteredStatus);
             }
 
             // Atualiza os campos (tanto do operador quanto do supervisor)

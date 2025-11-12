@@ -1,5 +1,5 @@
 using AuthService.DTO;
-using AuthService.Services;
+using AuthService.Services.Interfaces; // 1. IMPORTANTE: Usando o namespace das interfaces
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,18 +9,20 @@ namespace AuthService.Controllers
     [Route("api/[controller]")]
     public class TenantController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        // 2. MUDANÇA: Injeta o ITenantService
+        private readonly ITenantService _tenantService;
 
-        public TenantController(IAuthService authService)
+        public TenantController(ITenantService tenantService) // <-- MUDANÇA AQUI
         {
-            _authService = authService;
+            _tenantService = tenantService;
         }
 
         [HttpPost("provision")]
-        // [Authorize(Roles = "Dev")] // TODO: Descomentar quando quiser proteger
+        // [Authorize(Roles = "Dev")] 
         public async Task<IActionResult> ProvisionTenant([FromBody] TenantProvisionDto request)
         {
-            var result = await _authService.ProvisionTenantAsync(request);
+            // 3. MUDANÇA: Chama o _tenantService
+            var result = await _tenantService.ProvisionTenantAsync(request);
 
             if (!result.Success)
             {

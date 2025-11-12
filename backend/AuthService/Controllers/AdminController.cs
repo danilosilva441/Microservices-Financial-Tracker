@@ -1,4 +1,6 @@
-using AuthService.Services; // Importa o novo serviço
+// Caminho: backend/AuthService/Controllers/AdminController.cs
+using AuthService.Services.Interfaces; // 1. MUDANÇA: Namespace corrigido
+using AuthService.DTO; // 2. ADICIONADO: Para o novo DTO
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,21 +10,21 @@ namespace AuthService.Controllers;
 [Route("api/[controller]")]
 public class AdminController : ControllerBase
 {
-    // 1. Injeta a INTERFACE do serviço
-    private readonly IAuthService _authService;
+    // 3. MUDANÇA: Injeta o IUserService (onde a lógica de 'Promote' agora vive)
+    private readonly IUserService _userService;
 
-    public AdminController(IAuthService authService)
+    public AdminController(IUserService userService) // <-- MUDANÇA AQUI
     {
-        _authService = authService;
+        _userService = userService;
     }
 
     [HttpPost("promote-to-admin")]
-    public async Task<IActionResult> PromoteToAdmin([FromBody] string userEmail)
+    // [Authorize(Roles = "Dev")] // TODO: Proteger este endpoint
+    public async Task<IActionResult> PromoteToAdmin([FromBody] PromoteAdminDto request) // <-- MUDANÇA AQUI
     {
-        // 2. DELEGA toda a lógica para o serviço
-        var result = await _authService.PromoteToAdminAsync(userEmail);
+        // 4. MUDANÇA: Chama o _userService
+        var result = await _userService.PromoteToAdminAsync(request.Email);
 
-        // 3. O Controller apenas decide o tipo de resposta (HTTP)
         if (!result.Success)
         {
             if (result.ErrorMessage.Contains("não encontrado"))

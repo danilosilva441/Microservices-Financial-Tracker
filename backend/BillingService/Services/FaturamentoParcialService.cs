@@ -3,7 +3,8 @@ using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces; // 1. IMPORTANTE
 using BillingService.Data; // 2. IMPORTANTE (Para o DbContext)
-using Microsoft.EntityFrameworkCore; // 3. IMPORTANTE (Para o DbContext)
+using Microsoft.EntityFrameworkCore;
+using SharedKernel; // 3. IMPORTANTE (Para o DbContext)
 
 namespace BillingService.Services
 {
@@ -31,7 +32,7 @@ namespace BillingService.Services
             // 6. MUDANÇA (v2.0): Usando o método v2.0 do repositório
             if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
             {
-                return (null, "Unidade não encontrada ou o usuário não tem permissão para acessá-la.");
+                return (null, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
             }
 
             // 7. LÓGICA V2.0: Encontra ou Cria o FaturamentoDiario (o "cabeçalho")
@@ -60,7 +61,7 @@ namespace BillingService.Services
             // 8. Validações v1.0 (agora no contexto do FaturamentoDiarioId)
             if (dto.HoraInicio >= dto.HoraFim)
             {
-                return (null, "A Hora de Início deve ser anterior à Hora de Fim.");
+                return (null, ErrorMessages.InvalidDateRange);
             }
             
             // ... (outras validações de data) ...
@@ -68,7 +69,7 @@ namespace BillingService.Services
             // 9. MUDANÇA (v2.0): Checa duplicidade usando o FaturamentoDiarioId
             if (await _repository.CheckForOverlappingFaturamentoAsync(faturamentoDiario.Id, tenantId, dto.HoraInicio, dto.HoraFim))
             {
-                return (null, "Já existe um faturamento registrado com sobreposição de horário.");
+                return (null, ErrorMessages.OverlappingFaturamento);
             }
 
             // 10. MUDANÇA (v2.0): Cria o modelo v2.0 (corrige CS0117)
@@ -97,7 +98,7 @@ namespace BillingService.Services
         {
             if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
             {
-                return (false, "Unidade não encontrada ou usuário sem permissão.");
+                return (false, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
             }
 
             var faturamentoExistente = await _repository.GetByIdAsync(faturamentoId, tenantId);
@@ -109,17 +110,17 @@ namespace BillingService.Services
 
             if (faturamentoExistente == null || faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
             {
-                return (false, "Faturamento não encontrado nesta unidade.");
+                return (false, ErrorMessages.GenericNotFound);
             }
             
             if (dto.HoraInicio >= dto.HoraFim)
             {
-                return (false, "A Hora de Início deve ser anterior à Hora de Fim.");
+                return (false, ErrorMessages.InvalidDateRange  );
             }
             
             if (await _repository.CheckForOverlappingFaturamentoAsync(faturamentoDiario.Id, tenantId, dto.HoraInicio, dto.HoraFim, faturamentoId))
             {
-                return (false, "Já existe outro faturamento registrado com sobreposição de horário.");
+                return (false, ErrorMessages.OverlappingFaturamento);
             }
             
             faturamentoExistente.Valor = dto.Valor;
@@ -139,7 +140,7 @@ namespace BillingService.Services
         {
              if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
             {
-                return (false, "Unidade não encontrada ou usuário sem permissão.");
+                return (false, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
             }
 
             var faturamentoExistente = await _repository.GetByIdAsync(faturamentoId, tenantId);
@@ -149,7 +150,7 @@ namespace BillingService.Services
 
             if (faturamentoExistente == null || faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
             {
-                return (false, "Faturamento não encontrado nesta unidade.");
+                return (false, ErrorMessages.GenericNotFound);
             }
 
             _repository.Remove(faturamentoExistente);
@@ -164,7 +165,7 @@ namespace BillingService.Services
         {
              if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
             {
-                return (false, "Unidade não encontrada ou usuário sem permissão.");
+                return (false, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
             }
 
             var faturamentoExistente = await _repository.GetByIdAsync(faturamentoId, tenantId);
@@ -174,7 +175,7 @@ namespace BillingService.Services
 
             if (faturamentoExistente == null || faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
             {
-                return (false, "Faturamento não encontrado nesta unidade.");
+                return (false, ErrorMessages.GenericNotFound);
             }
 
             faturamentoExistente.IsAtivo = false;

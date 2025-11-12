@@ -1,7 +1,8 @@
 using BillingService.DTO;
 using BillingService.Models;
-using BillingService.Repositories.Interfaces; 
+using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces; 
+using SharedKernel;
 
 namespace BillingService.Services;
 
@@ -35,7 +36,7 @@ public class MensalistaService : IMensalistaService
         var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
         if (unidade == null)
         {
-            return (null, "Unidade não encontrada ou não pertence a este Tenant.");
+            return (null, ErrorMessages.UnidadeNotFound);
         }
 
         var novoMensalista = new Mensalista

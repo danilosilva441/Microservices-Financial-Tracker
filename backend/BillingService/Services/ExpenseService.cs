@@ -8,6 +8,7 @@ using System.IO; // 1. ADICIONADO: Para o Stream
 using BillingService.Data; // 1. ADICIONADO: Para o DbContext
 using Microsoft.EntityFrameworkCore; // 1. ADICIONADO: Para o DbContext
 using MiniExcelLibs.OpenXml;
+using SharedKernel;
 
 namespace BillingService.Services
 {
@@ -68,14 +69,14 @@ namespace BillingService.Services
             var unidade = await _unidadeRepo.GetByIdAsync(dto.UnidadeId, tenantId);
             if (unidade == null)
             {
-                return (null, "Unidade não encontrada.");
+                return (null, ErrorMessages.UnidadeNotFound);
             }
 
             // 2. Valida se a Categoria existe
             var category = await _expenseRepo.GetCategoryByIdAsync(dto.CategoryId, tenantId);
             if (category == null)
             {
-                return (null, "Categoria de despesa não encontrada.");
+                return (null, ErrorMessages.CategoriaNotFound);
             }
 
             // 3. MUDANÇA: Cria a entidade v2.0
@@ -108,7 +109,7 @@ namespace BillingService.Services
             var expense = await _expenseRepo.GetByIdAsync(expenseId, tenantId);
             if (expense == null)
             {
-                return (false, "Despesa não encontrada.");
+                return (false, ErrorMessages.DespesaNotFound);
             }
 
             _expenseRepo.Remove(expense);
