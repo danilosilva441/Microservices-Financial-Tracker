@@ -13,13 +13,24 @@ namespace BillingService.Services.Interfaces
         // 2. MUDANÇA: Corrigido de OperacaoDto para UnidadeDto
         Task<Unidade> CreateUnidadeAsync(UnidadeDto unidadeDto, Guid userId, Guid tenantId); 
         
-        Task<Unidade?> GetUnidadeByIdAsync(Guid id, Guid tenantId);
+        Task<Unidade?> GetUnidadeByIdAsync(
+            Guid id, 
+            Guid tenantId);
 
         // 3. MUDANÇA: Corrigido de UpdateOperacaoDto para UpdateUnidadeDto
-        Task<bool> UpdateUnidadeAsync(Guid id, UpdateUnidadeDto unidadeDto, Guid tenantId); 
+        Task<bool> UpdateUnidadeAsync(
+            Guid id, 
+            UpdateUnidadeDto unidadeDto, 
+            Guid tenantId); 
 
-        Task<bool> DeactivateUnidadeAsync(Guid id, Guid tenantId);
-        Task<bool> DeleteUnidadeAsync(Guid id, Guid tenantId);
-        Task<bool> UpdateProjecaoAsync(Guid id, decimal projecao);
+        Task<bool> DeactivateUnidadeAsync(
+            Guid id, 
+            Guid tenantId);
+        Task<bool> DeleteUnidadeAsync(
+            Guid id, 
+            Guid tenantId);
+        Task<bool> UpdateProjecaoAsync(
+            Guid id, 
+            decimal projecao);
     }
 }

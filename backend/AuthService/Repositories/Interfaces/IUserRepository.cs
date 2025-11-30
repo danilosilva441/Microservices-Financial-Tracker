@@ -2,11 +2,18 @@ using AuthService.Models;
 
 namespace AuthService.Repositories
 {
-    // Define o contrato para operações de dados do Usuário
     public interface IUserRepository
     {
         Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetUserByIdAsync(Guid userId);
         Task AddUserAsync(User user);
-        Task UpdateUserAsync(User user); // Para salvar mudanças (ex: promover admin)
+        Task UpdateUserAsync(User user);
+        Task<bool> UserExistsAsync(string email);
+        Task<bool> UserExistsAsync(Guid userId);
+        Task<List<User>> GetUsersByTenantAsync(Guid tenantId);
+        Task<List<User>> GetSubordinatesAsync(Guid managerId);
+        Task<bool> IsEmailUniqueAsync(string email, Guid? excludeUserId = null);
+        Task<List<User>> GetAllUsersAsync();
+        Task<List<User>> GetUsersByRoleAsync(string roleName);
     }
 }

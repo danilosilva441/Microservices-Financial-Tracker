@@ -1,19 +1,20 @@
-// Caminho: backend/AuthService/DTO/CreateTenantUserDto.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace AuthService.DTO
 {
     public class CreateTenantUserDto
     {
-        [Required(ErrorMessage = "O email é obrigatório.")]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email é obrigatório")]
+        [EmailAddress(ErrorMessage = "Formato de email inválido")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "A senha é obrigatória.")]
-        [MinLength(6, ErrorMessage = "A senha deve ter pelo menos 6 caracteres.")]
+        [Required(ErrorMessage = "Senha é obrigatória")]
+        [MinLength(8, ErrorMessage = "A senha deve ter pelo menos 8 caracteres")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$", 
+            ErrorMessage = "A senha deve conter letras maiúsculas, minúsculas e números")]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "O perfil (role) é obrigatório.")]
-        public string RoleName { get; set; } = string.Empty; // Ex: "Supervisor", "Lider", "Operador"
+        [Required(ErrorMessage = "Perfil (Role) é obrigatório")]
+        public string RoleName { get; set; } = string.Empty;
     }
 }

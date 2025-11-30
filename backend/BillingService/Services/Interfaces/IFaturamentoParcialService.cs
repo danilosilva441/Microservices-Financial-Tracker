@@ -1,14 +1,31 @@
-using BillingService.DTO;
+using BillingService.DTOs;
 using BillingService.Models;
 
 namespace BillingService.Services.Interfaces
 {
     public interface IFaturamentoParcialService
     {
-        // Todos os métodos de serviço agora recebem o TenantId e UserId (do JWT)
-        Task<(FaturamentoParcial? faturamento, string? errorMessage)> AddFaturamentoAsync(Guid operacaoId, FaturamentoParcialCreateDto dto, Guid userId, Guid tenantId);
-        Task<(bool success, string? errorMessage)> UpdateFaturamentoAsync(Guid operacaoId, Guid faturamentoId, FaturamentoParcialUpdateDto dto, Guid userId, Guid tenantId);
-        Task<(bool success, string? errorMessage)> DeleteFaturamentoAsync(Guid operacaoId, Guid faturamentoId, Guid userId, Guid tenantId);
-        Task<(bool success, string? errorMessage)> DeactivateFaturamentoAsync(Guid operacaoId, Guid faturamentoId, Guid userId, Guid tenantId);
+        // CORRIGIR: operacaoId → unidadeId
+        Task<(FaturamentoParcial? faturamento, string? errorMessage)> AddFaturamentoAsync(
+            Guid unidadeId, 
+            FaturamentoParcialCreateDto dto, 
+            Guid userId, 
+            Guid tenantId);
+        Task<(bool success, string? errorMessage)> UpdateFaturamentoAsync(
+            Guid unidadeId, 
+            Guid faturamentoId, 
+            FaturamentoParcialUpdateDto dto, 
+            Guid userId, 
+            Guid tenantId);
+        Task<(bool success, string? errorMessage)> DeleteFaturamentoAsync(
+            Guid unidadeId, 
+            Guid faturamentoId, 
+            Guid userId, 
+            Guid tenantId);
+        Task<(bool success, string? errorMessage)> DeactivateFaturamentoAsync(
+            Guid unidadeId, 
+            Guid faturamentoId, 
+            Guid userId, 
+            Guid tenantId);
     }
 }

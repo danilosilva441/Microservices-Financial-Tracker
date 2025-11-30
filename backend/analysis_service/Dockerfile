@@ -1,3 +1,4 @@
+# Caminho: backend/analysis_service/Dockerfile
 FROM node:20-alpine
 
 WORKDIR /app
@@ -5,21 +6,14 @@ WORKDIR /app
 # Instala dependências do sistema
 RUN apk add --no-cache curl
 
-# Copia arquivos de dependências
-COPY package*.json ./
+# 1. Copia TUDO de uma vez
+COPY backend/analysis_service/ .
 
-# Instala dependências da aplicação
-RUN npm install
+# 2. Verifica se o script existe
+RUN ls -la /app/scripts/ && \
+    chmod +x /app/scripts/create-system-user.sh
 
-# Copia o código da aplicação
-COPY . .
-
-# Copia e configura o script (certifique-se do caminho correto)
-COPY ./scripts/create-system-user.sh /app/create-system-user.sh
-RUN chmod +x /app/create-system-user.sh
-
-# Expõe a porta
 EXPOSE 3000
 
-# Comando de inicialização
-CMD ["npm", "start"]
+# 3. Executa o script
+CMD sh -c "/app/scripts/create-system-user.sh && npm start"

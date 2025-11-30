@@ -59,65 +59,65 @@ namespace AuthService.Migrations
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-7890-a1a1-a1a1a1a1a1a1"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7300),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8645),
                             IsDeleted = false,
                             Name = "User",
                             NormalizedName = "USER",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7303)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8650)
                         },
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a7-890b-b2b2-b2b2b2b2b2b2"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7322),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8767),
                             IsDeleted = false,
                             Name = "Admin",
                             NormalizedName = "ADMIN",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7323)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8768)
                         },
                         new
                         {
                             Id = new Guid("c3d4e5f6-a7b8-90c1-c3c3-c3c3c3c3c3c3"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7328),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8774),
                             IsDeleted = false,
                             Name = "Dev",
                             NormalizedName = "DEV",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7328)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8774)
                         },
                         new
                         {
                             Id = new Guid("d4e5f6a7-b8c9-01d2-d4d4-d4d4d4d4d4d4"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7332),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8778),
                             IsDeleted = false,
                             Name = "Gerente",
                             NormalizedName = "GERENTE",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7333)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8779)
                         },
                         new
                         {
                             Id = new Guid("e5f6a7b8-c9d0-12e3-e5e5-e5e5e5e5e5e5"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7337),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8783),
                             IsDeleted = false,
                             Name = "Supervisor",
                             NormalizedName = "SUPERVISOR",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7338)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8783)
                         },
                         new
                         {
                             Id = new Guid("f6a7b8c9-d0e1-23f4-f6f6-f6f6f6f6f6f6"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7360),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8806),
                             IsDeleted = false,
                             Name = "Lider",
                             NormalizedName = "LIDER",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7361)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8806)
                         },
                         new
                         {
                             Id = new Guid("a7b8c9d0-e1f2-34a5-a7a7-a7a7a7a7a7a7"),
-                            CreatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7365),
+                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8810),
                             IsDeleted = false,
                             Name = "Operador",
                             NormalizedName = "OPERADOR",
-                            UpdatedAt = new DateTime(2025, 11, 9, 20, 36, 3, 678, DateTimeKind.Utc).AddTicks(7366)
+                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8811)
                         });
                 });
 

@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using SharedKernel.Entities;
 
 namespace AuthService.Models
 {
-    public class Tenant : SharedKernel.BaseEntity
+    public class Tenant : BaseEntity
     {
 
         [Required]

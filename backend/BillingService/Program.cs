@@ -87,6 +87,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 // --- 6. Outros Serviços ---
+
+// (A CORREÇÃO ESTÁ AQUI)
+// Adiciona o serviço que lê o HttpContext (necessário para o DbContext v2.1)
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;

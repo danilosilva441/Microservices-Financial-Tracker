@@ -75,7 +75,7 @@ server {
         # --- Subrotas específicas (ORDEM É IMPORTANTE!) ---
    
         # 1. Analysis Service PRIMEIRO
-        location ~ ^/api/analysis {
+        location ~ ^/api/(analysis|relatorio-completo) {
             proxy_pass http://analysis_service;
         }
 
@@ -85,7 +85,7 @@ server {
         }
 
         # 3. Billing Service (v2.0 - inclui /billing e /operacoes legada)
-        location ~ ^/api/(billing|operacoes) {
+        location ~ ^/api/(billing|unidades|expenses|fechamentos|metas|mensalistas|solicitacoes|admin) {
             proxy_pass http://billing_service;
         }
         

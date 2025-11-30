@@ -15,8 +15,36 @@ namespace AuthService.Repositories
 
         public async Task<Role?> GetRoleByNameAsync(string roleName)
         {
-            // Lógica de busca de perfil movida do Controller
-            return await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+            return await _context.Roles
+                .FirstOrDefaultAsync(r => r.Name == roleName || r.NormalizedName == roleName.ToUpper());
+        }
+
+        public async Task<Role?> GetRoleByIdAsync(Guid roleId)
+        {
+            return await _context.Roles
+                .FirstOrDefaultAsync(r => r.Id == roleId);
+        }
+
+        public async Task<List<Role>> GetAllRolesAsync()
+        {
+            return await _context.Roles
+                .Where(r => !r.IsDeleted)
+                .ToListAsync();
+        }
+
+        public async Task<List<Role>> GetRolesByNamesAsync(IEnumerable<string> roleNames)
+        {
+            var normalizedNames = roleNames.Select(r => r.ToUpper()).ToList();
+            
+            return await _context.Roles
+                .Where(r => normalizedNames.Contains(r.NormalizedName))
+                .ToListAsync();
+        }
+
+        public async Task<bool> RoleExistsAsync(string roleName)
+        {
+            return await _context.Roles
+                .AnyAsync(r => r.Name == roleName || r.NormalizedName == roleName.ToUpper());
         }
     }
 }

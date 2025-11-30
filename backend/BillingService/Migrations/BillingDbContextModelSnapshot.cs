@@ -58,8 +58,6 @@ namespace BillingService.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("TenantId");
-
                     b.HasIndex("UnidadeId");
 
                     b.ToTable("Expenses");
@@ -90,8 +88,6 @@ namespace BillingService.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
 
                     b.ToTable("ExpenseCategories");
                 });
@@ -131,8 +127,6 @@ namespace BillingService.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
 
                     b.ToTable("Faturas");
                 });
@@ -175,8 +169,6 @@ namespace BillingService.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
 
                     b.HasIndex("UnidadeId");
 
@@ -226,8 +218,6 @@ namespace BillingService.Migrations
 
                     b.HasIndex("MetodoPagamentoId");
 
-                    b.HasIndex("TenantId");
-
                     b.ToTable("FaturamentosParciais");
                 });
 
@@ -263,8 +253,6 @@ namespace BillingService.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TenantId");
 
                     b.HasIndex("UnidadeId");
 
@@ -332,8 +320,6 @@ namespace BillingService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId");
-
                     b.ToTable("MetodosPagamento");
                 });
 
@@ -388,8 +374,6 @@ namespace BillingService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FaturamentoParcialId");
-
-                    b.HasIndex("TenantId");
 
                     b.ToTable("SolicitacoesAjuste");
                 });

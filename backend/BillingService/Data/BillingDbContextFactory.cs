@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using BillingService.Data;
+using Microsoft.AspNetCore.Http; // 1. IMPORTANTE: Adicionar este using
 
 namespace BillingService.Data
 {
@@ -18,8 +19,6 @@ namespace BillingService.Data
                 .Build();
 
             // 2. Pega a string de conexão
-            // !!! IMPORTANTE: Verifique se o nome "DefaultConnection"
-            //     está igual ao do seu appsettings.json
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrEmpty(connectionString))
@@ -31,7 +30,9 @@ namespace BillingService.Data
             var optionsBuilder = new DbContextOptionsBuilder<BillingDbContext>();
             optionsBuilder.UseNpgsql(connectionString);
 
-            return new BillingDbContext(optionsBuilder.Options);
+            // 4. CORREÇÃO (CS7036): Passa 'null' para o httpContextAccessor.
+            //    (Durante a migração, não há HttpContext)
+            return new BillingDbContext(optionsBuilder.Options, null);
         }
     }
 }

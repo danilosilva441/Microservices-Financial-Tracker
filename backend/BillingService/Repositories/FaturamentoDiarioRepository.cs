@@ -27,6 +27,7 @@ namespace BillingService.Repositories
 
         public async Task<FaturamentoDiario?> GetByIdAsync(Guid id, Guid tenantId)
         {
+            // Este método está CORRETO
             return await _context.FaturamentosDiarios
                 .Include(fd => fd.FaturamentosParciais) // Inclui os "itens"
                 .FirstOrDefaultAsync(fd => fd.Id == id && fd.TenantId == tenantId);
@@ -34,6 +35,7 @@ namespace BillingService.Repositories
 
         public async Task<FaturamentoDiario?> GetByUnidadeAndDateAsync(Guid unidadeId, DateOnly data, Guid tenantId)
         {
+            // Este método está CORRETO
             return await _context.FaturamentosDiarios
                 .Include(fd => fd.FaturamentosParciais)
                 .FirstOrDefaultAsync(fd => fd.UnidadeId == unidadeId && fd.Data == data && fd.TenantId == tenantId);
@@ -41,6 +43,7 @@ namespace BillingService.Repositories
 
         public async Task<IEnumerable<FaturamentoDiario>> ListByUnidadeAsync(Guid unidadeId, Guid tenantId)
         {
+            // Este método está CORRETO (e é usado pelo AnalysisService)
             return await _context.FaturamentosDiarios
                 .Where(fd => fd.UnidadeId == unidadeId && fd.TenantId == tenantId)
                 .Include(fd => fd.FaturamentosParciais)
@@ -48,14 +51,17 @@ namespace BillingService.Repositories
                 .ToListAsync();
         }
 
+        // --- A CORREÇÃO ESTÁ AQUI ---
         public async Task<IEnumerable<FaturamentoDiario>> ListByStatusAsync(RegistroStatus status, Guid tenantId)
         {
             return await _context.FaturamentosDiarios
                 .Where(fd => fd.Status == status && fd.TenantId == tenantId)
                 .Include(fd => fd.Unidade) // Inclui o nome da Unidade
+                .Include(fd => fd.FaturamentosParciais) // 1. CORREÇÃO: Adiciona os "itens"
                 .OrderBy(fd => fd.Data)
                 .ToListAsync();
         }
+        // --- FIM DA CORREÇÃO ---
 
         public async Task SaveChangesAsync()
         {

@@ -1,4 +1,4 @@
-using BillingService.DTO;
+using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces; // 1. IMPORTANTE

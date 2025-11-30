@@ -62,7 +62,9 @@ services:
       start_period: 40s
 
   analysis_service:
-    build: ./backend/analysis_service
+    build:
+      context: .  # <-- 1. MUDANÇA: Contexto na raiz (para consistência)
+      dockerfile: ./backend/analysis_service/Dockerfile # <-- 2. MUDANÇA: Caminho completo
     container_name: analysis_service
     restart: always
     depends_on:

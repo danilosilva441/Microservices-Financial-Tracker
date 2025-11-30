@@ -1,19 +1,17 @@
-// Caminho: backend/BillingService/Services/ExpenseService.cs
 using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces;
-using MiniExcelLibs; // 1. ADICIONADO: Para ler planilhas
-using System.IO; // 1. ADICIONADO: Para o Stream
-using BillingService.Data; // 1. ADICIONADO: Para o DbContext
-using Microsoft.EntityFrameworkCore; // 1. ADICIONADO: Para o DbContext
+using BillingService.Data;
+using Microsoft.EntityFrameworkCore;
+using MiniExcelLibs;
 using MiniExcelLibs.OpenXml;
 using SharedKernel;
+using System.Globalization;
 
 namespace BillingService.Services
 {
-
-    // Ela deve ficar AQUI, no namespace, mas FORA da classe ExpenseService.
+    // DTO interno para importação
     internal class ExpenseImportDto
     {
         public Guid UnidadeId { get; set; }
@@ -26,160 +24,371 @@ namespace BillingService.Services
     public class ExpenseService : IExpenseService
     {
         private readonly IExpenseRepository _expenseRepo;
-        // 1. MUDANÇA: Renomeado para _unidadeRepo para clareza
         private readonly IUnidadeRepository _unidadeRepo;
-        // 2. ADICIONADO: Injetando o DbContext para operações em LOTE (Batch)
         private readonly BillingDbContext _context;
+        private readonly ILogger<ExpenseService> _logger;
 
-        public ExpenseService(IExpenseRepository expenseRepo, IUnidadeRepository unidadeRepo, BillingDbContext context)
+        public ExpenseService(
+            IExpenseRepository expenseRepo, 
+            IUnidadeRepository unidadeRepo, 
+            BillingDbContext context,
+            ILogger<ExpenseService> logger)
         {
             _expenseRepo = expenseRepo;
             _unidadeRepo = unidadeRepo;
             _context = context;
+            _logger = logger;
         }
 
-        // --- Lógica de Categoria (Sem alteração) ---
+        #region Category Operations
 
-        public async Task<(ExpenseCategory? category, string? errorMessage)> CreateCategoryAsync(ExpenseCategoryCreateDto dto, Guid tenantId)
+        public async Task<(ExpenseCategory? category, string? errorMessage)> CreateCategoryAsync(
+            ExpenseCategoryCreateDto dto, Guid tenantId)
         {
-            var newCategory = new ExpenseCategory
+            try
             {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                Name = dto.Name,
-                Description = dto.Description
-            };
+                var validationError = ValidateCategoryCreateDto(dto);
+                if (validationError != null)
+                {
+                    _logger.LogWarning("Validação falhou para criação de categoria: {Error}", validationError);
+                    return (null, validationError);
+                }
 
-            await _expenseRepo.AddCategoryAsync(newCategory);
-            await _expenseRepo.SaveChangesAsync();
+                // Verifica se já existe categoria com mesmo nome (usando método disponível)
+                var existingCategories = await _expenseRepo.GetAllCategoriesAsync(tenantId);
+                var existingCategory = existingCategories.FirstOrDefault(c => 
+                    c.Name.Trim().Equals(dto.Name.Trim(), StringComparison.OrdinalIgnoreCase));
+                    
+                if (existingCategory != null)
+                {
+                    _logger.LogWarning("Categoria já existe: {CategoryName}", dto.Name);
+                    return (null, "Já existe uma categoria com este nome");
+                }
 
-            return (newCategory, null);
+                var newCategory = new ExpenseCategory
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    Name = dto.Name.Trim(),
+                    Description = dto.Description?.Trim()
+                };
+
+                await _expenseRepo.AddCategoryAsync(newCategory);
+                await _expenseRepo.SaveChangesAsync();
+
+                _logger.LogInformation("Categoria criada com sucesso: {CategoryId}", newCategory.Id);
+                return (newCategory, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao criar categoria para tenant {TenantId}", tenantId);
+                throw new ExpenseServiceException("Erro ao criar categoria", ex);
+            }
         }
 
         public async Task<IEnumerable<ExpenseCategory>> GetCategoriesAsync(Guid tenantId)
         {
-            return await _expenseRepo.GetAllCategoriesAsync(tenantId);
+            try
+            {
+                _logger.LogDebug("Buscando categorias para tenant {TenantId}", tenantId);
+                return await _expenseRepo.GetAllCategoriesAsync(tenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar categorias para tenant {TenantId}", tenantId);
+                throw new ExpenseServiceException("Erro ao buscar categorias", ex);
+            }
         }
 
-        // --- Lógica de Despesa (Atualizada) ---
+        #endregion
 
-        public async Task<(Expense? expense, string? errorMessage)> CreateExpenseAsync(ExpenseCreateDto dto, Guid tenantId)
+        #region Expense Operations
+
+        public async Task<(Expense? expense, string? errorMessage)> CreateExpenseAsync(
+            ExpenseCreateDto dto, Guid tenantId)
         {
-            // 2. MUDANÇA: Valida a Unidade (usando o DTO v2.0)
-            var unidade = await _unidadeRepo.GetByIdAsync(dto.UnidadeId, tenantId);
-            if (unidade == null)
+            try
             {
-                return (null, ErrorMessages.UnidadeNotFound);
+                var validationError = ValidateExpenseCreateDto(dto);
+                if (validationError != null)
+                {
+                    _logger.LogWarning("Validação falhou para criação de despesa: {Error}", validationError);
+                    return (null, validationError);
+                }
+
+                // Valida Unidade
+                var unidade = await _unidadeRepo.GetByIdAsync(dto.UnidadeId, tenantId);
+                if (unidade == null)
+                {
+                    _logger.LogWarning("Unidade não encontrada: {UnidadeId}", dto.UnidadeId);
+                    return (null, ErrorMessages.UnidadeNotFound);
+                }
+
+                // Valida Categoria
+                var category = await _expenseRepo.GetCategoryByIdAsync(dto.CategoryId, tenantId);
+                if (category == null)
+                {
+                    _logger.LogWarning("Categoria não encontrada: {CategoryId}", dto.CategoryId);
+                    return (null, ErrorMessages.CategoriaNotFound);
+                }
+
+                var newExpense = CreateExpenseEntity(dto, tenantId);
+                
+                await _expenseRepo.AddAsync(newExpense);
+                await _expenseRepo.SaveChangesAsync();
+
+                // Recupera a expense usando o método disponível no repository
+                var result = await _expenseRepo.GetByIdAsync(newExpense.Id, tenantId);
+                
+                _logger.LogInformation("Despesa criada com sucesso: {ExpenseId}", newExpense.Id);
+                return (result, null);
             }
-
-            // 2. Valida se a Categoria existe
-            var category = await _expenseRepo.GetCategoryByIdAsync(dto.CategoryId, tenantId);
-            if (category == null)
+            catch (Exception ex)
             {
-                return (null, ErrorMessages.CategoriaNotFound);
+                _logger.LogError(ex, "Erro ao criar despesa para unidade {UnidadeId}", dto.UnidadeId);
+                throw new ExpenseServiceException("Erro ao criar despesa", ex);
             }
-
-            // 3. MUDANÇA: Cria a entidade v2.0
-            var newExpense = new Expense
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                UnidadeId = dto.UnidadeId, // <-- Corrigido
-                CategoryId = dto.CategoryId,
-                Amount = dto.Amount,
-                ExpenseDate = dto.ExpenseDate.ToUniversalTime(),
-                Description = dto.Description
-            };
-
-            await _expenseRepo.AddAsync(newExpense);
-            await _expenseRepo.SaveChangesAsync();
-
-            var result = await _expenseRepo.GetByIdAsync(newExpense.Id, tenantId);
-            return (result, null);
         }
 
-        // 4. MUDANÇA: Assinatura e lógica v2.0
         public async Task<IEnumerable<Expense>> GetExpensesByUnidadeAsync(Guid unidadeId, Guid tenantId)
         {
-            return await _expenseRepo.GetAllByUnidadeAsync(unidadeId, tenantId); // <-- Corrigido
+            try
+            {
+                _logger.LogDebug("Buscando despesas da unidade {UnidadeId}", unidadeId);
+                return await _expenseRepo.GetAllByUnidadeAsync(unidadeId, tenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar despesas da unidade {UnidadeId}", unidadeId);
+                throw new ExpenseServiceException("Erro ao buscar despesas", ex);
+            }
+        }
+
+        public async Task<Expense?> GetExpenseByIdAsync(Guid expenseId, Guid tenantId)
+        {
+            try
+            {
+                _logger.LogDebug("Buscando despesa {ExpenseId}", expenseId);
+                return await _expenseRepo.GetByIdAsync(expenseId, tenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar despesa {ExpenseId}", expenseId);
+                throw new ExpenseServiceException("Erro ao buscar despesa", ex);
+            }
         }
 
         public async Task<(bool success, string? errorMessage)> DeleteExpenseAsync(Guid expenseId, Guid tenantId)
         {
-            var expense = await _expenseRepo.GetByIdAsync(expenseId, tenantId);
-            if (expense == null)
+            try
             {
-                return (false, ErrorMessages.DespesaNotFound);
-            }
+                var expense = await _expenseRepo.GetByIdAsync(expenseId, tenantId);
+                if (expense == null)
+                {
+                    _logger.LogWarning("Despesa não encontrada para exclusão: {ExpenseId}", expenseId);
+                    return (false, ErrorMessages.DespesaNotFound);
+                }
 
-            _expenseRepo.Remove(expense);
-            await _expenseRepo.SaveChangesAsync();
-            return (true, null);
+                _expenseRepo.Remove(expense);
+                await _expenseRepo.SaveChangesAsync();
+
+                _logger.LogInformation("Despesa excluída com sucesso: {ExpenseId}", expenseId);
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao excluir despesa {ExpenseId}", expenseId);
+                throw new ExpenseServiceException("Erro ao excluir despesa", ex);
+            }
         }
-        // --- 3. NOSSO NOVO MÉTODO (Tarefa 2) ---
-        public async Task<(bool success, string? errorMessage, int processedRows, List<int>? skippedRows)> ImportExpensesAsync(Stream stream, string fileType, Guid tenantId)
+
+        #endregion
+
+        #region Import Operations
+
+        public async Task<(bool success, string? errorMessage, int processedRows, List<int>? skippedRows)> 
+            ImportExpensesAsync(Stream stream, string fileType, Guid tenantId)
         {
             var processedRows = 0;
             var skippedRows = new List<int>();
             var expensesToAdd = new List<Expense>();
 
-            // Para performance, buscamos todas as Ids válidas UMA VEZ
-            // em vez de checar o banco de dados em cada linha do loop.
-            var validUnidadeIds = (await _unidadeRepo.GetAllAsync(tenantId)).Select(u => u.Id).ToHashSet();
-            var validCategoryIds = (await _expenseRepo.GetAllCategoriesAsync(tenantId)).Select(c => c.Id).ToHashSet();
-
             try
             {
+                // Validação do tipo de arquivo
+                if (!IsValidFileType(fileType))
+                {
+                    _logger.LogWarning("Tipo de arquivo inválido para importação: {FileType}", fileType);
+                    return (false, "Tipo de arquivo não suportado. Use .xlsx ou .csv", 0, null);
+                }
+
+                // Cache de IDs válidos para performance
+                var (validUnidadeIds, validCategoryIds) = await GetValidIdsCacheAsync(tenantId);
+
                 var config = new OpenXmlConfiguration { FillMergedCells = true };
                 var rows = stream.Query<ExpenseImportDto>(
-                    excelType: fileType == ".xlsx" ? ExcelType.XLSX : ExcelType.CSV,
+                    excelType: GetExcelType(fileType),
                     configuration: config
                 );
 
-                int rowNumber = 1; // MiniExcel não conta o cabeçalho
+                int rowNumber = 1; // Cabeçalho
                 foreach (var row in rows)
                 {
-                    rowNumber++; // Começa na linha 2
+                    rowNumber++;
 
-                    // --- Validação ---
-                    if (row.Amount <= 0 ||
-                        !validUnidadeIds.Contains(row.UnidadeId) ||
-                        !validCategoryIds.Contains(row.CategoryId))
+                    var validationResult = ValidateImportRow(row, validUnidadeIds, validCategoryIds, rowNumber);
+                    if (!validationResult.isValid)
                     {
                         skippedRows.Add(rowNumber);
-                        continue; // Pula esta linha
+                        _logger.LogDebug("Linha {RowNumber} ignorada: {Reason}", rowNumber, validationResult.reason);
+                        continue;
                     }
 
-                    // --- Criação da Entidade ---
-                    var newExpense = new Expense
-                    {
-                        Id = Guid.NewGuid(),
-                        TenantId = tenantId,
-                        UnidadeId = row.UnidadeId,
-                        CategoryId = row.CategoryId,
-                        Amount = row.Amount,
-                        ExpenseDate = row.ExpenseDate.ToUniversalTime(),
-                        Description = row.Description ?? string.Empty
-                    };
-
+                    var newExpense = CreateExpenseFromImportRow(row, tenantId);
                     expensesToAdd.Add(newExpense);
                     processedRows++;
                 }
 
-                // --- Salvamento em Lote (Batch) ---
-                // Adiciona todas as despesas válidas ao DbContext de uma só vez
-                await _context.Expenses.AddRangeAsync(expensesToAdd);
+                if (expensesToAdd.Any())
+                {
+                    await _context.Expenses.AddRangeAsync(expensesToAdd);
+                    await _context.SaveChangesAsync();
+                }
 
-                // Salva todas as mudanças no banco em uma ÚNICA transação
-                await _context.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Importação concluída: {Processed} processadas, {Skipped} ignoradas", 
+                    processedRows, skippedRows.Count);
 
                 return (true, null, processedRows, skippedRows);
             }
             catch (Exception ex)
             {
-                // Se o MiniExcel falhar (ex: coluna com nome errado)
+                _logger.LogError(ex, "Erro durante importação de despesas");
                 return (false, $"Erro ao processar a planilha: {ex.Message}", 0, null);
             }
         }
+
+        #endregion
+
+        #region Private Methods
+
+        private static Expense CreateExpenseEntity(ExpenseCreateDto dto, Guid tenantId)
+        {
+            return new Expense
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                UnidadeId = dto.UnidadeId,
+                CategoryId = dto.CategoryId,
+                Amount = dto.Amount,
+                ExpenseDate = dto.ExpenseDate.ToUniversalTime().Date,
+                Description = dto.Description?.Trim() ?? string.Empty
+            };
+        }
+
+        private static Expense CreateExpenseFromImportRow(ExpenseImportDto row, Guid tenantId)
+        {
+            return new Expense
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                UnidadeId = row.UnidadeId,
+                CategoryId = row.CategoryId,
+                Amount = row.Amount,
+                ExpenseDate = row.ExpenseDate.ToUniversalTime().Date,
+                Description = row.Description?.Trim() ?? string.Empty
+            };
+        }
+
+        private async Task<(HashSet<Guid> unidadeIds, HashSet<Guid> categoryIds)> GetValidIdsCacheAsync(Guid tenantId)
+        {
+            var unidadeIds = (await _unidadeRepo.GetAllAsync(tenantId))
+                .Select(u => u.Id)
+                .ToHashSet();
+
+            var categoryIds = (await _expenseRepo.GetAllCategoriesAsync(tenantId))
+                .Select(c => c.Id)
+                .ToHashSet();
+
+            return (unidadeIds, categoryIds);
+        }
+
+        private static (bool isValid, string reason) ValidateImportRow(
+            ExpenseImportDto row, 
+            HashSet<Guid> validUnidadeIds, 
+            HashSet<Guid> validCategoryIds,
+            int rowNumber)
+        {
+            if (row.Amount <= 0)
+                return (false, "Amount deve ser maior que zero");
+
+            if (!validUnidadeIds.Contains(row.UnidadeId))
+                return (false, "UnidadeId inválido");
+
+            if (!validCategoryIds.Contains(row.CategoryId))
+                return (false, "CategoryId inválido");
+
+            if (row.ExpenseDate > DateTime.UtcNow.Date)
+                return (false, "ExpenseDate não pode ser futura");
+
+            return (true, string.Empty);
+        }
+
+        private static string? ValidateExpenseCreateDto(ExpenseCreateDto dto)
+        {
+            if (dto == null)
+                return "DTO não pode ser nulo";
+
+            if (dto.Amount <= 0)
+                return "Amount deve ser maior que zero";
+
+            if (dto.ExpenseDate > DateTime.UtcNow.Date)
+                return "ExpenseDate não pode ser futura";
+
+            if (string.IsNullOrWhiteSpace(dto.Description))
+                return "Description é obrigatória";
+
+            if (dto.Description.Length > 500)
+                return "Description não pode exceder 500 caracteres";
+
+            return null;
+        }
+
+        private static string? ValidateCategoryCreateDto(ExpenseCategoryCreateDto dto)
+        {
+            if (dto == null)
+                return "DTO não pode ser nulo";
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return "Name é obrigatório";
+
+            if (dto.Name.Length > 100)
+                return "Name não pode exceder 100 caracteres";
+
+            if (dto.Description?.Length > 500)
+                return "Description não pode exceder 500 caracteres";
+
+            return null;
+        }
+
+        private static bool IsValidFileType(string fileType)
+        {
+            return fileType == ".xlsx" || fileType == ".csv";
+        }
+
+        private static ExcelType GetExcelType(string fileType)
+        {
+            return fileType == ".xlsx" ? ExcelType.XLSX : ExcelType.CSV;
+        }
+
+        #endregion
+    }
+
+    // Exceção customizada
+    public class ExpenseServiceException : Exception
+    {
+        public ExpenseServiceException(string message) : base(message) { }
+        public ExpenseServiceException(string message, Exception innerException) 
+            : base(message, innerException) { }
     }
 }

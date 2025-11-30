@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using SharedKernel.Entities;
 
 namespace AuthService.Models
 {
-    public class Role : SharedKernel.BaseEntity
+    public class Role : BaseEntity
     {
         [Required]
         public string Name { get; set; } = null!; // <--- MUDANÇA: 'required string' para null-safety

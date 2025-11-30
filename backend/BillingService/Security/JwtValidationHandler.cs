@@ -58,8 +58,7 @@ namespace BillingService.Security
                 
                 // URL do Auth Service - usa variável de ambiente ou valor padrão
                 var authServiceUrl = _configuration["AUTH_SERVICE_URL"] ?? 
-                                     Environment.GetEnvironmentVariable("AUTH_SERVICE_URL") ?? 
-                                     "http://microservices-financial-tracker.railway.internal:8080";
+                                     Environment.GetEnvironmentVariable("AUTH_SERVICE_URL");
                 
                 Logger.LogInformation($"🌐 Validando token com Auth Service: {authServiceUrl}");
 

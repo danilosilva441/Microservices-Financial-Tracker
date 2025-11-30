@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using AuthService.Models; // 1. IMPORTANTE: Adicione este using
-
+using SharedKernel.Entities; 
 namespace AuthService.Models
 {
-    public class User : SharedKernel.BaseEntity
+    public class User : BaseEntity
     {
         [Required]
         [EmailAddress]

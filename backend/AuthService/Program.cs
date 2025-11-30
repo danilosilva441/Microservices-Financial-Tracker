@@ -2,7 +2,7 @@ using AuthService.Configuration;
 using AuthService.Data;
 using AuthService.Repositories; 
 using AuthService.Services; 
-using AuthService.Services.Interfaces; // 1. ADICIONADO
+using AuthService.Services.Interfaces; 
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -51,19 +51,21 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 builder.Services.AddAuthConfiguration(builder.Configuration);
 
 // --- 4. REGISTRO DOS NOVOS SERVIÇOS (Injeção de Dependência) ---
-// Adiciona os repositórios e serviços ao contêiner de DI
-// Usamos AddScoped para que sejam criados uma vez por requisição HTTP
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 
-// 2. CORREÇÃO: Registamos os 3 serviços separados
 builder.Services.AddScoped<IAuthService, AuthService.Services.AuthService>();
 builder.Services.AddScoped<IUserService, UserService>(); 
 builder.Services.AddScoped<ITenantService, TenantService>();
 
 
 // --- 5. Outros Serviços ---
+
+// (A CORREÇÃO ESTÁ AQUI)
+// Adiciona o serviço que lê o HttpContext (necessário para o DbContext v2.1)
+builder.Services.AddHttpContextAccessor(); 
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -73,6 +75,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// ... (resto do ficheiro permanece igual) ...
 
 // --- 6. Pipeline de Middlewares ---
 if (app.Environment.IsDevelopment())
