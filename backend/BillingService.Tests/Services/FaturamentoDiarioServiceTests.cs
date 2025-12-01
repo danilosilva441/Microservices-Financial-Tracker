@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SharedKernel;
 using Xunit;
+using SharedKernel.Exceptions;
 
 namespace BillingService.Tests.Services
 {
@@ -386,7 +387,7 @@ namespace BillingService.Tests.Services
                 
                 _repositoryMock
                     .Setup(r => r.ListByStatusAsync(It.IsAny<RegistroStatus>(), _tenantId))
-                    .ThrowsAsync(new InvalidOperationException(exceptionMessage));
+                    .ThrowsAsync(new System.InvalidOperationException(exceptionMessage));
 
                 // Act
                 Func<Task> action = async () => await _service.GetFechamentosPendentesAsync(_tenantId);

@@ -113,6 +113,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+
 // Aplica as migrations na inicialização
 try
 {

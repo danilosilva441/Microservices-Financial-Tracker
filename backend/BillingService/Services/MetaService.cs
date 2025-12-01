@@ -1,72 +1,198 @@
-// Caminho: backend/BillingService/Services/MetaService.cs
 using BillingService.DTOs;
 using BillingService.Models;
-using BillingService.Repositories.Interfaces; // 1. IMPORTANTE: Usando Interfaces
+using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces;
-using SharedKernel; // 1. IMPORTANTE: Usando Interfaces
+using Microsoft.Extensions.Logging;
+using SharedKernel;
+using SharedKernel.Exceptions;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BillingService.Services;
 
-public class MetaService : IMetaService // 2. Herda da interface
+public class MetaService : IMetaService
 {
-    // 3. MUDANÇA: Injeta INTERFACES v2.0
     private readonly IMetaRepository _repository;
     private readonly IUnidadeRepository _unidadeRepository;
+    private readonly ILogger<MetaService> _logger;
 
-    public MetaService(IMetaRepository repository, IUnidadeRepository unidadeRepository)
+    public MetaService(
+        IMetaRepository repository, 
+        IUnidadeRepository unidadeRepository,
+        ILogger<MetaService> logger)
     {
         _repository = repository;
         _unidadeRepository = unidadeRepository;
+        _logger = logger;
     }
 
-    // 4. MUDANÇA: Assinatura v2.0
     public async Task<Meta?> GetMetaAsync(Guid unidadeId, int mes, int ano, Guid tenantId)
     {
-        return await _repository.GetByUnidadeAndPeriodAsync(unidadeId, mes, ano, tenantId);
+        try
+        {
+            _logger.LogDebug("Buscando meta para unidade {UnidadeId}, período {Mes}/{Ano}", 
+                unidadeId, mes, ano);
+
+            ValidatePeriodo(mes, ano);
+
+            return await _repository.GetByUnidadeAndPeriodAsync(unidadeId, mes, ano, tenantId);
+        }
+        catch (BaseException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar meta para unidade {UnidadeId}", unidadeId);
+            throw new MetaServiceException("Erro ao buscar meta", ex);
+        }
     }
     
-    // 5. NOVO (v2.0): Lista todas as metas
     public async Task<IEnumerable<Meta>> GetMetasAsync(Guid unidadeId, Guid tenantId)
     {
-        return await _repository.GetAllByUnidadeAsync(unidadeId, tenantId);
+        try
+        {
+            _logger.LogDebug("Buscando todas as metas para unidade {UnidadeId}", unidadeId);
+            
+            await ValidateUnidadeExistsAsync(unidadeId, tenantId);
+            
+            return await _repository.GetAllByUnidadeAsync(unidadeId, tenantId);
+        }
+        catch (BaseException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar metas para unidade {UnidadeId}", unidadeId);
+            throw new MetaServiceException("Erro ao buscar metas", ex);
+        }
     }
 
-    // 6. MUDANÇA: Assinatura v2.0
-    public async Task<(Meta? meta, string? errorMessage)> SetMetaAsync(Guid unidadeId, MetaDto metaDto, Guid tenantId)
+    public async Task<(Meta? meta, string? errorMessage)> SetMetaAsync(
+        Guid unidadeId, MetaDto metaDto, Guid tenantId)
     {
-        // 7. NOVO (v2.0): Validação de Unidade
+        try
+        {
+            _logger.LogInformation(
+                "Definindo meta para unidade {UnidadeId}: {ValorAlvo} em {Mes}/{Ano}", 
+                unidadeId, metaDto.ValorAlvo, metaDto.Mes, metaDto.Ano);
+
+            // Validações
+            ValidateMetaDto(metaDto);
+            await ValidateUnidadeExistsAsync(unidadeId, tenantId);
+
+            var metaExistente = await _repository.GetByUnidadeAndPeriodAsync(
+                unidadeId, metaDto.Mes, metaDto.Ano, tenantId);
+
+            if (metaExistente != null)
+            {
+                return await UpdateMetaExistenteAsync(metaExistente, metaDto.ValorAlvo);
+            }
+            else
+            {
+                return await CreateNovaMetaAsync(unidadeId, metaDto, tenantId);
+            }
+        }
+        catch (BaseException ex)
+        {
+            _logger.LogWarning(ex, "Validação falhou ao definir meta para unidade {UnidadeId}", unidadeId);
+            return (null, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro inesperado ao definir meta para unidade {UnidadeId}", unidadeId);
+            return (null, "Erro interno ao processar a meta");
+        }
+    }
+
+    #region Private Methods
+
+    private async Task ValidateUnidadeExistsAsync(Guid unidadeId, Guid tenantId)
+    {
         var unidade = await _unidadeRepository.GetByIdAsync(unidadeId, tenantId);
         if (unidade == null)
         {
-            return (null, ErrorMessages.UnidadeNotFound);
-        }
-
-        // 8. MUDANÇA: Lógica v2.0
-        var metaExistente = await _repository.GetByUnidadeAndPeriodAsync(unidadeId, metaDto.Mes, metaDto.Ano, tenantId);
-
-        if (metaExistente != null)
-        {
-            metaExistente.ValorAlvo = metaDto.ValorAlvo;
-            _repository.Update(metaExistente);
-            await _repository.SaveChangesAsync();
-            return (metaExistente, null);
-        }
-        else
-        {
-            // 9. MUDANÇA: Cria o modelo v2.0
-            var novaMeta = new Meta
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId, // <-- v2.0
-                UnidadeId = unidadeId, // <-- v2.0
-                Mes = metaDto.Mes,
-                Ano = metaDto.Ano,
-                ValorAlvo = metaDto.ValorAlvo
-                // UserId = userId // <-- v1.0 REMOVIDO
-            };
-            await _repository.AddAsync(novaMeta);
-            await _repository.SaveChangesAsync();
-            return (novaMeta, null);
+            // ✅ USANDO EntityNotFoundException EM VEZ DE UnidadeNotFoundException
+            throw new EntityNotFoundException("Unidade", unidadeId);
         }
     }
+
+    private static void ValidateMetaDto(MetaDto metaDto)
+    {
+        if (metaDto == null)
+            throw new ArgumentNullException(nameof(metaDto));
+
+        ValidatePeriodo(metaDto.Mes, metaDto.Ano);
+        ValidateValorAlvo(metaDto.ValorAlvo);
+    }
+
+    private static void ValidatePeriodo(int mes, int ano)
+    {
+        if (mes < 1 || mes > 12)
+            throw new BusinessRuleException("Mês deve estar entre 1 e 12");
+
+        var anoAtual = DateTime.Now.Year;
+        if (ano < anoAtual - 1 || ano > anoAtual + 5)
+            throw new BusinessRuleException($"Ano deve estar entre {anoAtual - 1} e {anoAtual + 5}");
+    }
+
+    private static void ValidateValorAlvo(decimal valorAlvo)
+    {
+        if (valorAlvo <= 0)
+            throw new BusinessRuleException("Valor alvo deve ser maior que zero");
+
+        if (valorAlvo > 10_000_000) // 10 milhões
+            throw new BusinessRuleException("Valor alvo muito alto");
+    }
+
+    private async Task<(Meta? meta, string? errorMessage)> UpdateMetaExistenteAsync(
+        Meta metaExistente, decimal novoValorAlvo)
+    {
+        if (metaExistente.ValorAlvo == novoValorAlvo)
+        {
+            _logger.LogInformation(
+                "Meta {MetaId} já possui o valor alvo {ValorAlvo}", 
+                metaExistente.Id, novoValorAlvo);
+            return (metaExistente, null);
+        }
+
+        var valorAnterior = metaExistente.ValorAlvo;
+        metaExistente.ValorAlvo = novoValorAlvo;
+        
+        _repository.Update(metaExistente);
+        await _repository.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Meta {MetaId} atualizada: {ValorAnterior} → {NovoValor}", 
+            metaExistente.Id, valorAnterior, novoValorAlvo);
+
+        return (metaExistente, null);
+    }
+
+    private async Task<(Meta? meta, string? errorMessage)> CreateNovaMetaAsync(
+        Guid unidadeId, MetaDto metaDto, Guid tenantId)
+    {
+        var novaMeta = new Meta
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UnidadeId = unidadeId,
+            Mes = metaDto.Mes,
+            Ano = metaDto.Ano,
+            ValorAlvo = metaDto.ValorAlvo,
+        };
+
+        await _repository.AddAsync(novaMeta);
+        await _repository.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Nova meta criada: {MetaId} para unidade {UnidadeId}", 
+            novaMeta.Id, unidadeId);
+
+        return (novaMeta, null);
+    }
+
+    #endregion
 }

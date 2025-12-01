@@ -1,10 +1,7 @@
-// Caminho: backend/BillingService/DTOs/FaturamentoParcialDto.cs
 using System.ComponentModel.DataAnnotations;
 
-// Garanta que o namespace é DTOs (plural)
 namespace BillingService.DTOs
 {
-    // DTO para CRIAR um FaturamentoParcial (v2.0)
     public class FaturamentoParcialCreateDto
     {
         [Required]
@@ -24,7 +21,6 @@ namespace BillingService.DTOs
         public string Origem { get; set; } = "AVULSO";
     }
 
-    // DTO para ATUALIZAR um FaturamentoParcial (v2.0)
     public class FaturamentoParcialUpdateDto
     {
         [Required]
@@ -39,16 +35,19 @@ namespace BillingService.DTOs
         
         [Required]
         public Guid MetodoPagamentoId { get; set; }
+
+        [Required] // ✅ ADICIONADO
+        public string Origem { get; set; } = "AVULSO";
     }
 
     public class FaturamentoParcialResponseDto
     {
-    public Guid Id { get; set; }
-    public decimal Valor { get; set; }
-    public DateTime HoraInicio { get; set; }
-    public DateTime HoraFim { get; set; }
-    public Guid MetodoPagamentoId { get; set; }
-    public string Origem { get; set; } = string.Empty;
-    public bool IsAtivo { get; set; }
+        public Guid Id { get; set; }
+        public decimal Valor { get; set; }
+        public DateTime HoraInicio { get; set; }
+        public DateTime HoraFim { get; set; }
+        public Guid MetodoPagamentoId { get; set; }
+        public string Origem { get; set; } = string.Empty;
+        public bool IsAtivo { get; set; }
     }
 }

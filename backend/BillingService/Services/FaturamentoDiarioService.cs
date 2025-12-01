@@ -3,6 +3,7 @@ using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces;
 using SharedKernel;
+using SharedKernel.Exceptions;
 
 namespace BillingService.Services
 {
@@ -310,13 +311,5 @@ namespace BillingService.Services
 
             return null;
         }
-    }
-
-    // Exceção customizada para o serviço
-    public class FaturamentoServiceException : Exception
-    {
-        public FaturamentoServiceException(string message) : base(message) { }
-        public FaturamentoServiceException(string message, Exception innerException) 
-            : base(message, innerException) { }
     }
 }

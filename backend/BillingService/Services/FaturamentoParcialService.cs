@@ -1,188 +1,319 @@
 using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
-using BillingService.Services.Interfaces; // 1. IMPORTANTE
-using BillingService.Data; // 2. IMPORTANTE (Para o DbContext)
+using BillingService.Services.Interfaces;
+using BillingService.Data;
 using Microsoft.EntityFrameworkCore;
-using SharedKernel; // 3. IMPORTANTE (Para o DbContext)
+using Microsoft.Extensions.Logging;
+using SharedKernel;
+using SharedKernel.Exceptions;
 
 namespace BillingService.Services
 {
     public class FaturamentoParcialService : IFaturamentoParcialService
     {
         private readonly IFaturamentoParcialRepository _repository;
-        // 4. MUDANÇA: Injetamos o Repositório de Unidade e o DbContext
         private readonly IUnidadeRepository _unidadeRepository;
         private readonly BillingDbContext _context;
+        private readonly ILogger<FaturamentoParcialService> _logger;
 
         public FaturamentoParcialService(
             IFaturamentoParcialRepository repository, 
             IUnidadeRepository unidadeRepository, 
-            BillingDbContext context)
+            BillingDbContext context,
+            ILogger<FaturamentoParcialService> logger)
         {
             _repository = repository;
             _unidadeRepository = unidadeRepository;
             _context = context;
+            _logger = logger;
         }
 
-        // 5. MUDANÇA (v2.0): Assinatura atualizada
-        public async Task<(FaturamentoParcial? faturamento, string? errorMessage)> AddFaturamentoAsync(
+        public async Task<FaturamentoParcial> AddFaturamentoAsync(
             Guid unidadeId, FaturamentoParcialCreateDto dto, Guid userId, Guid tenantId)
         {
-            // 6. MUDANÇA (v2.0): Usando o método v2.0 do repositório
+            try
+            {
+                // Validação do DTO
+                ValidateFaturamentoCreateDto(dto);
+
+                // Verifica acesso à unidade
+                await ValidateUserAccessAsync(unidadeId, userId, tenantId);
+
+                // Encontra ou cria o FaturamentoDiario
+                var dataDoFechamento = DateOnly.FromDateTime(dto.HoraInicio.Date);
+                var faturamentoDiario = await GetOrCreateFaturamentoDiarioAsync(unidadeId, dataDoFechamento, tenantId);
+
+                // Verifica sobreposição
+                await ValidateNoOverlapAsync(faturamentoDiario.Id, tenantId, dto.HoraInicio, dto.HoraFim);
+
+                // Cria o faturamento parcial
+                var novoFaturamento = CreateFaturamentoParcialEntity(dto, faturamentoDiario.Id, tenantId);
+
+                await _repository.AddAsync(novoFaturamento);
+                await _repository.SaveChangesAsync();
+
+                _logger.LogInformation("Faturamento parcial criado com sucesso: {FaturamentoId}", novoFaturamento.Id);
+                return novoFaturamento;
+            }
+            catch (BaseException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao adicionar faturamento parcial para unidade {UnidadeId}", unidadeId);
+                throw new FaturamentoServiceException("Erro ao adicionar faturamento parcial", ex);
+            }
+        }
+
+        public async Task UpdateFaturamentoAsync(
+            Guid unidadeId, Guid faturamentoId, FaturamentoParcialUpdateDto dto, Guid userId, Guid tenantId)
+        {
+            try
+            {
+                // Validação do DTO
+                ValidateFaturamentoUpdateDto(dto);
+
+                // Verifica acesso à unidade
+                await ValidateUserAccessAsync(unidadeId, userId, tenantId);
+
+                var faturamentoExistente = await GetFaturamentoParcialAsync(faturamentoId, tenantId);
+                await ValidateFaturamentoBelongsToUnidadeAsync(faturamentoExistente, unidadeId, tenantId);
+
+                // Verifica sobreposição (excluindo o próprio registro)
+                await ValidateNoOverlapAsync(faturamentoExistente.FaturamentoDiarioId, tenantId, 
+                    dto.HoraInicio, dto.HoraFim, faturamentoId);
+
+                UpdateFaturamentoFromDto(faturamentoExistente, dto);
+                _repository.Update(faturamentoExistente);
+                await _repository.SaveChangesAsync();
+
+                _logger.LogInformation("Faturamento parcial atualizado com sucesso: {FaturamentoId}", faturamentoId);
+            }
+            catch (BaseException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao atualizar faturamento parcial {FaturamentoId}", faturamentoId);
+                throw new FaturamentoServiceException("Erro ao atualizar faturamento parcial", ex);
+            }
+        }
+
+        public async Task DeleteFaturamentoAsync(Guid unidadeId, Guid faturamentoId, Guid userId, Guid tenantId)
+        {
+            try
+            {
+                // Verifica acesso à unidade
+                await ValidateUserAccessAsync(unidadeId, userId, tenantId);
+
+                var faturamentoExistente = await GetFaturamentoParcialAsync(faturamentoId, tenantId);
+                await ValidateFaturamentoBelongsToUnidadeAsync(faturamentoExistente, unidadeId, tenantId);
+
+                _repository.Remove(faturamentoExistente);
+                await _repository.SaveChangesAsync();
+
+                _logger.LogInformation("Faturamento parcial excluído com sucesso: {FaturamentoId}", faturamentoId);
+            }
+            catch (BaseException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao excluir faturamento parcial {FaturamentoId}", faturamentoId);
+                throw new FaturamentoServiceException("Erro ao excluir faturamento parcial", ex);
+            }
+        }
+
+        public async Task DeactivateFaturamentoAsync(Guid unidadeId, Guid faturamentoId, Guid userId, Guid tenantId)
+        {
+            try
+            {
+                // Verifica acesso à unidade
+                await ValidateUserAccessAsync(unidadeId, userId, tenantId);
+
+                var faturamentoExistente = await GetFaturamentoParcialAsync(faturamentoId, tenantId);
+                await ValidateFaturamentoBelongsToUnidadeAsync(faturamentoExistente, unidadeId, tenantId);
+
+                faturamentoExistente.IsAtivo = false;
+                _repository.Update(faturamentoExistente);
+                await _repository.SaveChangesAsync();
+
+                _logger.LogInformation("Faturamento parcial desativado com sucesso: {FaturamentoId}", faturamentoId);
+            }
+            catch (BaseException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao desativar faturamento parcial {FaturamentoId}", faturamentoId);
+                throw new FaturamentoServiceException("Erro ao desativar faturamento parcial", ex);
+            }
+        }
+
+        // Método auxiliar adicional para buscar faturamentos
+        public async Task<IEnumerable<FaturamentoParcial>> GetFaturamentosPorUnidadeEDataAsync(
+            Guid unidadeId, DateOnly data, Guid tenantId)
+        {
+            try
+            {
+                _logger.LogDebug("Buscando faturamentos parciais da unidade {UnidadeId} na data {Data}", 
+                    unidadeId, data);
+
+                // Busca o faturamento diário primeiro
+                var faturamentoDiario = await _context.FaturamentosDiarios
+                    .FirstOrDefaultAsync(fd => fd.UnidadeId == unidadeId && fd.Data == data && fd.TenantId == tenantId);
+
+                if (faturamentoDiario == null)
+                {
+                    return Enumerable.Empty<FaturamentoParcial>();
+                }
+
+                // Busca os faturamentos parciais relacionados
+                return await _context.FaturamentosParciais
+                    .Where(fp => fp.FaturamentoDiarioId == faturamentoDiario.Id && fp.TenantId == tenantId && fp.IsAtivo)
+                    .OrderBy(fp => fp.HoraInicio)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar faturamentos parciais da unidade {UnidadeId}", unidadeId);
+                throw new FaturamentoServiceException("Erro ao buscar faturamentos parciais", ex);
+            }
+        }
+
+        #region Private Methods
+
+        private async Task ValidateUserAccessAsync(Guid unidadeId, Guid userId, Guid tenantId)
+        {
             if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
             {
-                return (null, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
+                throw new UnidadeAccessDeniedException(unidadeId);
             }
+        }
 
-            // 7. LÓGICA V2.0: Encontra ou Cria o FaturamentoDiario (o "cabeçalho")
-            var dataDoFechamento = DateOnly.FromDateTime(dto.HoraInicio.Date);
+        private async Task<FaturamentoParcial> GetFaturamentoParcialAsync(Guid faturamentoId, Guid tenantId)
+        {
+            var faturamento = await _repository.GetByIdAsync(faturamentoId, tenantId);
+            if (faturamento == null)
+            {
+                throw new FaturamentoParcialNotFoundException(faturamentoId);
+            }
+            return faturamento;
+        }
+
+        private async Task ValidateFaturamentoBelongsToUnidadeAsync(
+            FaturamentoParcial faturamento, Guid unidadeId, Guid tenantId)
+        {
             var faturamentoDiario = await _context.FaturamentosDiarios
-                .FirstOrDefaultAsync(fd => fd.UnidadeId == unidadeId && fd.Data == dataDoFechamento);
+                .FirstOrDefaultAsync(fd => fd.Id == faturamento.FaturamentoDiarioId && fd.TenantId == tenantId);
+
+            if (faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
+            {
+                throw new UnidadeAccessDeniedException(unidadeId);
+            }
+        }
+
+        private async Task ValidateNoOverlapAsync(
+            Guid faturamentoDiarioId, Guid tenantId, DateTime inicio, DateTime fim, Guid? excludeFaturamentoId = null)
+        {
+            if (await _repository.CheckForOverlappingFaturamentoAsync(
+                faturamentoDiarioId, tenantId, inicio, fim, excludeFaturamentoId))
+            {
+                throw new FaturamentoOverlapException();
+            }
+        }
+
+        private static void ValidateFaturamentoCreateDto(FaturamentoParcialCreateDto dto)
+        {
+            if (dto == null)
+                throw new FaturamentoDtoNullException();
+
+            if (dto.Valor <= 0)
+                throw new BusinessRuleException("Valor deve ser maior que zero");
+
+            if (dto.HoraInicio >= dto.HoraFim)
+                throw new InvalidFaturamentoTimeException("Hora fim deve ser posterior à hora início");
+
+            if (dto.HoraFim > DateTime.UtcNow)
+                throw new InvalidFaturamentoTimeException("Hora fim não pode ser futura");
+
+            if (string.IsNullOrWhiteSpace(dto.Origem))
+                throw new BusinessRuleException("Origem é obrigatória");
+        }
+
+        private static void ValidateFaturamentoUpdateDto(FaturamentoParcialUpdateDto dto)
+        {
+            if (dto == null)
+                throw new BusinessRuleException("DTO não pode ser nulo");
+
+            if (dto.Valor <= 0)
+                throw new BusinessRuleException("Valor deve ser maior que zero");
+
+            if (dto.HoraInicio >= dto.HoraFim)
+                throw new InvalidFaturamentoTimeException("Hora fim deve ser posterior à hora início");
+
+            if (dto.HoraFim > DateTime.UtcNow)
+                throw new InvalidFaturamentoTimeException("Hora fim não pode ser futura");
+
+            if (string.IsNullOrWhiteSpace(dto.Origem))
+                throw new BusinessRuleException("Origem é obrigatória");
+        }
+
+        private async Task<FaturamentoDiario> GetOrCreateFaturamentoDiarioAsync(
+            Guid unidadeId, DateOnly data, Guid tenantId)
+        {
+            var faturamentoDiario = await _context.FaturamentosDiarios
+                .FirstOrDefaultAsync(fd => fd.UnidadeId == unidadeId && fd.Data == data && fd.TenantId == tenantId);
 
             if (faturamentoDiario == null)
             {
-                // Se não existir, cria um novo "cabeçalho"
                 faturamentoDiario = new FaturamentoDiario
                 {
                     Id = Guid.NewGuid(),
                     TenantId = tenantId,
                     UnidadeId = unidadeId,
-                    Data = dataDoFechamento,
+                    Data = data,
                     Status = RegistroStatus.Pendente,
-                    // TODO: Preencher FundoDeCaixa e Observacoes (Tarefa 3 do Roadmap)
-                    FundoDeCaixa = 0, 
-                    Observacoes = "Criado automaticamente."
+                    FundoDeCaixa = 0,
+                    Observacoes = "Criado automaticamente para faturamentos parciais"
                 };
                 await _context.FaturamentosDiarios.AddAsync(faturamentoDiario);
             }
-            // (Não salvamos ainda, vamos salvar tudo no final)
 
-            // 8. Validações v1.0 (agora no contexto do FaturamentoDiarioId)
-            if (dto.HoraInicio >= dto.HoraFim)
-            {
-                return (null, ErrorMessages.InvalidDateRange);
-            }
-            
-            // ... (outras validações de data) ...
+            return faturamentoDiario;
+        }
 
-            // 9. MUDANÇA (v2.0): Checa duplicidade usando o FaturamentoDiarioId
-            if (await _repository.CheckForOverlappingFaturamentoAsync(faturamentoDiario.Id, tenantId, dto.HoraInicio, dto.HoraFim))
-            {
-                return (null, ErrorMessages.OverlappingFaturamento);
-            }
-
-            // 10. MUDANÇA (v2.0): Cria o modelo v2.0 (corrige CS0117)
-            var novoFaturamento = new FaturamentoParcial
+        private static FaturamentoParcial CreateFaturamentoParcialEntity(
+            FaturamentoParcialCreateDto dto, Guid faturamentoDiarioId, Guid tenantId)
+        {
+            return new FaturamentoParcial
             {
                 Id = Guid.NewGuid(),
-                TenantId = tenantId, 
-                FaturamentoDiarioId = faturamentoDiario.Id, // <-- CORRIGIDO
+                TenantId = tenantId,
+                FaturamentoDiarioId = faturamentoDiarioId,
                 Valor = dto.Valor,
-                HoraInicio = dto.HoraInicio, 
-                HoraFim = dto.HoraFim, 
-                MetodoPagamentoId = dto.MetodoPagamentoId, 
+                HoraInicio = dto.HoraInicio,
+                HoraFim = dto.HoraFim,
+                MetodoPagamentoId = dto.MetodoPagamentoId,
                 Origem = dto.Origem,
                 IsAtivo = true
             };
-
-            await _repository.AddAsync(novoFaturamento);
-            await _repository.SaveChangesAsync(); // Salva o FaturamentoDiario (se novo) e o FaturamentoParcial
-
-            return (novoFaturamento, null);
         }
-        
-        // 11. MUDANÇA (v2.0): Assinatura atualizada
-        public async Task<(bool success, string? errorMessage)> UpdateFaturamentoAsync(
-            Guid unidadeId, Guid faturamentoId, FaturamentoParcialUpdateDto dto, Guid userId, Guid tenantId)
+
+        private static void UpdateFaturamentoFromDto(FaturamentoParcial faturamento, FaturamentoParcialUpdateDto dto)
         {
-            if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
-            {
-                return (false, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
-            }
-
-            var faturamentoExistente = await _repository.GetByIdAsync(faturamentoId, tenantId);
-            
-            // 12. MUDANÇA (v2.0): Corrige CS1061
-            // Precisamos carregar o FaturamentoDiario para checar a UnidadeId
-            var faturamentoDiario = await _context.FaturamentosDiarios
-                .FirstOrDefaultAsync(fd => fd.Id == faturamentoExistente!.FaturamentoDiarioId);
-
-            if (faturamentoExistente == null || faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
-            {
-                return (false, ErrorMessages.GenericNotFound);
-            }
-            
-            if (dto.HoraInicio >= dto.HoraFim)
-            {
-                return (false, ErrorMessages.InvalidDateRange  );
-            }
-            
-            if (await _repository.CheckForOverlappingFaturamentoAsync(faturamentoDiario.Id, tenantId, dto.HoraInicio, dto.HoraFim, faturamentoId))
-            {
-                return (false, ErrorMessages.OverlappingFaturamento);
-            }
-            
-            faturamentoExistente.Valor = dto.Valor;
-            faturamentoExistente.HoraInicio = dto.HoraInicio;
-            faturamentoExistente.HoraFim = dto.HoraFim;
-            faturamentoExistente.MetodoPagamentoId = dto.MetodoPagamentoId;
-
-            _repository.Update(faturamentoExistente);
-            await _repository.SaveChangesAsync();
-
-            return (true, null);
+            faturamento.Valor = dto.Valor;
+            faturamento.HoraInicio = dto.HoraInicio;
+            faturamento.HoraFim = dto.HoraFim;
+            faturamento.MetodoPagamentoId = dto.MetodoPagamentoId;
+            faturamento.Origem = dto.Origem;
         }
 
-        // 13. MUDANÇA (v2.0): Assinatura atualizada
-        public async Task<(bool success, string? errorMessage)> DeleteFaturamentoAsync(
-            Guid unidadeId, Guid faturamentoId, Guid userId, Guid tenantId)
-        {
-             if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
-            {
-                return (false, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
-            }
-
-            var faturamentoExistente = await _repository.GetByIdAsync(faturamentoId, tenantId);
-            
-            var faturamentoDiario = await _context.FaturamentosDiarios
-                .FirstOrDefaultAsync(fd => fd.Id == faturamentoExistente!.FaturamentoDiarioId);
-
-            if (faturamentoExistente == null || faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
-            {
-                return (false, ErrorMessages.GenericNotFound);
-            }
-
-            _repository.Remove(faturamentoExistente);
-            await _repository.SaveChangesAsync();
-
-            return (true, null);
-        }
-
-        // 14. MUDANÇA (v2.0): Assinatura atualizada
-        public async Task<(bool success, string? errorMessage)> DeactivateFaturamentoAsync(
-            Guid unidadeId, Guid faturamentoId, Guid userId, Guid tenantId)
-        {
-             if (!await _repository.UserHasAccessToUnidadeAsync(unidadeId, userId, tenantId))
-            {
-                return (false, ErrorMessages.UnidadeNotFound + " ou " + ErrorMessages.UserNoPermission);
-            }
-
-            var faturamentoExistente = await _repository.GetByIdAsync(faturamentoId, tenantId);
-            
-            var faturamentoDiario = await _context.FaturamentosDiarios
-                .FirstOrDefaultAsync(fd => fd.Id == faturamentoExistente!.FaturamentoDiarioId);
-
-            if (faturamentoExistente == null || faturamentoDiario == null || faturamentoDiario.UnidadeId != unidadeId)
-            {
-                return (false, ErrorMessages.GenericNotFound);
-            }
-
-            faturamentoExistente.IsAtivo = false;
-            _repository.Update(faturamentoExistente);
-            await _repository.SaveChangesAsync();
-
-            return (true, null);
-        }
+        #endregion
     }
 }

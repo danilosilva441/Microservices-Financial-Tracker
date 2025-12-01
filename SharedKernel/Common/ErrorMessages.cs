@@ -35,7 +35,12 @@ namespace SharedKernel
         public const string InvalidDateRange = "Intervalo de datas inválido.";
         public const string DataFuturaNaoPermitida = "Não são permtidas datas futuras para esta operação.";
         public const string NoAlteredStatus = "Não é permitido alterar o status de 'Aprovado' para pendente.";
-        
+        public const string FaturamentoNotFound = "Faturamento não encontrado.";
+        public const string FaturamentoParcialNotFound = "Faturamento parcial não encontrado.";
+        public const string FaturamentoJaExiste = "Já existe um faturamento registrado para este período.";
+        public const string OverlappingFaturamento = "Já existe um faturamento registrado com sobreposição de horário.";
+        public const string AcessoNegado  = "Acesso negado ao recurso solicitado.";
+
         
         // Erros de Validação
         public const string RequiredField = "O campo {0} é obrigatório.";
@@ -57,6 +62,5 @@ namespace SharedKernel
         public const string InvalidFileType = "Formato de ficheiro inválido.";
         public const string OperationFailed = "A operação falhou. Tente novamente.";
         public const string InvalidOperation = "Operação inválida para o estado atual do recurso.";
-        public const string OverlappingFaturamento = "Já existe um faturamento registrado com sobreposição de horário.";
     }
 }
