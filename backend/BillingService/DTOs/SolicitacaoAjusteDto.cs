@@ -1,4 +1,5 @@
 namespace BillingService.DTOs;
+
 public class SolicitacaoAjusteDto
 {
     public Guid Id { get; set; }
@@ -25,3 +26,4 @@ public class OperacaoSimplesDto
     public Guid Id { get; set; }
     public string Nome { get; set; } = string.Empty;
 }
+
