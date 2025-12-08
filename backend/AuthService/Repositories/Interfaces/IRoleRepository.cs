@@ -9,5 +9,6 @@ namespace AuthService.Repositories
         Task<List<Role>> GetAllRolesAsync();
         Task<List<Role>> GetRolesByNamesAsync(IEnumerable<string> roleNames);
         Task<bool> RoleExistsAsync(string roleName);
+        Task<List<User>> GetUsersByRoleAsync(string roleName);
     }
 }

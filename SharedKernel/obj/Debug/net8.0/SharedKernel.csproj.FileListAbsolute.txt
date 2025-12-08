@@ -10,3 +10,4 @@ C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKern
 C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\refint\SharedKernel.dll
 C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.pdb
 C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\ref\SharedKernel.dll
+C:\My workspace\portfolio-microservices\SharedKernel\obj\Debug\net8.0\SharedKernel.csproj.AssemblyReference.cache

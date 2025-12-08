@@ -1,173 +1,133 @@
+🧾 README.md — DSS Systech Platform (v2.1)
 
----
+    DSS Systech — Plataforma de Gestão Operacional & Financeira Multi-Tenant (SaaS)
 
-🧾 README.md — Microservices Financial Tracker (v2.0)
+Status	Versão	Foco Atual
+🟢 Estável	v2.1 (Enterprise Grade)	Fase 4: Qualidade & Testes Unitários
 
-# 💰 Microservices Financial Tracker — Plataforma Financeira Multi-Tenant
+📖 Visão Geral
 
-**Status:** 🟢 Em Produção (v2.0 Estável)  
-**Backend:** .NET 8 (C#), Node.js  
-**Frontend:** Vue.js 3 + TailwindCSS + Chart.js  
-**Infraestrutura:** Docker Compose + Nginx + PostgreSQL  
-**Arquitetura:** Microsserviços + Multi-Tenancy + JWT Security  
+O DSS Systech é uma plataforma SaaS (Software as a Service) B2B desenvolvida para gestão financeira e operacional de múltiplas unidades de negócio.
 
----
+Diferente de um CRUD simples, este projeto implementa uma arquitetura de microsserviços multi-tenant robusta, focada em Isolamento de Dados (Security-by-Default), hierarquia de permissões complexa e inteligência de dados em tempo real.
 
-## 📖 Visão Geral
+O sistema resolve o problema da gestão descentralizada (planilhas e papel), oferecendo um fluxo digital onde líderes operacionais submetem fechamentos, supervisores auditam, e gerentes visualizam a lucratividade real.
 
-O **Microservices Financial Tracker** é uma plataforma de **gestão e análise financeira multi-tenant**, desenvolvida para centralizar o controle de operações, faturamentos e despesas de múltiplas unidades e empresas.
+🧱 Arquitetura & Stack Tecnológica
 
-O sistema foi projetado com foco em **segurança, escalabilidade e automação inteligente**, unindo backend modular em microserviços, frontend reativo em Vue.js e um motor de análise em Node.js.  
-A infraestrutura é totalmente conteinerizada e orquestrada com Docker + Nginx, pronta para ambientes produtivos.
+A solução é orquestrada via Docker Compose, composta por 3 microsserviços principais e um Kernel compartilhado.
 
----
+🛠️ Backend & Infraestrutura
 
-## 🧱 Arquitetura do Sistema
+    AuthService (.NET 8): Gestão de Identidade, Tokens JWT v2.0, Hierarquia e Provisionamento de Tenants.
 
-┌──────────────────────────────┐ │          Frontend            │ │  Vue.js + Tailwind + Chart.js│ └──────────────┬───────────────┘ │ API Gateway (Nginx) │ ┌──────────────┼──────────────┐ │ AuthService  │ BillingService│ │ (.NET 8)     │ (.NET 8)      │ └──────────────┼──────────────┘ │ AnalysisService (Node.js - Inteligência) │ PostgreSQL (x3)
+    BillingService (.NET 8): Core Business (Unidades, Despesas, Fluxo de Aprovação). Implementa Global Query Filters para segurança.
 
-Cada microserviço possui seu próprio banco (`auth_db`, `billing_db`, `analysis_db`), com isolamento total de dados.  
-A arquitetura **multi-tenant** garante que cada empresa (Tenant) possua dados segregados e segurança contextual via `TenantId` nos tokens JWT.
+    AnalysisService (Node.js): Motor de inteligência que agrega dados e calcula lucratividade (Receita - Despesa) em tempo real.
 
----
+    SharedKernel: Biblioteca de domínios compartilhados e contratos de segurança (ITenantEntity).
 
-## ⚙️ Tecnologias-Chave
+    Banco de Dados: PostgreSQL (Schemas isolados por serviço).
 
-**Backend**
-- .NET 8 + C#
-- Entity Framework Core
-- Repository Pattern
-- JWT Authentication com Tenant Claims
-- PostgreSQL
-- MiniExcel (Upload de Planilhas)
-- Node.js (AnalysisService)
+    API Gateway: Nginx (Reverse Proxy para roteamento seguro /api/*).
 
-**Frontend**
-- Vue.js 3 (Composition API + Pinia)
-- TailwindCSS
-- Chart.js
-- Axios
-- Modo Mobile-First
+🧪 Qualidade & Testes
 
-**Infraestrutura**
-- Docker Compose
-- Nginx (API Gateway + Reverse Proxy)
-- Multi-Database (auth_db, billing_db)
-- Volume Persistence + Healthchecks
+    xUnit: Framework de testes.
 
----
+    Moq: Simulação de dependências e repositórios.
 
-## ✅ Fase 1 — A Grande Refatoração (v1.0 → v2.0)
+    FluentAssertions: Asserções legíveis e expressivas.
 
-**Status:** ✅ Concluída com Sucesso  
+    SQLite (In-Memory): Para testes de integração de banco de dados e transações.
 
-A Fase 1 foi o marco principal do projeto, consolidando a migração de um protótipo v1.0 para uma **plataforma robusta multi-tenant**.  
-Principais entregas:
+🚀 Roadmap de Desenvolvimento
 
-### 🧩 Banco de Dados
-- Migração completa para **multi-tenancy** via `TenantId`.
-- Criação da migração única `V2_Schema_Inicial` nos bancos `auth_db` e `billing_db`.
-- Sincronia total entre código e schema.
+✅ Fase 1: A Grande Refatoração (v1.0 → v2.0)
 
-### 🛠️ Infraestrutura
-- Reescrita completa do `docker-compose.yml` e dos `Dockerfiles`.
-- Build estável e contêineres **Healthy** para todos os serviços.
-- API Gateway (Nginx) roteando corretamente `/api/*`.
+    [x] Migração de Monólito para Microsserviços.
 
-### 🔐 AuthService (.NET 8)
-- Implementação de **Repository Pattern**.
-- Endpoint `/api/tenant/provision` para criação de novos Tenants (empresas).
-- JWT com claims de `tenantId` e controle granular de roles.
+    [x] Implementação do padrão Repository Pattern e Injeção de Dependência.
 
-### 💼 BillingService (.NET 8)
-- Refatoração completa da lógica de negócio.
-- Novo módulo **Despesas (Expenses)**:
-  - `POST /expenses/categories`
-  - `POST /expenses`
-  - `POST /expenses/upload` (upload via planilha Excel)
-- Fluxo de **Fechamento de Caixa**:
-  - Líder submete fechamento (`POST /unidades/.../fechamentos`)
-  - Supervisor aprova (`PUT /unidades/.../fechamentos/{id}`)
+    [x] Containerização total (Docker) com Healthchecks.
 
-### 📊 AnalysisService (Node.js)
-- Substituição de cron job por API sob demanda.
-- Autenticação segura com token `Admin` (TenantId NULL).
-- Integração com BillingService para cálculos de projeção de faturamento.
+    [x] Configuração do Nginx Gateway.
 
-### 🧪 Validação
-- Testes Postman ponta a ponta cobrindo todo o fluxo:
-  - Provisionamento de Tenant → Login → Criação de Unidade → Registro de Faturamento → Fechamento e Aprovação.
+✅ Fase 2: Funcionalidades de Negócio (v2.0)
 
----
+    [x] Módulo de Despesas: CRUD e importação em lote via Excel (MiniExcel).
 
-## 🚀 Fase 2 — Funcionalidades Finais (v2.1)
+    [x] Fluxo de Aprovação: Workflow de estado (Pendente → Aprovado/Rejeitado) para fechamentos de caixa.
 
-**Status:** 🔄 Em Desenvolvimento  
+    [x] Dashboard de Lucro: Cálculo automático de lucratividade consumindo dados de múltiplos serviços.
 
-Agora que a base estável foi alcançada, o foco é entregar as **funcionalidades finais do produto**.
+    [x] Hierarquia: Gerentes podem criar a sua própria equipa (Supervisores, Líderes) via API.
 
-### 🔧 Backend
-- [ ] Depurar `GET /api/analysis/dashboard-data`  
-  - Corrigir credenciais do `system@...` (Admin, TenantId NULL)  
-  - Validar cálculo de lucro `(Receita - Despesa)`  
+✅ Fase 3: Segurança & Isolamento (v2.1)
 
-### 🖥️ Frontend (Vue.js + TailwindCSS)
-- [ ] **Auth v2.0** — Atualizar `auth.store.ts` (Pinia) para armazenar `tenantId` globalmente.  
-- [ ] **Dashboard de Lucro** — Tela principal do gerente com dados do AnalysisService.  
-- [ ] **Módulo de Despesas** — Listagem e upload de planilhas (`/expenses` + `/expenses/upload`).  
-- [ ] **Fluxo Mobile (Líder)** — Formulário para submissão de fechamentos diários.  
-- [ ] **Painel do Supervisor** — Tela desktop para aprovar fechamentos pendentes.  
-- [ ] **OCR (Prova de Conceito)** — Testes com `Tesseract.js` para leitura de comprovantes físicos.
+    [x] Isolamento de Tenant: Implementação de Global Query Filters no EF Core. O sistema aplica WHERE TenantId = X automaticamente em todas as consultas, impedindo vazamento de dados.
 
----
+    [x] Autenticação Robusta: Proteção global com [Authorize] e validação de Claims no JWT.
 
-## 🧠 AI-Driven Development
+    [x] Admin Global: Lógica "Admin-Aware" que permite ao sistema (Analysis) ver dados globais, enquanto restringe usuários comuns.
 
-Este projeto foi desenvolvido integralmente com apoio de **ferramentas de Inteligência Artificial**, adotando práticas de **AI-Augmented Engineering**:
+🔄 Fase 4: Qualidade & Blindagem (EM ANDAMENTO)
 
-| Ferramenta | Utilização |
-|-------------|-------------|
-| **ChatGPT (OpenAI)** | Arquitetura, design de APIs e otimizações de código. |
-| **Gemini (Google)** | Organização de roadmap e etapas de desenvolvimento. |
-| **DeepSeek** | Refino de performance e análise de bugs. |
+    [x] BillingService Tests: Validação de cálculos financeiros e testes de segurança de isolamento de dados.
 
-Essa metodologia garantiu um ciclo de desenvolvimento **rápido, iterativo e com alta coerência técnica**, resultando em uma base estável e escalável.
+    [x] AuthService Tests: Cobertura de 100% das regras de hierarquia (ex: "Gerente não pode criar outro Gerente") e validações de cadastro (60 testes passando).
 
----
+    [ ] AnalysisService Tests: Testes unitários em Jest para a lógica matemática.
 
-## 🐳 Como Executar Localmente
+🔜 Fases Futuras
 
-### **Pré-requisitos**
-- Docker Desktop  
-- Git  
+    Fase 5: Frontend (Vue.js + Pinia + TailwindCSS).
 
-### **Passos**
-```bash
-# Clone o repositório
+    Fase 6: Funcionalidades Enterprise (Audit Logs, Observabilidade).
+
+    Fase 7: Inovação (OCR com Tesseract.js para leitura de comprovantes).
+
+📡 Principais Endpoints (API Reference)
+
+🔐 AuthService
+
+Método	Endpoint	Acesso	Descrição
+POST	/api/tenant/provision	Público	Cria uma nova Empresa e o seu Gerente.
+POST	/api/token	Público	Login (Retorna JWT com tenantId).
+POST	/api/users/tenant-user	Gerente	Cria funcionários (Supervisor, Líder) para a empresa.
+
+💰 BillingService
+
+Método	Endpoint	Acesso	Descrição
+GET	/api/unidades	Autenticado	Lista as unidades do Tenant (Segurança Automática).
+POST	/api/unidades/{id}/fechamentos	Líder+	Submete um fechamento de caixa diário.
+PUT	/api/unidades/.../fechamentos/{id}	Supervisor+	Aprova/Rejeita um fechamento.
+POST	/api/expenses/upload	Gerente	Upload de planilha de despesas (.xlsx).
+
+📊 AnalysisService
+
+Método	Endpoint	Acesso	Descrição
+GET	/api/analysis/dashboard-data	Gerente	Retorna KPIs de Lucro, Receita e Despesa em tempo real.
+
+🐳 Como Executar
+
+    Pré-requisitos: Docker Desktop e Git.
+
+    Clone o repositório:
+    Bash
+
 git clone https://github.com/danilosilva441/Microservices-Financial-Tracker.git
-cd Microservices-Financial-Tracker
 
-# Ajuste variáveis de ambiente no docker-compose.yml
-# SYSTEM_EMAIL, SYSTEM_PASSWORD
+Suba o ambiente:
+Bash
 
-# Suba os contêineres
 docker-compose up --build -d
 
-Acesse:
-👉 http://localhost:8080
+Execute os Testes (Opcional):
+Bash
 
-
----
-
-📡 Endpoints Principais
-
-Método	Endpoint	Serviço	Descrição
-
-POST	/api/tenant/provision	AuthService	Cria um novo Tenant (Empresa)
-POST	/api/token	AuthService	Gera token JWT
-GET	/api/operacoes	BillingService	Lista operações por Tenant
-POST	/api/expenses	BillingService	Cadastra despesa
-GET	/api/analysis/dashboard-data	AnalysisService	Retorna dados de lucro (receita - despesa)
+    dotnet test backend/AuthService.Tests
+    dotnet test backend/BillingService.Tests
 
 
 

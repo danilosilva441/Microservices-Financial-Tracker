@@ -446,5 +446,35 @@ namespace AuthService.Services
                 return AuthResult.Fail("Erro interno ao buscar usuários administradores.");
             }
         }
+
+
+        public async Task<AuthResult> GetSubordinatesAsync(Guid managerId)
+        {
+            try
+            {
+                // Busca usuários onde ReportsToUserId == managerId
+                // Nota: Precisará adicionar este método no IUserRepository
+                var subordinates = await _userRepository.GetUsersByManagerAsync(managerId);
+
+                var result = subordinates.Select(u => new
+                {
+                    u.Id,
+                    u.Email,
+                    Role = u.Roles.FirstOrDefault()?.Name ?? "Sem Cargo",
+                    u.CreatedAt
+                }).ToList();
+
+                return AuthResult.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar subordinados do manager: {ManagerId}", managerId);
+                return AuthResult.Fail("Erro ao buscar lista de subordinados.");
+            }
+        }
+
+
+
     }
+
 }

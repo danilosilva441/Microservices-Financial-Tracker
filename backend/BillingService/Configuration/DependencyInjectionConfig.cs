@@ -20,6 +20,7 @@ namespace BillingService.Configuration
             services.AddScoped<IMensalistaRepository, MensalistaRepository>();
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
             services.AddScoped<IFaturamentoDiarioRepository, FaturamentoDiarioRepository>();
+            services.AddScoped<IShiftRepository, ShiftRepository>();
             
 
 
@@ -33,6 +34,7 @@ namespace BillingService.Configuration
             services.AddScoped<IMensalistaService, MensalistaService>();
             services.AddScoped<IExpenseService, ExpenseService>();
             services.AddScoped<IFaturamentoDiarioService, FaturamentoDiarioService>();
+            services.AddScoped<IShiftService, ShiftService>();
             
 
             return services;

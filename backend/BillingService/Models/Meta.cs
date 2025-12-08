@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BillingService.Models; // 1. IMPORTANTE: Adiciona o using local
+using SharedKernel.Entities;
 
 namespace BillingService.Models
 {

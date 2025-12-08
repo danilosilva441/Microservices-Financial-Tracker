@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BillingService.Models; // Garante que ele veja o BaseEntity e Unidade
+using SharedKernel.Entities;
 
 namespace BillingService.Models
 {

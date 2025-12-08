@@ -11,6 +11,8 @@ namespace BillingService.Services.Interfaces
             SolicitacaoAjuste solicitacao, 
             Guid solicitanteId);
 
+        Task<SolicitacaoAjusteDto?> GetSolicitacaoByIdAsync(Guid id);
+
         // 2. CORREÇÃO: A interface agora espera o DTO, assim como a classe
         Task<IEnumerable<SolicitacaoAjusteDto>> GetSolicitacoesAsync();
 

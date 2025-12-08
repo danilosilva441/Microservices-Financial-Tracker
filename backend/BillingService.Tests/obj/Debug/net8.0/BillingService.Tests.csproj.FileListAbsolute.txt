@@ -160,3 +160,7 @@ C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\n
 C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\runtimes\win-x86\native\e_sqlite3.dll
 C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.dll
 C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\Microsoft.Extensions.Caching.Memory.dll
+C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\Microsoft.Extensions.Logging.dll
+C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\My workspace\portfolio-microservices\backend\BillingService.Tests\bin\Debug\net8.0\Microsoft.Extensions.Options.dll

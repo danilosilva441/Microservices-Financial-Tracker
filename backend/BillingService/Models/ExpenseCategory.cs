@@ -1,5 +1,6 @@
 // Caminho: backend/BillingService/Models/ExpenseCategory.cs
 using System.ComponentModel.DataAnnotations;
+using SharedKernel.Entities;
 
 namespace BillingService.Models
 {

@@ -1,0 +1,446 @@
+// Caminho: backend/BillingService/Controller/UnidadeController.cs
+using BillingService.DTOs;
+using BillingService.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Microsoft.Extensions.Logging;
+using System.Net;
+
+namespace BillingService.Controllers;
+
+[ApiController]
+[Route("api/v{version:apiVersion}/unidades")]
+[Authorize]
+public class UnidadeController : ControllerBase
+{
+    private readonly IUnidadeService _unidadeService;
+    private readonly ILogger<UnidadeController> _logger;
+
+    public UnidadeController(
+        IUnidadeService unidadeService,
+        ILogger<UnidadeController> logger)
+    {
+        _unidadeService = unidadeService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Obtém o ID do usuário autenticado do token JWT
+    /// </summary>
+    private Guid GetUserId()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrWhiteSpace(userIdClaim))
+            {
+                _logger.LogWarning("Claim 'NameIdentifier' não encontrada no token JWT");
+                throw new UnauthorizedAccessException("Identificação do usuário não encontrada.");
+            }
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                _logger.LogError("Claim 'NameIdentifier' com formato inválido: {UserIdClaim}", userIdClaim);
+                throw new UnauthorizedAccessException("Identificação do usuário em formato inválido.");
+            }
+
+            return userId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter UserId do token JWT");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Obtém o TenantId do token JWT (apenas para Gerentes)
+    /// </summary>
+    private Guid GetTenantId()
+    {
+        try
+        {
+            var tenantIdClaim = User.FindFirst("tenantId")?.Value;
+
+            if (string.IsNullOrWhiteSpace(tenantIdClaim))
+            {
+                _logger.LogWarning("Claim 'tenantId' não encontrada no token JWT");
+                throw new InvalidOperationException(
+                    "Tenant ID não encontrado no token. Este endpoint requer privilégios de Gerente.");
+            }
+
+            if (!Guid.TryParse(tenantIdClaim, out var tenantId))
+            {
+                _logger.LogError("Claim 'tenantId' com formato inválido: {TenantIdClaim}", tenantIdClaim);
+                throw new InvalidOperationException("Tenant ID em formato inválido.");
+            }
+
+            return tenantId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter TenantId do token JWT");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Verifica se o usuário é Admin/Sistema (TenantId nulo)
+    /// </summary>
+    private bool IsAdmin()
+    {
+        var tenantIdClaim = User.FindFirst("tenantId");
+        return tenantIdClaim == null || string.IsNullOrWhiteSpace(tenantIdClaim.Value);
+    }
+
+    /// <summary>
+    /// Obtém todas as unidades (Admin: todas, Gerente: apenas do seu tenant)
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<UnidadeResponseDto>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.InternalServerError)]
+    public async Task<IActionResult> GetUnidades()
+    {
+        try
+        {
+            _logger.LogInformation("Iniciando consulta de unidades. Usuário é Admin: {IsAdmin}", IsAdmin());
+
+            if (IsAdmin())
+            {
+                var todasUnidades = await _unidadeService.GetAllUnidadesAdminAsync();
+                _logger.LogInformation("Admin consultou {Count} unidades", todasUnidades?.Count() ?? 0);
+                return Ok(todasUnidades);
+            }
+            else
+            {
+                var tenantId = GetTenantId();
+                var unidades = await _unidadeService.GetAllUnidadesByTenantAsync(tenantId);
+                _logger.LogInformation("Gerente do tenant {TenantId} consultou {Count} unidades", 
+                    tenantId, unidades?.Count() ?? 0);
+                return Ok(unidades);
+            }
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Acesso não autorizado ao consultar unidades");
+            return Unauthorized(new ProblemDetails
+            {
+                Title = "Acesso não autorizado",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.Unauthorized
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Operação inválida ao consultar unidades");
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Operação inválida",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.BadRequest
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro inesperado ao consultar unidades");
+            return StatusCode((int)HttpStatusCode.InternalServerError, new ProblemDetails
+            {
+                Title = "Erro interno do servidor",
+                Detail = "Ocorreu um erro ao processar sua solicitação.",
+                Status = (int)HttpStatusCode.InternalServerError
+            });
+        }
+    }
+
+    /// <summary>
+    /// Obtém uma unidade específica por ID
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(UnidadeResponseDto), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    public async Task<IActionResult> GetUnidadeById(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Consultando unidade com ID: {UnidadeId}", id);
+            
+            var tenantId = GetTenantId();
+            var unidade = await _unidadeService.GetUnidadeByIdAsync(id, tenantId);
+            
+            if (unidade == null)
+            {
+                _logger.LogWarning("Unidade com ID {UnidadeId} não encontrada para o tenant {TenantId}", 
+                    id, tenantId);
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Unidade não encontrada",
+                    Detail = $"A unidade com ID {id} não foi encontrada ou você não tem permissão para acessá-la.",
+                    Status = (int)HttpStatusCode.NotFound
+                });
+            }
+
+            return Ok(unidade);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Acesso não autorizado à unidade {UnidadeId}", id);
+            return Unauthorized(new ProblemDetails
+            {
+                Title = "Acesso não autorizado",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.Unauthorized
+            });
+        }
+    }
+
+    /// <summary>
+    /// Cria uma nova unidade
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin, Gerente")]
+    [ProducesResponseType(typeof(UnidadeResponseDto), (int)HttpStatusCode.Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
+    public async Task<IActionResult> CreateUnidade([FromBody] UnidadeDto unidadeDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Dados inválidos para criação de unidade: {@ModelState}", 
+                    ModelState.Values.SelectMany(v => v.Errors));
+                return ValidationProblem(ModelState);
+            }
+
+            var userId = GetUserId();
+            var tenantId = GetTenantId();
+            
+            _logger.LogInformation(
+                "Criando nova unidade. Usuário: {UserId}, Tenant: {TenantId}, Dados: {@UnidadeDto}",
+                userId, tenantId, unidadeDto);
+
+            var novaUnidade = await _unidadeService.CreateUnidadeAsync(unidadeDto, userId, tenantId);
+            
+            _logger.LogInformation("Unidade criada com sucesso. ID: {UnidadeId}", novaUnidade.Id);
+            
+            return CreatedAtAction(
+                nameof(GetUnidadeById),
+                new { id = novaUnidade.Id, version = "2.0" },
+                novaUnidade);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Argumento inválido ao criar unidade");
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Dados inválidos",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.BadRequest
+            });
+        }
+    }
+
+    /// <summary>
+    /// Atualiza uma unidade existente
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin, Gerente")]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), (int)HttpStatusCode.BadRequest)]
+    public async Task<IActionResult> UpdateUnidade(Guid id, [FromBody] UpdateUnidadeDto unidadeDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            var tenantId = GetTenantId();
+            
+            _logger.LogInformation(
+                "Atualizando unidade {UnidadeId}. Tenant: {TenantId}, Dados: {@UnidadeDto}",
+                id, tenantId, unidadeDto);
+
+            var success = await _unidadeService.UpdateUnidadeAsync(id, unidadeDto, tenantId);
+
+            if (!success)
+            {
+                _logger.LogWarning(
+                    "Falha ao atualizar unidade {UnidadeId}. Não encontrada ou sem permissão.",
+                    id);
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Unidade não encontrada",
+                    Detail = "A unidade não foi encontrada ou você não tem permissão para atualizá-la.",
+                    Status = (int)HttpStatusCode.NotFound
+                });
+            }
+
+            _logger.LogInformation("Unidade {UnidadeId} atualizada com sucesso", id);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Argumento inválido ao atualizar unidade {UnidadeId}", id);
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Dados inválidos",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.BadRequest
+            });
+        }
+    }
+
+    /// <summary>
+    /// Desativa uma unidade (soft delete)
+    /// </summary>
+    [HttpPatch("{id:guid}/desativar")]
+    [Authorize(Roles = "Admin, Gerente")]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    public async Task<IActionResult> DeactivateUnidade(Guid id)
+    {
+        try
+        {
+            var tenantId = GetTenantId();
+            
+            _logger.LogInformation("Desativando unidade {UnidadeId}. Tenant: {TenantId}", id, tenantId);
+            
+            var success = await _unidadeService.DeactivateUnidadeAsync(id, tenantId);
+            
+            if (!success)
+            {
+                _logger.LogWarning(
+                    "Falha ao desativar unidade {UnidadeId}. Não encontrada ou sem permissão.",
+                    id);
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Unidade não encontrada",
+                    Detail = "A unidade não foi encontrada ou você não tem permissão para desativá-la.",
+                    Status = (int)HttpStatusCode.NotFound
+                });
+            }
+
+            _logger.LogInformation("Unidade {UnidadeId} desativada com sucesso", id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Operação inválida ao desativar unidade {UnidadeId}", id);
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Operação não permitida",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.BadRequest
+            });
+        }
+    }
+
+    /// <summary>
+    /// Exclui permanentemente uma unidade (hard delete)
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin, Gerente")]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Conflict)]
+    public async Task<IActionResult> DeleteUnidade(Guid id)
+    {
+        try
+        {
+            var tenantId = GetTenantId();
+            
+            _logger.LogWarning("Excluindo permanentemente unidade {UnidadeId}. Tenant: {TenantId}", 
+                id, tenantId);
+            
+            var success = await _unidadeService.DeleteUnidadeAsync(id, tenantId);
+            
+            if (!success)
+            {
+                _logger.LogWarning(
+                    "Falha ao excluir unidade {UnidadeId}. Não encontrada ou sem permissão.",
+                    id);
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Unidade não encontrada",
+                    Detail = "A unidade não foi encontrada ou não pertence ao seu tenant.",
+                    Status = (int)HttpStatusCode.NotFound
+                });
+            }
+
+            _logger.LogWarning("Unidade {UnidadeId} excluída permanentemente", id);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("dependências"))
+        {
+            _logger.LogWarning(ex, "Não foi possível excluir unidade {UnidadeId} devido a dependências", id);
+            return Conflict(new ProblemDetails
+            {
+                Title = "Conflito na exclusão",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.Conflict
+            });
+        }
+    }
+
+    /// <summary>
+    /// Atualiza a projeção de faturamento de uma unidade (apenas Admin)
+    /// </summary>
+    [HttpPatch("{id:guid}/projecao")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType((int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.BadRequest)]
+    public async Task<IActionResult> UpdateProjecaoFaturamento(
+        Guid id,
+        [FromBody] ProjecaoDto projecaoDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            _logger.LogInformation(
+                "Atualizando projeção da unidade {UnidadeId}. Nova projeção: {Projecao}",
+                id, projecaoDto.ProjecaoFaturamento);
+
+            var success = await _unidadeService.UpdateProjecaoAsync(id, projecaoDto.ProjecaoFaturamento);
+            
+            if (!success)
+            {
+                _logger.LogWarning("Unidade {UnidadeId} não encontrada para atualização de projeção", id);
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Unidade não encontrada",
+                    Detail = $"A unidade com ID {id} não foi encontrada.",
+                    Status = (int)HttpStatusCode.NotFound
+                });
+            }
+
+            _logger.LogInformation("Projeção da unidade {UnidadeId} atualizada com sucesso", id);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Valor de projeção inválido para unidade {UnidadeId}", id);
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Valor de projeção inválido",
+                Detail = ex.Message,
+                Status = (int)HttpStatusCode.BadRequest
+            });
+        }
+    }
+
+    private class UnidadeResponseDto
+    {
+    }
+}

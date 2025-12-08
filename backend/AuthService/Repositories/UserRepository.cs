@@ -1,6 +1,11 @@
 using AuthService.Data;
 using AuthService.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AuthService.Repositories;
 
 namespace AuthService.Repositories
 {
@@ -87,11 +92,45 @@ namespace AuthService.Repositories
         }
         public async Task<List<User>> GetUsersByRoleAsync(string roleName)
         {
+
+            // Busca usuários que tenham a Role específica (ex: "Admin")
+            // Importante: Normalizamos para UpperCase para evitar erros de "admin" vs "Admin"
+            var roleUpper = roleName.ToUpper();
+
             return await _context.Users
                 .Include(u => u.Roles)
                 .Where(u => u.Roles.Any(r => r.Name == roleName || r.NormalizedName == roleName.ToUpper()))
                 .AsNoTracking()
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<object>> GetUsersByRoleAsync(Guid managerId)
+        {
+            // Busca usuários que sejam subordinados de um gestor específico
+            var users = await _context.Users
+                .Include(u => u.Roles)
+                .Where(u => u.ReportsToUserId == managerId)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Email,
+                    Roles = u.Roles.Select(r => r.Name).ToList()
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return users;
+        }
+
+        public async Task<List<User>> GetUsersByManagerAsync(Guid managerId)
+        {
+            // Busca todos os subordinados diretos de um gestor
+            return await _context.Users
+                .Include(u => u.Roles) // Carrega as roles para exibir na lista
+                .Where(u => u.ReportsToUserId == managerId)
+                .OrderBy(u => u.Email)
+                .ToListAsync();
+        }
+
     }
 }

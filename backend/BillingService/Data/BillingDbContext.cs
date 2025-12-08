@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using BillingService.Models;
-using SharedKernel.Entities; 
+using SharedKernel.Entities;
 using Microsoft.AspNetCore.Http;
 using System.Reflection;
 
@@ -11,7 +11,7 @@ namespace BillingService.Data
         // 1. MUDANÇA: Tornamos pública (mas set privado) para o EF Core ver como propriedade
         public Guid? CurrentTenantId { get; private set; }
 
-        public BillingDbContext(DbContextOptions<BillingDbContext> options, IHttpContextAccessor? httpContextAccessor) : base(options) 
+        public BillingDbContext(DbContextOptions<BillingDbContext> options, IHttpContextAccessor? httpContextAccessor) : base(options)
         {
             if (httpContextAccessor?.HttpContext != null)
             {
@@ -37,12 +37,15 @@ namespace BillingService.Data
         public DbSet<MetodoPagamento> MetodosPagamento { get; set; }
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<WorkSchedule> WorkSchedules { get; set; }
+        public DbSet<EmployeeShift> EmployeeShifts { get; set; }
+        public DbSet<ShiftBreak> ShiftBreaks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<UsuarioOperacao>().HasKey(uo => new { uo.TenantId, uo.UserId, uo.UnidadeId }); 
+            modelBuilder.Entity<UsuarioOperacao>().HasKey(uo => new { uo.TenantId, uo.UserId, uo.UnidadeId });
             modelBuilder.Entity<Unidade>().HasIndex(u => u.TenantId);
             modelBuilder.Entity<Meta>().HasIndex(m => m.TenantId);
             modelBuilder.Entity<Expense>().HasIndex(e => e.UnidadeId);
@@ -56,6 +59,18 @@ namespace BillingService.Data
                 var genericMethod = method?.MakeGenericMethod(entityType.ClrType);
                 genericMethod?.Invoke(this, new object[] { modelBuilder });
             }
+
+            modelBuilder.Entity<WorkSchedule>()
+        .HasIndex(w => new { w.TenantId, w.UnidadeId });
+
+            modelBuilder.Entity<EmployeeShift>()
+                .HasIndex(s => new { s.TenantId, s.UnidadeId, s.UserId, s.Date }); // Índice para busca rápida de escala
+
+            modelBuilder.Entity<EmployeeShift>()
+                .HasMany(s => s.Breaks)
+                .WithOne(b => b.EmployeeShift)
+                .HasForeignKey(b => b.EmployeeShiftId)
+                .OnDelete(DeleteBehavior.Cascade); // Apagou o turno -> Apaga as pausas
         }
 
         private void ConfigureTenantFilter<T>(ModelBuilder builder) where T : class, ITenantEntity

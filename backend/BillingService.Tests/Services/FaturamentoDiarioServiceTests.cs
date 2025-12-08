@@ -103,7 +103,7 @@ namespace BillingService.Tests.Services
             {
                 // Arrange
                 var fechamento = CreateFaturamentoDiario(RegistroStatus.Pendente);
-                fechamento.FaturamentosParciais = null; // Caso de null
+                fechamento.FaturamentosParciais = new List<FaturamentoParcial>(); 
 
                 _repositoryMock
                     .Setup(r => r.ListByStatusAsync(RegistroStatus.Pendente, _tenantId))

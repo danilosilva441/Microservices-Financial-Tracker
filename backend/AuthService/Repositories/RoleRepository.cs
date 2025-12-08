@@ -1,6 +1,8 @@
 using AuthService.Data;
 using AuthService.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using AuthService.Repositories;
 
 namespace AuthService.Repositories
 {
@@ -45,6 +47,11 @@ namespace AuthService.Repositories
         {
             return await _context.Roles
                 .AnyAsync(r => r.Name == roleName || r.NormalizedName == roleName.ToUpper());
+        }
+
+        public Task<List<User>> GetUsersByRoleAsync(string roleName)
+        {
+            throw new NotImplementedException();
         }
     }
 }

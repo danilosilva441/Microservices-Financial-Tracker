@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SharedKernel.Entities;
 
 namespace BillingService.Models
 {

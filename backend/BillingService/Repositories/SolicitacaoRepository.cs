@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Repositories;
 
-public class SolicitacaoRepository : ISolicitacaoRepository 
+public class SolicitacaoRepository : ISolicitacaoRepository
 {
     private readonly BillingDbContext _context;
 
@@ -33,9 +33,10 @@ public class SolicitacaoRepository : ISolicitacaoRepository
 
     public async Task<SolicitacaoAjuste?> GetByIdComFaturamentoAsync(Guid id)
     {
-        // --- 2. CORRIGIDO (v2.0) ---
         return await _context.SolicitacoesAjuste
-            .Include(s => s.FaturamentoParcial) // <-- Corrigido
+            .Include(s => s.FaturamentoParcial)
+                .ThenInclude(fp => fp.FaturamentoDiario)
+                    .ThenInclude(fd => fd.Unidade)
             .FirstOrDefaultAsync(s => s.Id == id);
     }
 

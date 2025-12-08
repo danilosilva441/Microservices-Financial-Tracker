@@ -3,6 +3,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using BillingService.Models; // <-- 1. MUDANÇA: Usando o namespace local
+using SharedKernel.Entities;
 
 namespace BillingService.Models
 {

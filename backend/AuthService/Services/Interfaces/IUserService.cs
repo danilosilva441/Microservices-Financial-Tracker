@@ -10,6 +10,7 @@ namespace AuthService.Services.Interfaces
         Task<AuthResult> PromoteToAdminAsync(string userEmail);
         Task<AuthResult> DemoteFromAdminAsync(string userEmail);
         Task<AuthResult> GetAdminUsersAsync();
+        Task<AuthResult> GetSubordinatesAsync(Guid managerId);
         Task<AuthResult> CreateTenantUserAsync(CreateTenantUserDto request, Guid managerUserId, Guid tenantId);
         Task<AuthResult> GetUserHierarchyAsync(Guid userId);
     }

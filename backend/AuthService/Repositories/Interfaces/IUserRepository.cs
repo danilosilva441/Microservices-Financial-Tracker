@@ -1,4 +1,7 @@
 using AuthService.Models;
+using AuthService.Services;
+using System;
+using AuthService.Repositories;
 
 namespace AuthService.Repositories
 {
@@ -15,5 +18,8 @@ namespace AuthService.Repositories
         Task<bool> IsEmailUniqueAsync(string email, Guid? excludeUserId = null);
         Task<List<User>> GetAllUsersAsync();
         Task<List<User>> GetUsersByRoleAsync(string roleName);
+        Task<IEnumerable<object>> GetUsersByRoleAsync(Guid managerId);
+        Task<List<User>> GetUsersByManagerAsync(Guid managerId);
+        
     }
 }

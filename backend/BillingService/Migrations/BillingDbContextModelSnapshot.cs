@@ -22,6 +22,57 @@ namespace BillingService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BillingService.Models.EmployeeShift", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ActualEndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActualStartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ScheduledEndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ScheduledStartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UnidadeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnidadeId");
+
+                    b.HasIndex("TenantId", "UnidadeId", "UserId", "Date");
+
+                    b.ToTable("EmployeeShifts");
+                });
+
             modelBuilder.Entity("BillingService.Models.Expense", b =>
                 {
                     b.Property<Guid>("Id")
@@ -44,6 +95,9 @@ namespace BillingService.Migrations
 
                     b.Property<DateTime>("ExpenseDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
@@ -75,6 +129,9 @@ namespace BillingService.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -109,6 +166,9 @@ namespace BillingService.Migrations
 
                     b.Property<DateTime>("DataVencimento")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("MesReferencia")
                         .HasColumnType("integer");
@@ -145,6 +205,9 @@ namespace BillingService.Migrations
 
                     b.Property<decimal>("FundoDeCaixa")
                         .HasColumnType("numeric");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Observacoes")
                         .HasMaxLength(500)
@@ -196,6 +259,9 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("MetodoPagamentoId")
                         .HasColumnType("uuid");
 
@@ -236,6 +302,9 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("text");
@@ -270,6 +339,9 @@ namespace BillingService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Mes")
                         .HasColumnType("integer");
@@ -307,6 +379,9 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtivo")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -321,6 +396,46 @@ namespace BillingService.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MetodosPagamento");
+                });
+
+            modelBuilder.Entity("BillingService.Models.ShiftBreak", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeShiftId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeShiftId");
+
+                    b.ToTable("ShiftBreaks");
                 });
 
             modelBuilder.Entity("BillingService.Models.SolicitacaoAjuste", b =>
@@ -349,6 +464,9 @@ namespace BillingService.Migrations
 
                     b.Property<Guid>("FaturamentoParcialId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Motivo")
                         .IsRequired()
@@ -414,6 +532,9 @@ namespace BillingService.Migrations
                     b.Property<bool>("IsAtiva")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("LancaAtm")
                         .HasColumnType("boolean");
 
@@ -466,6 +587,9 @@ namespace BillingService.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RoleInOperation")
                         .IsRequired()
                         .HasColumnType("text");
@@ -478,6 +602,63 @@ namespace BillingService.Migrations
                     b.HasIndex("UnidadeId");
 
                     b.ToTable("UsuarioOperacoes");
+                });
+
+            modelBuilder.Entity("BillingService.Models.WorkSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DefaultBreakDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeSpan>("DefaultEndTime")
+                        .HasColumnType("interval");
+
+                    b.Property<TimeSpan>("DefaultStartTime")
+                        .HasColumnType("interval");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UnidadeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnidadeId");
+
+                    b.HasIndex("TenantId", "UnidadeId");
+
+                    b.ToTable("WorkSchedules");
+                });
+
+            modelBuilder.Entity("BillingService.Models.EmployeeShift", b =>
+                {
+                    b.HasOne("BillingService.Models.Unidade", "Unidade")
+                        .WithMany()
+                        .HasForeignKey("UnidadeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Unidade");
                 });
 
             modelBuilder.Entity("BillingService.Models.Expense", b =>
@@ -551,6 +732,17 @@ namespace BillingService.Migrations
                     b.Navigation("Unidade");
                 });
 
+            modelBuilder.Entity("BillingService.Models.ShiftBreak", b =>
+                {
+                    b.HasOne("BillingService.Models.EmployeeShift", "EmployeeShift")
+                        .WithMany("Breaks")
+                        .HasForeignKey("EmployeeShiftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeShift");
+                });
+
             modelBuilder.Entity("BillingService.Models.SolicitacaoAjuste", b =>
                 {
                     b.HasOne("BillingService.Models.FaturamentoParcial", "FaturamentoParcial")
@@ -571,6 +763,22 @@ namespace BillingService.Migrations
                         .IsRequired();
 
                     b.Navigation("Unidade");
+                });
+
+            modelBuilder.Entity("BillingService.Models.WorkSchedule", b =>
+                {
+                    b.HasOne("BillingService.Models.Unidade", "Unidade")
+                        .WithMany()
+                        .HasForeignKey("UnidadeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Unidade");
+                });
+
+            modelBuilder.Entity("BillingService.Models.EmployeeShift", b =>
+                {
+                    b.Navigation("Breaks");
                 });
 
             modelBuilder.Entity("BillingService.Models.ExpenseCategory", b =>
