@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using SharedKernel.Exceptions;
+using BillingService.Services.Exceptions;
 
 namespace BillingService.Controllers;
 
@@ -78,7 +79,7 @@ public class FaturamentoParcialController : ControllerBase
                 unidadeId);
             return Conflict(new { error = ex.Message });
         }
-        catch (BusinessRuleException ex)
+        catch (BusinessException ex)
         {
             _logger.LogWarning(
                 "Regra de negócio violada ao criar faturamento parcial na unidade {UnidadeId}: {Error}", 
@@ -140,7 +141,7 @@ public class FaturamentoParcialController : ControllerBase
                 faturamentoId);
             return Conflict(new { error = ex.Message });
         }
-        catch (BusinessRuleException ex)
+        catch (BusinessException ex)
         {
             _logger.LogWarning(
                 "Regra de negócio violada ao atualizar faturamento parcial {FaturamentoId}: {Error}", 

@@ -36,7 +36,7 @@ public class AdminController : ControllerBase
         public Guid UnidadeId { get; set; }
     }
 
-    [HttpPost("vincular-usuario-operacao")]
+    [HttpPost("vincular-usuario-unidade")]
     public async Task<IActionResult> VincularUsuarioOperacao([FromBody] VincularDto vinculoDto)
     {
         var tenantId = GetTenantId(); // Pega o TenantId do Admin/Gerente

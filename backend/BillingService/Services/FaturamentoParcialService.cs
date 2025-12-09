@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedKernel;
 using SharedKernel.Exceptions;
+using BillingService.Services.Exceptions;
 
 namespace BillingService.Services
 {
@@ -18,8 +19,8 @@ namespace BillingService.Services
         private readonly ILogger<FaturamentoParcialService> _logger;
 
         public FaturamentoParcialService(
-            IFaturamentoParcialRepository repository, 
-            IUnidadeRepository unidadeRepository, 
+            IFaturamentoParcialRepository repository,
+            IUnidadeRepository unidadeRepository,
             BillingDbContext context,
             ILogger<FaturamentoParcialService> logger)
         {
@@ -82,7 +83,7 @@ namespace BillingService.Services
                 await ValidateFaturamentoBelongsToUnidadeAsync(faturamentoExistente, unidadeId, tenantId);
 
                 // Verifica sobreposição (excluindo o próprio registro)
-                await ValidateNoOverlapAsync(faturamentoExistente.FaturamentoDiarioId, tenantId, 
+                await ValidateNoOverlapAsync(faturamentoExistente.FaturamentoDiarioId, tenantId,
                     dto.HoraInicio, dto.HoraFim, faturamentoId);
 
                 UpdateFaturamentoFromDto(faturamentoExistente, dto);
@@ -161,7 +162,7 @@ namespace BillingService.Services
         {
             try
             {
-                _logger.LogDebug("Buscando faturamentos parciais da unidade {UnidadeId} na data {Data}", 
+                _logger.LogDebug("Buscando faturamentos parciais da unidade {UnidadeId} na data {Data}",
                     unidadeId, data);
 
                 // Busca o faturamento diário primeiro
@@ -234,7 +235,7 @@ namespace BillingService.Services
                 throw new FaturamentoDtoNullException();
 
             if (dto.Valor <= 0)
-                throw new BusinessRuleException("Valor deve ser maior que zero");
+                throw new BusinessException("VALOR_INVALIDO", ErrorCodes.RequiredField, "Valor deve ser maior que zero");
 
             if (dto.HoraInicio >= dto.HoraFim)
                 throw new InvalidFaturamentoTimeException("Hora fim deve ser posterior à hora início");
@@ -243,16 +244,16 @@ namespace BillingService.Services
                 throw new InvalidFaturamentoTimeException("Hora fim não pode ser futura");
 
             if (string.IsNullOrWhiteSpace(dto.Origem))
-                throw new BusinessRuleException("Origem é obrigatória");
+                throw new BusinessException("INVALID_ORIGEM", ErrorCodes.InvalidDateRange, "Hora fim deve ser posterior à hora início");
         }
 
         private static void ValidateFaturamentoUpdateDto(FaturamentoParcialUpdateDto dto)
         {
             if (dto == null)
-                throw new BusinessRuleException("DTO não pode ser nulo");
+                throw new BusinessException("DTO_NULL", ErrorCodes.RequiredField, "DTO não pode ser nulo");
 
             if (dto.Valor <= 0)
-                throw new BusinessRuleException("Valor deve ser maior que zero");
+                throw new BusinessException("VALOR_INVALIDO", ErrorCodes.RequiredField, "Valor deve ser maior que zero");
 
             if (dto.HoraInicio >= dto.HoraFim)
                 throw new InvalidFaturamentoTimeException("Hora fim deve ser posterior à hora início");
@@ -261,7 +262,7 @@ namespace BillingService.Services
                 throw new InvalidFaturamentoTimeException("Hora fim não pode ser futura");
 
             if (string.IsNullOrWhiteSpace(dto.Origem))
-                throw new BusinessRuleException("Origem é obrigatória");
+                throw new BusinessException("INVALID_ORIGEM", ErrorCodes.InvalidDateRange, "Origem não pode ser nula ou vazia");
         }
 
         private async Task<FaturamentoDiario> GetOrCreateFaturamentoDiarioAsync(

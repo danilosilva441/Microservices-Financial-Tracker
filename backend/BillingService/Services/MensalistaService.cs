@@ -1,4 +1,5 @@
 using BillingService.DTO;
+using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces; 
@@ -99,5 +100,20 @@ public class MensalistaService : IMensalistaService
         _repository.Update(mensalistaExistente);
         await _repository.SaveChangesAsync();
         return (true, null);
+    }
+
+    Task<IEnumerable<MensalistaDto>> IMensalistaService.GetAllMensalistasAsync(Guid operacaoId, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    Task<(MensalistaDto? mensalista, string? errorMessage)> IMensalistaService.CreateMensalistaAsync(Guid operacaoId, CreateMensalistaDto mensalistaDto, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<MensalistaDto?> GetMensalistaByIdAsync(Guid operacaoId, Guid mensalistaId, Guid userId)
+    {
+        throw new NotImplementedException();
     }
 }

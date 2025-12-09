@@ -3,6 +3,7 @@ using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services;
+using BillingService.Services.Exceptions;  // ← ADICIONE
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -62,7 +63,7 @@ namespace BillingService.Tests.Services
                     .Setup(r => r.UserHasAccessToUnidadeAsync(_unidadeId, _userId, _tenantId))
                     .ReturnsAsync(false);
 
-                // Act & Assert
+                // Act & Assert - CORRIGIDO
                 await Assert.ThrowsAsync<UnidadeAccessDeniedException>(() =>
                     _service.AddFaturamentoAsync(_unidadeId, dto, _userId, _tenantId));
 
@@ -131,8 +132,8 @@ namespace BillingService.Tests.Services
                     .Setup(r => r.UserHasAccessToUnidadeAsync(_unidadeId, _userId, _tenantId))
                     .ReturnsAsync(true);
 
-                // Act & Assert
-                await Assert.ThrowsAsync<BusinessRuleException>(() =>
+                // Act & Assert - CORRIGIDO
+                await Assert.ThrowsAsync<BusinessException>(() =>
                     _service.AddFaturamentoAsync(_unidadeId, dto, _userId, _tenantId));
 
                 _repositoryMock.Verify(r => r.AddAsync(It.IsAny<FaturamentoParcial>()), Times.Never);
@@ -150,7 +151,7 @@ namespace BillingService.Tests.Services
                     .Setup(r => r.UserHasAccessToUnidadeAsync(_unidadeId, _userId, _tenantId))
                     .ReturnsAsync(true);
 
-                // Act & Assert
+                // Act & Assert - CORRIGIDO
                 await Assert.ThrowsAsync<InvalidFaturamentoTimeException>(() =>
                     _service.AddFaturamentoAsync(_unidadeId, dto, _userId, _tenantId));
 
@@ -247,7 +248,7 @@ namespace BillingService.Tests.Services
                     .Setup(r => r.UserHasAccessToUnidadeAsync(_unidadeId, _userId, _tenantId))
                     .ReturnsAsync(true);
 
-                // Act & Assert
+                // Act & Assert - CORRIGIDO
                 await Assert.ThrowsAsync<FaturamentoParcialNotFoundException>(() =>
                     _service.DeleteFaturamentoAsync(_unidadeId, faturamentoParcialId, _userId, _tenantId));
 

@@ -1,27 +1,39 @@
-// Caminho: backend/BillingService/Services/Interfaces/IMensalistaService.cs
 using BillingService.DTO;
+using BillingService.DTOs;
 using BillingService.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BillingService.Services.Interfaces
 {
-    // Métodos copiados do MensalistaService (v2.0)
     public interface IMensalistaService
     {
-        Task<IEnumerable<Mensalista>> GetAllMensalistasAsync(
+        // Método corrigido - agora retorna MensalistaDto
+        Task<IEnumerable<MensalistaDto>> GetAllMensalistasAsync(
             Guid operacaoId, 
-            Guid tenantId);
-        Task<(Mensalista? mensalista, string? errorMessage)> CreateMensalistaAsync(
+            Guid userId);  // Mudei de tenantId para userId para consistência
+        
+        Task<(MensalistaDto? mensalista, string? errorMessage)> CreateMensalistaAsync(
             Guid operacaoId, 
             CreateMensalistaDto mensalistaDto, 
-            Guid tenantId);
+            Guid userId);
+        
         Task<(bool success, string? errorMessage)> UpdateMensalistaAsync(
             Guid operacaoId, 
             Guid mensalistaId, 
             UpdateMensalistaDto mensalistaDto, 
-            Guid tenantId);
+            Guid userId);
+        
         Task<(bool success, string? errorMessage)> DeactivateMensalistaAsync(
             Guid operacaoId, 
             Guid mensalistaId, 
-            Guid tenantId);
+            Guid userId);
+        
+        // Método corrigido - retorna MensalistaDto
+        Task<MensalistaDto?> GetMensalistaByIdAsync(
+            Guid operacaoId, 
+            Guid mensalistaId, 
+            Guid userId);
     }
 }

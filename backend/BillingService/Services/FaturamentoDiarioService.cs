@@ -4,6 +4,8 @@ using BillingService.Repositories.Interfaces;
 using BillingService.Services.Interfaces;
 using SharedKernel;
 using SharedKernel.Exceptions;
+using BillingService.Services.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace BillingService.Services
 {

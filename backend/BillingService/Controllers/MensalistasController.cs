@@ -1,80 +1,265 @@
-using BillingService.DTO;
+using BillingService.DTOs;
 using BillingService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using SharedKernel.Exceptions;
+using BillingService.Services.Interfaces;
+using BillingService.DTO;
 
 namespace BillingService.Controllers;
 
 [ApiController]
-[Route("api/operacoes/{operacaoId}/mensalistas")]
-[Authorize(Roles = "Admin , Gerente, Financeiro")] // Apenas usuários com essas funções podem acessar
+[Route("api/unidades/{unidadeId}/mensalistas")]
+[Authorize(Roles = "Admin,Gerente,Financeiro")]
 public class MensalistasController : ControllerBase
 {
-    private readonly MensalistaService _mensalistaService;
+    private readonly IMensalistaService _mensalistaService;
+    private readonly ILogger<MensalistasController> _logger;
 
-    public MensalistasController(MensalistaService mensalistaService)
+    public MensalistasController(
+        IMensalistaService mensalistaService, 
+        ILogger<MensalistasController> logger)
     {
         _mensalistaService = mensalistaService;
+        _logger = logger;
     }
 
     private Guid GetUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdClaim == null) throw new InvalidOperationException("User ID not found in token.");
-        return Guid.Parse(userIdClaim);
+        
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            _logger.LogWarning("User ID not found in token for user: {Username}", 
+                User.Identity?.Name);
+            throw new UnauthorizedAccessException("User ID not found in token.");
+        }
+
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Invalid User ID format in token: {UserIdClaim}", userIdClaim);
+            throw new UnauthorizedAccessException("Invalid User ID format.");
+        }
+
+        return userId;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(Guid operacaoId)
+    [ProducesResponseType(typeof(IEnumerable<MensalistaDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAll(Guid unidadeId)
     {
-        var userId = GetUserId();
-        var mensalistas = await _mensalistaService.GetAllMensalistasAsync(operacaoId, userId);
-        return Ok(mensalistas);
+        try
+        {
+            var userId = GetUserId();
+            _logger.LogInformation("Getting all mensalistas for operation {OperacaoId} by user {UserId}", 
+                unidadeId, userId);
+            
+            var mensalistas = await _mensalistaService.GetAllMensalistasAsync(unidadeId, userId);
+            return Ok(mensalistas);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Resource not found for operation {OperacaoId}", unidadeId);
+            return NotFound(new { Message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized access for operation {OperacaoId}", unidadeId);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting mensalistas for operation {OperacaoId}", unidadeId);
+            return StatusCode(500, new { Message = "An error occurred while processing your request." });
+        }
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin, Gerente, Financeiro")]
-    public async Task<IActionResult> Create(Guid operacaoId, [FromBody] CreateMensalistaDto mensalistaDto)
+    [Authorize(Roles = "Admin,Gerente,Financeiro")]
+    [ProducesResponseType(typeof(MensalistaDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Create(
+        Guid unidadeId, 
+        [FromBody] CreateMensalistaDto mensalistaDto)
     {
-        var userId = GetUserId();
-        var (novoMensalista, errorMessage) = await _mensalistaService.CreateMensalistaAsync(operacaoId, mensalistaDto, userId);
-
-        if (errorMessage != null)
+        if (!ModelState.IsValid)
         {
-            return NotFound(errorMessage);
+            _logger.LogWarning("Invalid model state for creating mensalista in operation {OperacaoId}", 
+                unidadeId);
+            return BadRequest(ModelState);
         }
 
-        return Ok(novoMensalista);
+        try
+        {
+            var userId = GetUserId();
+            _logger.LogInformation(
+                "Creating mensalista in operation {OperacaoId} by user {UserId}", 
+                unidadeId, userId);
+            
+            var novoMensalista = await _mensalistaService.CreateMensalistaAsync(
+                unidadeId, mensalistaDto, userId);
+
+            return CreatedAtAction(
+                nameof(GetAll), 
+                new { unidadeId }, 
+                novoMensalista);
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning(ex, "Validation error creating mensalista in operation {OperacaoId}", 
+                unidadeId);
+            return BadRequest(new { ex.Message, ex.Errors });
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Resource not found for operation {OperacaoId}", unidadeId);
+            return NotFound(new { Message = ex.Message });
+        }
+        catch (BusinessException ex)
+        {
+            _logger.LogWarning(ex, "Business rule violation in operation {OperacaoId}", unidadeId);
+            return Conflict(new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating mensalista in operation {OperacaoId}", unidadeId);
+            return StatusCode(500, new { Message = "An error occurred while creating mensalista." });
+        }
     }
 
     [HttpPut("{mensalistaId}")]
-    [Authorize(Roles = "Admin, Gerente, Financeiro")]
-    public async Task<IActionResult> Update(Guid operacaoId, Guid mensalistaId, [FromBody] UpdateMensalistaDto mensalistaDto)
+    [Authorize(Roles = "Admin,Gerente,Financeiro")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(
+        Guid unidadeId, 
+        Guid mensalistaId, 
+        [FromBody] UpdateMensalistaDto mensalistaDto)
     {
-        var userId = GetUserId();
-        var (success, errorMessage) = await _mensalistaService.UpdateMensalistaAsync(operacaoId, mensalistaId, mensalistaDto, userId);
-
-        if (!success)
+        if (!ModelState.IsValid)
         {
-            return NotFound(errorMessage);
+            return BadRequest(ModelState);
         }
 
-        return NoContent();
+        try
+        {
+            var userId = GetUserId();
+            _logger.LogInformation(
+                "Updating mensalista {MensalistaId} in operation {OperacaoId} by user {UserId}", 
+                mensalistaId, unidadeId, userId);
+            
+            await _mensalistaService.UpdateMensalistaAsync(
+                unidadeId, mensalistaId, mensalistaDto, userId);
+            
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, 
+                "Mensalista {MensalistaId} not found in operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return NotFound(new { Message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning(ex, 
+                "Validation error updating mensalista {MensalistaId}", mensalistaId);
+            return BadRequest(new { ex.Message, ex.Errors });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, 
+                "Error updating mensalista {MensalistaId} in operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return StatusCode(500, new { Message = "An error occurred while updating mensalista." });
+        }
     }
 
     [HttpPatch("{mensalistaId}/desativar")]
-    [Authorize(Roles = "Admin, Gerente, Financeiro")] // Apenas Admins, Gerentes ou Financeiros podem desativar mensalistas
-    public async Task<IActionResult> Deactivate(Guid operacaoId, Guid mensalistaId)
+    [Authorize(Roles = "Admin,Gerente,Financeiro")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Deactivate(Guid unidadeId, Guid mensalistaId)
     {
-        var userId = GetUserId();
-        var (success, errorMessage) = await _mensalistaService.DeactivateMensalistaAsync(operacaoId, mensalistaId, userId);
-
-        if (!success)
+        try
         {
-            return NotFound(errorMessage);
+            var userId = GetUserId();
+            _logger.LogInformation(
+                "Deactivating mensalista {MensalistaId} in operation {OperacaoId} by user {UserId}", 
+                mensalistaId, unidadeId, userId);
+            
+            await _mensalistaService.DeactivateMensalistaAsync(unidadeId, mensalistaId, userId);
+            
+            return NoContent();
         }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, 
+                "Mensalista {MensalistaId} not found for deactivation in operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return NotFound(new { Message = ex.Message });
+        }
+        catch (BusinessException ex)
+        {
+            _logger.LogWarning(ex, 
+                "Cannot deactivate mensalista {MensalistaId} in operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return BadRequest(new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, 
+                "Error deactivating mensalista {MensalistaId} in operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return StatusCode(500, new { Message = "An error occurred while deactivating mensalista." });
+        }
+    }
 
-        return NoContent();
+    [HttpGet("{mensalistaId}")]
+    [ProducesResponseType(typeof(MensalistaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(Guid unidadeId, Guid mensalistaId)
+    {
+        try
+        {
+            var userId = GetUserId();
+            _logger.LogInformation(
+                "Getting mensalista {MensalistaId} from operation {OperacaoId} by user {UserId}", 
+                mensalistaId, unidadeId, userId);
+            
+            var mensalista = await _mensalistaService.GetMensalistaByIdAsync(
+                unidadeId, mensalistaId, userId);
+            
+            return Ok(mensalista);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, 
+                "Mensalista {MensalistaId} not found in operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return NotFound(new { Message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, 
+                "Error getting mensalista {MensalistaId} from operation {OperacaoId}", 
+                mensalistaId, unidadeId);
+            return StatusCode(500, new { Message = "An error occurred while retrieving mensalista." });
+        }
     }
 }

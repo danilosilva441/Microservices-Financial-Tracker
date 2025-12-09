@@ -2,15 +2,43 @@ using System;
 
 namespace SharedKernel.Exceptions
 {
-    public class MetaServiceException : BaseException
+    public class MetaServiceException : InfrastructureException
     {
         public MetaServiceException(string message) 
-            : base(message, "META_SERVICE_ERROR", 500)
+            : base(
+                "MetaService", 
+                "GeneralOperation", 
+                ErrorCodes.OperationFailed, 
+                message)
         {
         }
 
         public MetaServiceException(string message, Exception innerException) 
-            : base(message, "META_SERVICE_ERROR", innerException, 500)
+            : base(
+                "MetaService", 
+                "GeneralOperation", 
+                ErrorCodes.OperationFailed, 
+                message, 
+                innerException)
+        {
+        }
+
+        public MetaServiceException(string operation, string message) 
+            : base(
+                "MetaService", 
+                operation, 
+                ErrorCodes.OperationFailed, 
+                message)
+        {
+        }
+
+        public MetaServiceException(string operation, string message, Exception innerException) 
+            : base(
+                "MetaService", 
+                operation, 
+                ErrorCodes.OperationFailed, 
+                message, 
+                innerException)
         {
         }
     }

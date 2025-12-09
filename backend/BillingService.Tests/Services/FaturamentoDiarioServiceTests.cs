@@ -2,12 +2,13 @@ using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
 using BillingService.Services;
+using BillingService.Services.Exceptions;  // ← ADICIONE ESTE
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SharedKernel;
-using Xunit;
 using SharedKernel.Exceptions;
+using Xunit;
 
 namespace BillingService.Tests.Services
 {
@@ -394,7 +395,7 @@ namespace BillingService.Tests.Services
 
                 // Assert
                 await action.Should()
-                    .ThrowAsync<FaturamentoServiceException>()
+                    .ThrowAsync<FaturamentoServiceException>()  // ← CORRIGIDO
                     .WithMessage("Erro ao buscar fechamentos pendentes");
             }
         }

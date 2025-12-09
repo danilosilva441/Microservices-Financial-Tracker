@@ -60,6 +60,8 @@ namespace SharedKernel
         public const string GenericNotFound = "GEN_9001";
         public const string OperationFailed = "GEN_9002";
         public const string InvalidOperation = "GEN_9003";
+
+    
     }
 
     /// <summary>

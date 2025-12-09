@@ -8,6 +8,7 @@ using SharedKernel.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BillingService.Services.Exceptions;
 
 namespace BillingService.Services;
 
@@ -115,7 +116,7 @@ public class MetaService : IMetaService
         if (unidade == null)
         {
             // ✅ USANDO EntityNotFoundException EM VEZ DE UnidadeNotFoundException
-            throw new EntityNotFoundException("Unidade", unidadeId);
+            throw new NotFoundException("Unidade", unidadeId);
         }
     }
 
@@ -131,20 +132,20 @@ public class MetaService : IMetaService
     private static void ValidatePeriodo(int mes, int ano)
     {
         if (mes < 1 || mes > 12)
-            throw new BusinessRuleException("Mês deve estar entre 1 e 12");
+            throw new BusinessException("MES_INVALIDO", ErrorCodes.InvalidNumberRange, "Mês deve estar entre 1 e 12");
 
         var anoAtual = DateTime.Now.Year;
         if (ano < anoAtual - 1 || ano > anoAtual + 5)
-            throw new BusinessRuleException($"Ano deve estar entre {anoAtual - 1} e {anoAtual + 5}");
+            throw new BusinessException("ANO_INVALIDO", ErrorCodes.InvalidNumberRange, $"Ano deve estar entre {anoAtual -1} e {anoAtual +5}");
     }
 
     private static void ValidateValorAlvo(decimal valorAlvo)
     {
         if (valorAlvo <= 0)
-            throw new BusinessRuleException("Valor alvo deve ser maior que zero");
+            throw new BusinessException("VALOR_ALVO_INVALIDO", ErrorCodes.RequiredField, "Valor alvo deve ser maior que zero");
 
         if (valorAlvo > 10_000_000) // 10 milhões
-            throw new BusinessRuleException("Valor alvo muito alto");
+            throw new BusinessException("VALOR_ALVO_MUITO_ALTO", errorCode: ErrorCodes.InvalidNumberRange, "Valor alvo muito alto");
     }
 
     private async Task<(Meta? meta, string? errorMessage)> UpdateMetaExistenteAsync(
