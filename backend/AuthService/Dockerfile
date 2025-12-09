@@ -10,8 +10,8 @@ COPY ["backend/AuthService/AuthService.csproj", "backend/AuthService/"]
 RUN dotnet restore "backend/AuthService/AuthService.csproj"
 
 # 3. Copia o código-fonte específico (mais rápido que "COPY . .")
-COPY ["./SharedKernel/", "SharedKernel/"]
-COPY ["./backend/AuthService/", "backend/AuthService/"]
+COPY ["/SharedKernel/", "SharedKernel/"]
+COPY ["/backend/AuthService/", "backend/AuthService/"]
 
 # 4. Publica usando o caminho completo
 WORKDIR "/src/backend/AuthService"
