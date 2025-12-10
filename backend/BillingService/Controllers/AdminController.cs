@@ -3,66 +3,170 @@ using BillingService.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims; // 1. ADICIONAR ESTE USING
+using System.Security.Claims;
 
 namespace BillingService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin, Gerente")] // 2. ATUALIZADO (para incluir o Role v2.0)
+[Authorize(Roles = "Admin, Gerente")]
 public class AdminController : ControllerBase
 {
     private readonly BillingDbContext _context;
+    private readonly ILogger<AdminController> _logger;
 
-    public AdminController(BillingDbContext context)
+    public AdminController(BillingDbContext context, ILogger<AdminController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // 3. ADICIONADO (Helper v2.0 para segurança)
-    private Guid GetTenantId()
+    // Cache da tenantId para a requisição
+    private Guid? _tenantId;
+    private Guid TenantId => _tenantId ??= GetTenantIdFromToken();
+
+    private Guid GetTenantIdFromToken()
     {
         var tenantIdClaim = User.FindFirst("tenantId")?.Value;
-        if (tenantIdClaim == null) throw new InvalidOperationException("Tenant ID (tenantId) not found in token.");
-        return Guid.Parse(tenantIdClaim);
-    }
-
-    public class VincularDto
-    {
-        public Guid UserId { get; set; }
         
-        // 4. MUDANÇA (v2.0)
-        // Renomeado de OperacaoId para UnidadeId
-        public Guid UnidadeId { get; set; }
-    }
-
-    [HttpPost("vincular-usuario-unidade")]
-    public async Task<IActionResult> VincularUsuarioOperacao([FromBody] VincularDto vinculoDto)
-    {
-        var tenantId = GetTenantId(); // Pega o TenantId do Admin/Gerente
-
-        var vinculo = new UsuarioOperacao
+        if (string.IsNullOrEmpty(tenantIdClaim) || 
+            !Guid.TryParse(tenantIdClaim, out var tenantId))
         {
-            UserId = vinculoDto.UserId,
-            // 5. MUDANÇA (v2.0) - Corrige o erro CS0117
-            UnidadeId = vinculoDto.UnidadeId,
-            TenantId = tenantId // Adiciona o TenantId ao novo vínculo
-        };
-
-        var jaExiste = await _context.UsuarioOperacoes
-            // 6. MUDANÇA (v2.0) - Corrige o erro CS1061
-            .AnyAsync(uo => uo.UserId == vinculo.UserId && 
-                           uo.UnidadeId == vinculo.UnidadeId && 
-                           uo.TenantId == tenantId);
-
-        if (jaExiste)
-        {
-            return Conflict("Este usuário já está vinculado a esta operação.");
+            _logger.LogWarning("Tenant ID não encontrado ou inválido no token para o usuário {UserId}", 
+                User.FindFirstValue(ClaimTypes.NameIdentifier));
+            throw new UnauthorizedAccessException("Tenant ID não autorizado.");
         }
 
-        await _context.UsuarioOperacoes.AddAsync(vinculo);
-        await _context.SaveChangesAsync();
+        return tenantId;
+    }
 
-        return Ok("Vínculo criado com sucesso.");
+    public record VincularUsuarioDto(Guid UserId, Guid UnidadeId);
+
+    [HttpPost("vincular-usuario-unidade")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> VincularUsuarioUnidade(
+        [FromBody] VincularUsuarioDto vinculoDto,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Validações iniciais
+            if (vinculoDto.UserId == Guid.Empty || vinculoDto.UnidadeId == Guid.Empty)
+            {
+                return BadRequest("UserId e UnidadeId são obrigatórios.");
+            }
+
+            // Verifica se usuário existe e pertence ao mesmo tenant
+            var usuarioExiste = await _context.UsuarioOperacoes
+                .AnyAsync(u => u.Id == vinculoDto.UserId && u.TenantId == TenantId, 
+                         cancellationToken);
+            
+            if (!usuarioExiste)
+            {
+                return NotFound("Usuário não encontrado ou não pertence a este tenant.");
+            }
+
+            // Verifica se unidade existe e pertence ao mesmo tenant
+            var unidadeExiste = await _context.Unidades
+                .AnyAsync(u => u.Id == vinculoDto.UnidadeId && u.TenantId == TenantId, 
+                         cancellationToken);
+            
+            if (!unidadeExiste)
+            {
+                return NotFound("Unidade não encontrada ou não pertence a este tenant.");
+            }
+
+            // Verifica se vínculo já existe
+            var vinculoExistente = await _context.UsuarioOperacoes
+                .AnyAsync(uo => uo.UserId == vinculoDto.UserId 
+                             && uo.UnidadeId == vinculoDto.UnidadeId 
+                             && uo.TenantId == TenantId, 
+                         cancellationToken);
+
+            if (vinculoExistente)
+            {
+                return Conflict("Este usuário já está vinculado a esta unidade.");
+            }
+
+            // Cria o novo vínculo
+            var vinculo = new UsuarioOperacao
+            {
+                Id = Guid.NewGuid(),
+                UserId = vinculoDto.UserId,
+                UnidadeId = vinculoDto.UnidadeId,
+                TenantId = TenantId
+            };
+
+            await _context.UsuarioOperacoes.AddAsync(vinculo, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Vínculo criado: UserId={UserId}, UnidadeId={UnidadeId}, TenantId={TenantId}",
+                vinculo.UserId, vinculo.UnidadeId, vinculo.TenantId);
+
+            return Ok(new 
+            { 
+                Message = "Vínculo criado com sucesso.",
+                VinculoId = vinculo.Id,
+                UserId = vinculo.UserId,
+                UnidadeId = vinculo.UnidadeId
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Falha de autorização ao vincular usuário");
+            return Unauthorized(ex.Message);
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Erro de banco de dados ao vincular usuário {UserId} à unidade {UnidadeId}", 
+                vinculoDto.UserId, vinculoDto.UnidadeId);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                "Erro ao salvar vínculo no banco de dados.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro inesperado ao vincular usuário {UserId} à unidade {UnidadeId}", 
+                vinculoDto.UserId, vinculoDto.UnidadeId);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                "Ocorreu um erro interno ao processar a solicitação.");
+        }
+    }
+
+    // Endpoint opcional para listar vínculos do usuário
+    [HttpGet("usuario/{userId}/vinculos")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetVinculosUsuario(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            return BadRequest("UserId é obrigatório.");
+        }
+
+        var vinculos = await _context.UsuarioOperacoes
+            .Where(uo => uo.UserId == userId && uo.TenantId == TenantId)
+            .Include(uo => uo.Unidade) // Se houver navegação
+            .Select(uo => new
+            {
+                uo.Id,
+                uo.UnidadeId,
+                UnidadeNome = uo.Unidade.Nome, // Ajuste conforme seu modelo
+
+            })
+            .ToListAsync(cancellationToken);
+
+        if (!vinculos.Any())
+        {
+            return NotFound("Nenhum vínculo encontrado para este usuário.");
+        }
+
+        return Ok(vinculos);
     }
 }
