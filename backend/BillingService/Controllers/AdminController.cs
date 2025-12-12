@@ -28,11 +28,11 @@ public class AdminController : ControllerBase
     private Guid GetTenantIdFromToken()
     {
         var tenantIdClaim = User.FindFirst("tenantId")?.Value;
-        
-        if (string.IsNullOrEmpty(tenantIdClaim) || 
+
+        if (string.IsNullOrEmpty(tenantIdClaim) ||
             !Guid.TryParse(tenantIdClaim, out var tenantId))
         {
-            _logger.LogWarning("Tenant ID não encontrado ou inválido no token para o usuário {UserId}", 
+            _logger.LogWarning("Tenant ID não encontrado ou inválido no token para o usuário {UserId}",
                 User.FindFirstValue(ClaimTypes.NameIdentifier));
             throw new UnauthorizedAccessException("Tenant ID não autorizado.");
         }
@@ -49,32 +49,32 @@ public class AdminController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> VincularUsuarioUnidade(
-        [FromBody] VincularUsuarioDto vinculoDto,
-        CancellationToken cancellationToken = default)
+         [FromBody] VincularUsuarioDto vinculoDto,
+         CancellationToken cancellationToken = default)
     {
         try
         {
-            // Validações iniciais
+            if (vinculoDto == null)
+            {
+                return BadRequest("DTO é obrigatório.");
+            }
+            // 1. Validação de Ids
             if (vinculoDto.UserId == Guid.Empty || vinculoDto.UnidadeId == Guid.Empty)
             {
                 return BadRequest("UserId e UnidadeId são obrigatórios.");
             }
 
-            // Verifica se usuário existe e pertence ao mesmo tenant
-            var usuarioExiste = await _context.UsuarioOperacoes
-                .AnyAsync(u => u.Id == vinculoDto.UserId && u.TenantId == TenantId, 
-                         cancellationToken);
-            
-            if (!usuarioExiste)
-            {
-                return NotFound("Usuário não encontrado ou não pertence a este tenant.");
-            }
+            // 2. CORREÇÃO PRINCIPAL: Força a leitura do TenantId AQUI.
+            // Se o token for inválido, a exceção UnauthorizedAccessException estoura aqui,
+            // fora do LINQ, e será capturada pelo catch correto abaixo.
+            var tenantId = TenantId;
 
-            // Verifica se unidade existe e pertence ao mesmo tenant
+            // Verifica se unidade existe
             var unidadeExiste = await _context.Unidades
-                .AnyAsync(u => u.Id == vinculoDto.UnidadeId && u.TenantId == TenantId, 
-                         cancellationToken);
-            
+                // Usa a variável local 'tenantId' em vez da propriedade
+                .AnyAsync(u => u.Id == vinculoDto.UnidadeId && u.TenantId == tenantId,
+                          cancellationToken);
+
             if (!unidadeExiste)
             {
                 return NotFound("Unidade não encontrada ou não pertence a este tenant.");
@@ -82,10 +82,11 @@ public class AdminController : ControllerBase
 
             // Verifica se vínculo já existe
             var vinculoExistente = await _context.UsuarioOperacoes
-                .AnyAsync(uo => uo.UserId == vinculoDto.UserId 
-                             && uo.UnidadeId == vinculoDto.UnidadeId 
-                             && uo.TenantId == TenantId, 
-                         cancellationToken);
+                // Usa a variável local 'tenantId'
+                .AnyAsync(uo => uo.UserId == vinculoDto.UserId
+                             && uo.UnidadeId == vinculoDto.UnidadeId
+                             && uo.TenantId == tenantId,
+                          cancellationToken);
 
             if (vinculoExistente)
             {
@@ -98,7 +99,7 @@ public class AdminController : ControllerBase
                 Id = Guid.NewGuid(),
                 UserId = vinculoDto.UserId,
                 UnidadeId = vinculoDto.UnidadeId,
-                TenantId = TenantId
+                TenantId = tenantId // Usa a variável local
             };
 
             await _context.UsuarioOperacoes.AddAsync(vinculo, cancellationToken);
@@ -108,8 +109,8 @@ public class AdminController : ControllerBase
                 "Vínculo criado: UserId={UserId}, UnidadeId={UnidadeId}, TenantId={TenantId}",
                 vinculo.UserId, vinculo.UnidadeId, vinculo.TenantId);
 
-            return Ok(new 
-            { 
+            return Ok(new
+            {
                 Message = "Vínculo criado com sucesso.",
                 VinculoId = vinculo.Id,
                 UserId = vinculo.UserId,
@@ -118,21 +119,22 @@ public class AdminController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
+            // Agora o fluxo cairá aqui corretamente!
             _logger.LogWarning(ex, "Falha de autorização ao vincular usuário");
             return Unauthorized(ex.Message);
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Erro de banco de dados ao vincular usuário {UserId} à unidade {UnidadeId}", 
+            _logger.LogError(ex, "Erro de banco de dados ao vincular usuário {UserId} à unidade {UnidadeId}",
                 vinculoDto.UserId, vinculoDto.UnidadeId);
-            return StatusCode(StatusCodes.Status500InternalServerError, 
+            return StatusCode(StatusCodes.Status500InternalServerError,
                 "Erro ao salvar vínculo no banco de dados.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro inesperado ao vincular usuário {UserId} à unidade {UnidadeId}", 
+            _logger.LogError(ex, "Erro inesperado ao vincular usuário {UserId} à unidade {UnidadeId}",
                 vinculoDto.UserId, vinculoDto.UnidadeId);
-            return StatusCode(StatusCodes.Status500InternalServerError, 
+            return StatusCode(StatusCodes.Status500InternalServerError,
                 "Ocorreu um erro interno ao processar a solicitação.");
         }
     }

@@ -117,3 +117,9 @@ C:\My workspace\portfolio-microservices\backend\AuthService\obj\Debug\net8.0\Aut
 C:\My workspace\portfolio-microservices\backend\AuthService\obj\Debug\net8.0\ref\AuthService.dll
 C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\SharedKernel.dll
 C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\SharedKernel.pdb
+C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\Microsoft.Extensions.Caching.Memory.dll
+C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.dll
+C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\Microsoft.Extensions.Logging.dll
+C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\My workspace\portfolio-microservices\backend\AuthService\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
