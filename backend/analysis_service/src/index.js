@@ -1,4 +1,5 @@
 // Caminho: backend/analysis_service/src/index.js
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 // O 'cron' e a lógica de projeção v1.0 foram removidos.
@@ -12,6 +13,7 @@ const port = process.env.PORT || 3000;
 
 // 2. Configura o CORS (permite qualquer origem)
 app.use(cors()); 
+app.use(express.json());
 
 // 3. Rota para o Healthcheck do Docker
 app.get('/health', (req, res) => {

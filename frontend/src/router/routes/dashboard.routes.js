@@ -6,15 +6,15 @@ const dashboardRoutes = [
     meta: { requiresAuth: true } // Marca a rota como protegida
   },
   {
-    path: '/operacoes',
+    path: '/unidades',
     name: 'operacoes',
     component: () => import('@/views/OperacoesView.vue'),
     meta: { requiresAuth: true }
   },
   {
     // O ':id' indica que esta parte da URL é um parâmetro dinâmico
-    path: '/operacoes/:id',
-    name: 'operacao-detalhes',
+    path: '/unidades/:id',
+    name: 'unidade-detalhes',
     component: () => import('@/views/OperacaoDetalhesView.vue'),
     meta: { requiresAuth: true }
   },
