@@ -10,8 +10,8 @@ COPY ["backend/BillingService/BillingService.csproj", "backend/BillingService/"]
 RUN dotnet restore "backend/BillingService/BillingService.csproj"
 
 # 3. Copia o código-fonte específico
-COPY ["/SharedKernel/", "SharedKernel/"]
-COPY ["/backend/BillingService/", "backend/BillingService/"]
+COPY ["SharedKernel/", "SharedKernel/"]
+COPY ["backend/BillingService/", "backend/BillingService/"]
 
 # 4. Publica usando o caminho completo
 WORKDIR "/src/backend/BillingService"
