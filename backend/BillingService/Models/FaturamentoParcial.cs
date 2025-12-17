@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BillingService.Models; // 1. MUDANÇA: Usando o namespace local
 using SharedKernel.Entities;
+using SharedKernel.Enums;
 
 namespace BillingService.Models
 {
@@ -37,7 +38,7 @@ namespace BillingService.Models
         public Guid MetodoPagamentoId { get; set; }
         
         [ForeignKey("MetodoPagamentoId")]
-        public virtual MetodoPagamento MetodoPagamento { get; set; } = null!;
+        public MetodoPagamentoEnum MetodoPagamento { get; set; }
 
         [Required]
         public string Origem { get; set; } = "AVULSO";

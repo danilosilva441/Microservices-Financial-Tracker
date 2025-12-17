@@ -20,6 +20,12 @@ namespace BillingService.Controllers
 
         private Guid GetTenantId() => Guid.Parse(User.FindFirst("tenantId")?.Value ?? throw new Exception("TenantId não encontrado"));
 
+        #region Work Schedule Templates and Shift Management
+        /// <summary>
+        /// Cria um novo template de escala de trabalho
+        /// </summary>
+        /// <param name="dto">Dados do template de escala</param>
+        /// <returns>Template criado</returns>
         [HttpPost("templates")]
         public async Task<IActionResult> CreateTemplate([FromBody] CreateWorkScheduleDto dto)
         {
@@ -27,7 +33,15 @@ namespace BillingService.Controllers
             if (!result.Success) return BadRequest(result.ErrorMessage);
             return Created("", result.Value);
         }
+        #endregion
 
+        #region Shift Generation and Retrieval
+        /// <summary>
+        /// Gera escalas de trabalho para uma unidade com base em um template e intervalo de
+        /// datas, atribuindo usuários específicos.
+        /// </summary>
+        /// <param name="request">Dados para geração de escalas</param>
+        /// <returns>Resultado da operação</returns>
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateShifts([FromBody] GenerateRequest request)
         {
@@ -42,7 +56,16 @@ namespace BillingService.Controllers
             if (!result.Success) return BadRequest(result.ErrorMessage);
             return Ok("Escalas geradas com sucesso.");
         }
+        #endregion
 
+        #region Shift Retrieval and Break Management
+        /// <summary>
+        /// Obtém as escalas de trabalho para uma unidade dentro de um intervalo de datas.
+        /// </summary>
+        /// <param name="unidadeId">ID da unidade</param>
+        /// <param name="start">Data de início</param>
+        /// <param name="end">Data de fim</param>
+        /// <returns>Lista de escalas de trabalho</returns>
         [HttpGet("unidade/{unidadeId}")]
         public async Task<IActionResult> GetShifts(Guid unidadeId, [FromQuery] DateOnly start, [FromQuery] DateOnly end)
         {
@@ -58,7 +81,9 @@ namespace BillingService.Controllers
             return Ok();
         }
     }
+    #endregion
 
+    #region DTO auxiliar para a requisição de geração
     // DTO auxiliar para a requisição de geração
     public class GenerateRequest
     {
@@ -68,4 +93,5 @@ namespace BillingService.Controllers
         public DateOnly EndDate { get; set; }
         public List<Guid> UserIds { get; set; } = new();
     }
+    #endregion
 }

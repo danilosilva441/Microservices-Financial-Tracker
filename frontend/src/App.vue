@@ -128,9 +128,9 @@ onUnmounted(() => {
         </RouterLink>
         
         <RouterLink 
-          to="/operacoes" 
+          to="/unidades" 
           class="flex items-center px-4 py-3 lg:py-2 rounded-md hover:bg-neutral-light hover:bg-opacity-25 transition-colors group"
-          :class="{ 'bg-neutral-light bg-opacity-25': route.path.startsWith('/operacoes') }"
+          :class="{ 'bg-neutral-light bg-opacity-25': route.path.startsWith('/unidades') }"
           @click="handleMobileLinkClick"
         >
           <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">

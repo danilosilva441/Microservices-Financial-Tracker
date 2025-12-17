@@ -24,6 +24,11 @@ public class SolicitacoesController : ControllerBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    #region Métodos auxiliares para extrair informações do token
+    /// <summary>
+    /// Extrai o UserId do token JWT
+    /// </summary>
+    /// <returns>Guid do UserId</returns>
     private Guid GetUserId()
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -36,12 +41,20 @@ public class SolicitacoesController : ControllerBase
         
         return userId;
     }
+    
 
     private string? GetUserRole()
     {
         return User.FindFirstValue(ClaimTypes.Role);
     }
+    #endregion
 
+    #region Criar Solicitação
+    /// <summary>
+    /// Cria uma nova solicitação de ajuste de faturamento
+    /// </summary>
+    /// <param name="dto">Dados da solicitação</param>
+    /// <returns>Solicitação criada</returns>
     [HttpPost]
     [ProducesResponseType(typeof(SolicitacaoAjuste), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -95,7 +108,15 @@ public class SolicitacoesController : ControllerBase
                 new { Message = "Ocorreu um erro interno ao processar sua solicitação" });
         }
     }
+    #endregion
 
+    #region Listar Solicitações com Filtros
+    /// <summary>
+    /// Lista todas as solicitações de ajuste de faturamento com filtros opcionais por status e tipo.
+    /// </summary>
+    /// <param name="status">Filtro por status</param>
+    /// <param name="tipo">Filtro por tipo</param>
+    /// <returns>Lista de solicitações</returns>
     [HttpGet]
     [Authorize(Roles = "Admin, Gerente")]
     [ProducesResponseType(typeof(IEnumerable<SolicitacaoAjuste>), StatusCodes.Status200OK)]
@@ -137,7 +158,14 @@ public class SolicitacoesController : ControllerBase
                 new { Message = "Erro ao recuperar solicitações" });
         }
     }
+    #endregion
 
+    #region Obter Solicitação por ID
+    /// <summary>
+    /// Obtem uma solicitação de ajuste de faturamento por ID.
+    /// </summary>
+    /// <param name="id">ID da solicitação</param>
+    /// <returns>Solicitação encontrada</returns>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(SolicitacaoAjuste), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -186,7 +214,15 @@ public class SolicitacoesController : ControllerBase
                 new { Message = "Erro interno ao processar a solicitação" });
         }
     }
+    #endregion
 
+    #region Revisar Solicitação
+    /// <summary>
+    /// Revisa (aprova ou rejeita) uma solicitação de ajuste de faturamento.
+    /// </summary>
+    /// <param name="id">ID da solicitação</param>
+    /// <param name="revisaoDto">Dados da revisão</param>
+    /// <returns>Resultado da operação</returns>
     [HttpPatch("{id:guid}/revisar")]
     [Authorize(Roles = "Admin, Gerente")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -238,7 +274,15 @@ public class SolicitacoesController : ControllerBase
                 new { Message = "Erro interno ao processar a revisão" });
         }
     }
+    #endregion
 
+    #region Listar Minhas Solicitações
+    /// <summary>
+    /// Lista as solicitações de ajuste de faturamento criadas pelo usuário autenticado,
+    /// com filtro opcional por status.
+    /// </summary>
+    /// <param name="status">Filtro por status</param>
+    /// <returns>Lista de solicitações do usuário</returns>
     [HttpGet("minhas")]
     [ProducesResponseType(typeof(IEnumerable<SolicitacaoAjuste>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -281,8 +325,11 @@ public class SolicitacoesController : ControllerBase
                 new { Message = "Erro interno ao processar a solicitação" });
         }
     }
+    #endregion
 }
 
+
+#region DTO para criação de solicitação
 // DTO para revisão
 public class RevisarSolicitacaoDto
 {
@@ -293,3 +340,4 @@ public class RevisarSolicitacaoDto
     [StringLength(500, ErrorMessage = "A justificativa não pode exceder 500 caracteres")]
     public string? Justificativa { get; set; }
 }
+#endregion

@@ -41,7 +41,12 @@ namespace BillingService.Services
         }
 
         #region Category Operations
-
+        /// <summary>
+        /// Cria uma nova categoria de despesa
+        /// </summary>
+        /// <param name="dto">Dados da categoria</param>
+        /// <param name="tenantId">ID do tenant</param>
+        /// <returns>Categoria criada ou mensagem de erro</returns>
         public async Task<(ExpenseCategory? category, string? errorMessage)> CreateCategoryAsync(
             ExpenseCategoryCreateDto dto, Guid tenantId)
         {

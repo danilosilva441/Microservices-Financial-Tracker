@@ -1,13 +1,13 @@
 // Caminho: backend/BillingService/Repositories/FaturamentoDiarioRepository.cs
 using BillingService.Data;
 using BillingService.Models;
-using BillingService.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using BillingService.Repositories.Interfaces;
 
 namespace BillingService.Repositories
 {
     public class FaturamentoDiarioRepository : IFaturamentoDiarioRepository
-    {
+        {
         private readonly BillingDbContext _context;
 
         public FaturamentoDiarioRepository(BillingDbContext context)
@@ -66,6 +66,33 @@ namespace BillingService.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<FaturamentoDiario>> GetAllByUnidadeAsync(Guid tenantId, Guid unidadeId)
+        {
+            return await _context.FaturamentosDiarios
+                .Where(f => f.TenantId == tenantId && f.UnidadeId == unidadeId)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<FaturamentoDiario>> GetByDateRangeAsync(
+                    Guid tenantId,
+                    Guid unidadeId,
+                    DateOnly dataInicio,
+                    DateOnly dataFim)
+        {
+            return await _context.FaturamentosDiarios
+                .Where(f => f.TenantId == tenantId
+                    && f.UnidadeId == unidadeId
+                    && f.Data >= dataInicio  // Agora ambos são DateOnly
+                    && f.Data <= dataFim)     // Agora ambos são DateOnly
+                .OrderBy(f => f.Data)
+                .ToListAsync();
+        }
+
+        public Task<IEnumerable<FaturamentoDiario>> GetByDateRangeAsync(Guid tenantId, Guid unidadeId, DateTime dataInicio, DateTime dataFim)
+        {
+            throw new NotImplementedException();
         }
     }
 }

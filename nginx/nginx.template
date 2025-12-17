@@ -85,7 +85,7 @@ server {
         }
 
         # 3. Billing Service (v2.0 - inclui /billing e /operacoes legada)
-        location ~ ^/api/(billing|unidades|expenses|fechamentos|metas|mensalistas|solicitacoes|admin) {
+        location ~ ^/api/(billing|v1|unidades|expenses|fechamentos|metas|mensalistas|solicitacoes|billingadmin|faturamentos-parciais) {
             proxy_pass http://billing_service;
         }
         

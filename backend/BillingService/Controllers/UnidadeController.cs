@@ -10,7 +10,7 @@ using System.Net;
 namespace BillingService.Controllers;
 
 [ApiController]
-[Route("api/v{version:apiVersion}/unidades")]
+[Route("api/unidades")]
 [Authorize]
 public class UnidadeController : ControllerBase
 {
@@ -24,10 +24,13 @@ public class UnidadeController : ControllerBase
         _unidadeService = unidadeService;
         _logger = logger;
     }
-
+    
+    #region Helpers para extrair informações do token JWT 
     /// <summary>
     /// Obtém o ID do usuário autenticado do token JWT
     /// </summary>
+    /// <returns>UserId como Guid</returns>
+    /// <exception cref="UnauthorizedAccessException">Lançada se o UserId não for encontrado ou inválido</exception>
     private Guid GetUserId()
     {
         try
@@ -54,30 +57,36 @@ public class UnidadeController : ControllerBase
             throw;
         }
     }
+    #endregion
 
+    #region Helpers para extrair TenantId do token JWT
     /// <summary>
-    /// Obtém o TenantId do token JWT (apenas para Gerentes)
+    /// Obtém o TenantId do token JWT
     /// </summary>
+    /// <returns>TenantId como Guid</returns>
+    /// <exception cref="UnauthorizedAccessException">Lançada se o TenantId não for encontrado ou inválido</exception>
+    /// <exception cref="InvalidOperationException">Lançada se o usuário for Admin/Sistema (TenantId nulo)</exception>
+    /// <returns></returns>
     private Guid GetTenantId()
     {
         try
         {
-            var tenantIdClaim = User.FindFirst("tenantId")?.Value;
+            var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
 
-            if (string.IsNullOrWhiteSpace(tenantIdClaim))
+            if (string.IsNullOrWhiteSpace(tenant_idClaim))
             {
-                _logger.LogWarning("Claim 'tenantId' não encontrada no token JWT");
+                _logger.LogWarning("Claim 'tenant_id' não encontrada no token JWT");
                 throw new InvalidOperationException(
                     "Tenant ID não encontrado no token. Este endpoint requer privilégios de Gerente.");
             }
 
-            if (!Guid.TryParse(tenantIdClaim, out var tenantId))
+            if (!Guid.TryParse(tenant_idClaim, out var tenant_id))
             {
-                _logger.LogError("Claim 'tenantId' com formato inválido: {TenantIdClaim}", tenantIdClaim);
+                _logger.LogError("Claim 'tenant_id' com formato inválido: {TenantIdClaim}", tenant_idClaim);
                 throw new InvalidOperationException("Tenant ID em formato inválido.");
             }
 
-            return tenantId;
+            return tenant_id;
         }
         catch (Exception ex)
         {
@@ -85,21 +94,27 @@ public class UnidadeController : ControllerBase
             throw;
         }
     }
+    #endregion
 
+    #region Helpers para verificar permissões
     /// <summary>
     /// Verifica se o usuário é Admin/Sistema (TenantId nulo)
     /// </summary>
+    /// <returns>True se for Admin, False caso contrário</returns>
     private bool IsAdmin()
     {
-        var tenantIdClaim = User.FindFirst("tenantId");
-        return tenantIdClaim == null || string.IsNullOrWhiteSpace(tenantIdClaim.Value);
+        var tenant_idClaim = User.FindFirst("tenant_id");
+        return tenant_idClaim == null || string.IsNullOrWhiteSpace(tenant_idClaim.Value);
     }
+    #endregion
 
+    #region Endpoints de Unidade
     /// <summary>
     /// Obtém todas as unidades (Admin: todas, Gerente: apenas do seu tenant)
     /// </summary>
+    /// <returns>Lista de unidades</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<UnidadeResponseDto>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(IEnumerable<UnidadeDto>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> GetUnidades()
@@ -116,10 +131,10 @@ public class UnidadeController : ControllerBase
             }
             else
             {
-                var tenantId = GetTenantId();
-                var unidades = await _unidadeService.GetAllUnidadesByTenantAsync(tenantId);
+                var tenant_id = GetTenantId();
+                var unidades = await _unidadeService.GetAllUnidadesByTenantAsync(tenant_id);
                 _logger.LogInformation("Gerente do tenant {TenantId} consultou {Count} unidades", 
-                    tenantId, unidades?.Count() ?? 0);
+                    tenant_id, unidades?.Count() ?? 0);
                 return Ok(unidades);
             }
         }
@@ -154,12 +169,16 @@ public class UnidadeController : ControllerBase
             });
         }
     }
+    #endregion
 
+    #region Get Unidade by ID
     /// <summary>
     /// Obtém uma unidade específica por ID
     /// </summary>
+    /// <param name="id">ID da unidade</param>
+    /// <returns>Unidade encontrada</returns>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(UnidadeResponseDto), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(UnidadeDto), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> GetUnidadeById(Guid id)
@@ -168,13 +187,13 @@ public class UnidadeController : ControllerBase
         {
             _logger.LogInformation("Consultando unidade com ID: {UnidadeId}", id);
             
-            var tenantId = GetTenantId();
-            var unidade = await _unidadeService.GetUnidadeByIdAsync(id, tenantId);
+            var tenant_id = GetTenantId();
+            var unidade = await _unidadeService.GetUnidadeByIdAsync(id, tenant_id);
             
             if (unidade == null)
             {
                 _logger.LogWarning("Unidade com ID {UnidadeId} não encontrada para o tenant {TenantId}", 
-                    id, tenantId);
+                    id, tenant_id);
                 return NotFound(new ProblemDetails
                 {
                     Title = "Unidade não encontrada",
@@ -196,13 +215,17 @@ public class UnidadeController : ControllerBase
             });
         }
     }
+    #endregion
 
+    #region Create Unidade
     /// <summary>
     /// Cria uma nova unidade
     /// </summary>
+    /// <param name="unidadeDto">Dados da unidade a ser criada</param>
+    /// <returns>Unidade criada</returns>
     [HttpPost]
     [Authorize(Roles = "Admin, Gerente")]
-    [ProducesResponseType(typeof(UnidadeResponseDto), (int)HttpStatusCode.Created)]
+    [ProducesResponseType(typeof(UnidadeDto), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     public async Task<IActionResult> CreateUnidade([FromBody] UnidadeDto unidadeDto)
@@ -217,13 +240,13 @@ public class UnidadeController : ControllerBase
             }
 
             var userId = GetUserId();
-            var tenantId = GetTenantId();
+            var tenant_Id = GetTenantId();
             
             _logger.LogInformation(
                 "Criando nova unidade. Usuário: {UserId}, Tenant: {TenantId}, Dados: {@UnidadeDto}",
-                userId, tenantId, unidadeDto);
+                userId, tenant_Id, unidadeDto);
 
-            var novaUnidade = await _unidadeService.CreateUnidadeAsync(unidadeDto, userId, tenantId);
+            var novaUnidade = await _unidadeService.CreateUnidadeAsync(unidadeDto, userId, tenant_Id);
             
             _logger.LogInformation("Unidade criada com sucesso. ID: {UnidadeId}", novaUnidade.Id);
             
@@ -243,10 +266,16 @@ public class UnidadeController : ControllerBase
             });
         }
     }
+    #endregion
 
+
+    #region Update Unidade
     /// <summary>
     /// Atualiza uma unidade existente
     /// </summary>
+    /// <param name="id">ID da unidade a ser atualizada</param>
+    /// <param name="unidadeDto">Dados atualizados da unidade</param>
+    /// <returns></returns>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin, Gerente")]
     [ProducesResponseType((int)HttpStatusCode.NoContent)]
@@ -261,13 +290,13 @@ public class UnidadeController : ControllerBase
                 return ValidationProblem(ModelState);
             }
 
-            var tenantId = GetTenantId();
+            var tenant_id = GetTenantId();
             
             _logger.LogInformation(
                 "Atualizando unidade {UnidadeId}. Tenant: {TenantId}, Dados: {@UnidadeDto}",
-                id, tenantId, unidadeDto);
+                id, tenant_id, unidadeDto);
 
-            var success = await _unidadeService.UpdateUnidadeAsync(id, unidadeDto, tenantId);
+            var success = await _unidadeService.UpdateUnidadeAsync(id, unidadeDto, tenant_id);
 
             if (!success)
             {
@@ -296,10 +325,14 @@ public class UnidadeController : ControllerBase
             });
         }
     }
+    #endregion
 
+    #region Deactivate Unidade
     /// <summary>
     /// Desativa uma unidade (soft delete)
     /// </summary>
+    /// <param name="id">ID da unidade a ser desativada</param>
+    /// <returns></returns>
     [HttpPatch("{id:guid}/desativar")]
     [Authorize(Roles = "Admin, Gerente")]
     [ProducesResponseType((int)HttpStatusCode.NoContent)]
@@ -308,11 +341,11 @@ public class UnidadeController : ControllerBase
     {
         try
         {
-            var tenantId = GetTenantId();
+            var tenant_id = GetTenantId();
             
-            _logger.LogInformation("Desativando unidade {UnidadeId}. Tenant: {TenantId}", id, tenantId);
+            _logger.LogInformation("Desativando unidade {UnidadeId}. Tenant: {TenantId}", id, tenant_id);
             
-            var success = await _unidadeService.DeactivateUnidadeAsync(id, tenantId);
+            var success = await _unidadeService.DeactivateUnidadeAsync(id, tenant_id);
             
             if (!success)
             {
@@ -341,10 +374,14 @@ public class UnidadeController : ControllerBase
             });
         }
     }
+    #endregion
 
+    #region Delete Unidade
     /// <summary>
     /// Exclui permanentemente uma unidade (hard delete)
     /// </summary>
+    /// <param name="id">ID da unidade a ser excluída</param>
+    /// <returns></returns>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin, Gerente")]
     [ProducesResponseType((int)HttpStatusCode.NoContent)]
@@ -354,12 +391,12 @@ public class UnidadeController : ControllerBase
     {
         try
         {
-            var tenantId = GetTenantId();
+            var tenant_id = GetTenantId();
             
             _logger.LogWarning("Excluindo permanentemente unidade {UnidadeId}. Tenant: {TenantId}", 
-                id, tenantId);
+                id, tenant_id);
             
-            var success = await _unidadeService.DeleteUnidadeAsync(id, tenantId);
+            var success = await _unidadeService.DeleteUnidadeAsync(id, tenant_id);
             
             if (!success)
             {
@@ -388,10 +425,15 @@ public class UnidadeController : ControllerBase
             });
         }
     }
+    #endregion
 
+    #region Update Projecao Faturamento
     /// <summary>
     /// Atualiza a projeção de faturamento de uma unidade (apenas Admin)
     /// </summary>
+    /// <param name="id">ID da unidade a ser atualizada</param>
+    /// <param name="projecaoDto">Dados da nova projeção</param>
+    /// <returns></returns>
     [HttpPatch("{id:guid}/projecao")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType((int)HttpStatusCode.NoContent)]
@@ -439,8 +481,5 @@ public class UnidadeController : ControllerBase
             });
         }
     }
-
-    private class UnidadeResponseDto
-    {
-    }
+    #endregion
 }

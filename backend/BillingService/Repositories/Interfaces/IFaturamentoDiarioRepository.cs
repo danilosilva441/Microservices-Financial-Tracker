@@ -7,7 +7,7 @@ namespace BillingService.Repositories.Interfaces
     {
         Task AddAsync(FaturamentoDiario faturamentoDiario);
         void Update(FaturamentoDiario faturamentoDiario);
-        
+
         /// <summary>
         /// Busca um FaturamentoDiario pelo ID, verificando o Tenant.
         /// </summary>
@@ -27,7 +27,17 @@ namespace BillingService.Repositories.Interfaces
         /// Lista FaturamentosDiarios por Status (ex: todos "Pendentes") para um Tenant.
         /// </summary>
         Task<IEnumerable<FaturamentoDiario>> ListByStatusAsync(RegistroStatus status, Guid tenantId);
-        
+
         Task SaveChangesAsync();
+
+        // Ou melhor ainda, um método específico para intervalo de datas:
+        Task<IEnumerable<FaturamentoDiario>> GetByDateRangeAsync(
+            Guid tenantId,
+            Guid unidadeId,
+            DateTime dataInicio,
+            DateTime dataFim);
+        Task<IEnumerable<FaturamentoDiario>> GetByDateRangeAsync(Guid tenantId, Guid unidadeId, DateOnly dataInicio, DateOnly dataFim);
+
+        Task<IEnumerable<FaturamentoDiario>> GetAllByUnidadeAsync(Guid tenantId, Guid unidadeId);
     }
 }

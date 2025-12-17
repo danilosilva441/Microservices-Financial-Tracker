@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace BillingService.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/billingadmin")]
 [Authorize(Roles = "Admin, Gerente")]
 public class AdminController : ControllerBase
 {
@@ -21,27 +22,33 @@ public class AdminController : ControllerBase
         _logger = logger;
     }
 
-    // Cache da tenantId para a requisição
-    private Guid? _tenantId;
-    private Guid TenantId => _tenantId ??= GetTenantIdFromToken();
+    // Cache da tenant_id para a requisição
+    private Guid? _tenant_id;
+    private Guid TenantId => _tenant_id ??= GetTenantIdFromToken();
 
+    #region Método auxiliar para extrair TenantId do token
     private Guid GetTenantIdFromToken()
     {
-        var tenantIdClaim = User.FindFirst("tenantId")?.Value;
+        var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
 
-        if (string.IsNullOrEmpty(tenantIdClaim) ||
-            !Guid.TryParse(tenantIdClaim, out var tenantId))
+        if (string.IsNullOrEmpty(tenant_idClaim) ||
+            !Guid.TryParse(tenant_idClaim, out var tenant_id))
         {
             _logger.LogWarning("Tenant ID não encontrado ou inválido no token para o usuário {UserId}",
                 User.FindFirstValue(ClaimTypes.NameIdentifier));
             throw new UnauthorizedAccessException("Tenant ID não autorizado.");
         }
 
-        return tenantId;
+        return tenant_id;
     }
+    #endregion
 
     public record VincularUsuarioDto(Guid UserId, Guid UnidadeId);
 
+    #region Vincular Usuário a Unidade
+    /// <summary>
+    /// Endpoint para vincular um usuário a uma unidade específica dentro do tenant
+    /// </summary>
     [HttpPost("vincular-usuario-unidade")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -67,12 +74,12 @@ public class AdminController : ControllerBase
             // 2. CORREÇÃO PRINCIPAL: Força a leitura do TenantId AQUI.
             // Se o token for inválido, a exceção UnauthorizedAccessException estoura aqui,
             // fora do LINQ, e será capturada pelo catch correto abaixo.
-            var tenantId = TenantId;
+            var tenant_id = TenantId;
 
             // Verifica se unidade existe
             var unidadeExiste = await _context.Unidades
-                // Usa a variável local 'tenantId' em vez da propriedade
-                .AnyAsync(u => u.Id == vinculoDto.UnidadeId && u.TenantId == tenantId,
+                // Usa a variável local 'tenant_id' em vez da propriedade
+                .AnyAsync(u => u.Id == vinculoDto.UnidadeId && u.TenantId == tenant_id,
                           cancellationToken);
 
             if (!unidadeExiste)
@@ -82,10 +89,10 @@ public class AdminController : ControllerBase
 
             // Verifica se vínculo já existe
             var vinculoExistente = await _context.UsuarioOperacoes
-                // Usa a variável local 'tenantId'
+                // Usa a variável local 'tenant_id'
                 .AnyAsync(uo => uo.UserId == vinculoDto.UserId
                              && uo.UnidadeId == vinculoDto.UnidadeId
-                             && uo.TenantId == tenantId,
+                             && uo.TenantId == tenant_id,
                           cancellationToken);
 
             if (vinculoExistente)
@@ -99,7 +106,7 @@ public class AdminController : ControllerBase
                 Id = Guid.NewGuid(),
                 UserId = vinculoDto.UserId,
                 UnidadeId = vinculoDto.UnidadeId,
-                TenantId = tenantId // Usa a variável local
+                TenantId = tenant_id // Usa a variável local
             };
 
             await _context.UsuarioOperacoes.AddAsync(vinculo, cancellationToken);
@@ -138,8 +145,12 @@ public class AdminController : ControllerBase
                 "Ocorreu um erro interno ao processar a solicitação.");
         }
     }
+    #endregion
 
-    // Endpoint opcional para listar vínculos do usuário
+    #region Get Vínculos do Usuário
+    /// <summary>
+    /// Endpoint opcional para listar vínculos do usuário
+    /// </summary>
     [HttpGet("usuario/{userId}/vinculos")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -171,4 +182,5 @@ public class AdminController : ControllerBase
 
         return Ok(vinculos);
     }
+    #endregion
 }

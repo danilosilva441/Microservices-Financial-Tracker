@@ -123,3 +123,7 @@ C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\
 C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Microsoft.Extensions.Logging.dll
 C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
 C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Asp.Versioning.Abstractions.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Asp.Versioning.Http.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Asp.Versioning.Mvc.dll
+C:\My workspace\portfolio-microservices\backend\BillingService\bin\Debug\net8.0\Asp.Versioning.Mvc.ApiExplorer.dll

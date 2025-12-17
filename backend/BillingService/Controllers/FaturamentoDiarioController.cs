@@ -25,7 +25,11 @@ namespace BillingService.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        #region Helper Functions
+        //<summary>
+        // Funções helper para extrair UserId e TenantId do token JWT
         // --- Funções Helper ---
+        //</summary>
         private Guid GetUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -34,36 +38,36 @@ namespace BillingService.Controllers
                 _logger.LogWarning("User ID not found in token");
                 throw new UnauthorizedAccessException("User ID not found in token.");
             }
-            
+
             if (!Guid.TryParse(userIdClaim, out var userId))
             {
                 _logger.LogWarning("Invalid User ID format in token: {UserIdClaim}", userIdClaim);
                 throw new UnauthorizedAccessException("Invalid User ID format.");
             }
-            
+
             return userId;
         }
 
         private Guid GetTenantId()
         {
-            var tenantIdClaim = User.FindFirst("tenantId")?.Value;
-            if (string.IsNullOrEmpty(tenantIdClaim))
+            var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
+            if (string.IsNullOrEmpty(tenant_idClaim))
             {
                 _logger.LogWarning("Tenant ID not found in token");
-                throw new UnauthorizedAccessException("Tenant ID (tenantId) not found in token.");
+                throw new UnauthorizedAccessException("Tenant ID (tenant_id) not found in token.");
             }
-            
-            if (!Guid.TryParse(tenantIdClaim, out var tenantId))
+
+            if (!Guid.TryParse(tenant_idClaim, out var tenant_id))
             {
-                _logger.LogWarning("Invalid Tenant ID format in token: {TenantIdClaim}", tenantIdClaim);
+                _logger.LogWarning("Invalid Tenant ID format in token: {TenantIdClaim}", tenant_idClaim);
                 throw new UnauthorizedAccessException("Invalid Tenant ID format.");
             }
-            
-            return tenantId;
+
+            return tenant_id;
         }
+        #endregion
 
-        // --- Endpoints ---
-
+        #region Submit Daily Closing
         /// <summary>
         /// (Líder/Operador) Submete um novo fechamento de caixa.
         /// </summary>
@@ -83,13 +87,13 @@ namespace BillingService.Controllers
             try
             {
                 var userId = GetUserId();
-                var tenantId = GetTenantId();
-                
+                var tenant_id = GetTenantId();
+
                 _logger.LogInformation(
                     "Tentativa de submissão de fechamento - Unidade: {UnidadeId}, Usuário: {UserId}, Tenant: {TenantId}",
-                    unidadeId, userId, tenantId);
+                    unidadeId, userId, tenant_id);
 
-                var (fechamento, errorMessage) = await _service.SubmeterFechamentoAsync(unidadeId, dto, userId, tenantId);
+                var (fechamento, errorMessage) = await _service.SubmeterFechamentoAsync(unidadeId, dto, userId, tenant_id);
 
                 if (errorMessage != null)
                 {
@@ -103,7 +107,7 @@ namespace BillingService.Controllers
                 }
 
                 _logger.LogInformation(
-                    "Fechamento criado com sucesso - ID: {FechamentoId}", 
+                    "Fechamento criado com sucesso - ID: {FechamentoId}",
                     fechamento.Id);
 
                 return CreatedAtAction(
@@ -122,7 +126,9 @@ namespace BillingService.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
             }
         }
+        #endregion
 
+        #region Get Pending Closings
         /// <summary>
         /// (Supervisor) Lista todos os fechamentos pendentes no seu Tenant.
         /// </summary>
@@ -134,10 +140,10 @@ namespace BillingService.Controllers
         {
             try
             {
-                var tenantId = GetTenantId();
-                _logger.LogDebug("Buscando fechamentos pendentes para o Tenant: {TenantId}", tenantId);
-                
-                var pendentes = await _service.GetFechamentosPendentesAsync(tenantId);
+                var tenant_id = GetTenantId();
+                _logger.LogDebug("Buscando fechamentos pendentes para o Tenant: {TenantId}", tenant_id);
+
+                var pendentes = await _service.GetFechamentosPendentesAsync(tenant_id);
                 return Ok(pendentes);
             }
             catch (UnauthorizedAccessException ex)
@@ -151,7 +157,9 @@ namespace BillingService.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
             }
         }
+        #endregion
 
+        #region Review Daily Closing
         /// <summary>
         /// (Supervisor) Atualiza/Aprova um fechamento existente.
         /// </summary>
@@ -178,13 +186,13 @@ namespace BillingService.Controllers
                 }
 
                 var supervisorId = GetUserId();
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
 
                 _logger.LogInformation(
                     "Tentativa de revisão de fechamento - ID: {FechamentoId}, Supervisor: {SupervisorId}, Tenant: {TenantId}",
-                    id, supervisorId, tenantId);
+                    id, supervisorId, tenant_id);
 
-                var (fechamento, errorMessage) = await _service.RevisarFechamentoAsync(id, dto, supervisorId, tenantId);
+                var (fechamento, errorMessage) = await _service.RevisarFechamentoAsync(id, dto, supervisorId, tenant_id);
 
                 if (errorMessage != null)
                 {
@@ -198,7 +206,7 @@ namespace BillingService.Controllers
                 }
 
                 _logger.LogInformation(
-                    "Fechamento revisado com sucesso - ID: {FechamentoId}", 
+                    "Fechamento revisado com sucesso - ID: {FechamentoId}",
                     id);
 
                 return Ok(fechamento);
@@ -214,7 +222,9 @@ namespace BillingService.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
             }
         }
+        #endregion
 
+        #region Get Unit Closings
         /// <summary>
         /// Lista todos os fechamentos de uma unidade.
         /// </summary>
@@ -226,12 +236,12 @@ namespace BillingService.Controllers
         {
             try
             {
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
                 _logger.LogDebug(
                     "Buscando fechamentos da unidade - Unidade: {UnidadeId}, Tenant: {TenantId}",
-                    unidadeId, tenantId);
-                
-                var fechamentos = await _service.GetFechamentosPorUnidadeAsync(unidadeId, tenantId);
+                    unidadeId, tenant_id);
+
+                var fechamentos = await _service.GetFechamentosPorUnidadeAsync(unidadeId, tenant_id);
                 return Ok(fechamentos);
             }
             catch (UnauthorizedAccessException ex)
@@ -245,7 +255,9 @@ namespace BillingService.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
             }
         }
+        #endregion
 
+        #region Get Closing by ID
         /// <summary>
         /// Obtém um fechamento específico por ID.
         /// </summary>
@@ -261,12 +273,12 @@ namespace BillingService.Controllers
         {
             try
             {
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
                 _logger.LogDebug(
                     "Buscando fechamento - ID: {FechamentoId}, Unidade: {UnidadeId}, Tenant: {TenantId}",
-                    id, unidadeId, tenantId);
-                
-                var fechamento = await _service.GetFechamentoByIdAsync(id, tenantId);
+                    id, unidadeId, tenant_id);
+
+                var fechamento = await _service.GetFechamentoByIdAsync(id, tenant_id);
 
                 if (fechamento == null || fechamento.UnidadeId != unidadeId)
                 {
@@ -289,9 +301,85 @@ namespace BillingService.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
             }
         }
+        #endregion
 
-        // --- Métodos Auxiliares Privados ---
 
+        #region Get Closings by Date Range
+        /// <summary>
+        /// Obtém fechamentos por intervalo de datas.
+        /// </summary>
+        /// <param name="unidadeId">ID da unidade</param>
+        /// <param name="dataInicio">Data de início</param>
+        /// <param name="dataFim">Data de fim</param>
+        /// <returns>Lista de fechamentos no intervalo</returns>
+        [HttpGet("por-data")]
+        [ProducesResponseType(typeof(IEnumerable<FaturamentoDiarioResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetFechamentosPorData(
+            [FromRoute] Guid unidadeId,
+            [FromQuery] DateTime dataInicio,
+            [FromQuery] DateTime dataFim)
+        {
+            try
+            {
+                var tenant_id = GetTenantId();
+
+                _logger.LogDebug(
+                    "Buscando fechamentos por data - Unidade: {UnidadeId}, Tenant: {TenantId}, Data Início: {DataInicio}, Data Fim: {DataFim}",
+                    unidadeId, tenant_id, dataInicio, dataFim);
+
+                // Converta DateTime para DateOnly (se necessário)
+                var dataInicioDateOnly = DateOnly.FromDateTime(dataInicio);
+                var dataFimDateOnly = DateOnly.FromDateTime(dataFim);
+
+                var fechamentos = await _service.GetFechamentosPorDataAsync(
+                    unidadeId,
+                    dataInicioDateOnly,
+                    dataFimDateOnly,
+                    tenant_id);
+
+                if (fechamentos == null || !fechamentos.Any())
+                {
+                    return NotFound("Nenhum fechamento encontrado para o período especificado.");
+                }
+
+                // Mapeie corretamente baseado nas propriedades reais do seu modelo
+                var response = fechamentos.Select(f => new FaturamentoDiarioResponseDto
+                {
+                    Id = f.Id,
+                    Data = f.Data,
+                });
+
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Argumento inválido ao buscar fechamentos por data");
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Erro de autorização ao buscar fechamentos por data");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro inesperado ao buscar fechamentos por data");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
+            }
+        }
+        #endregion
+
+
+        #region Get Closings Summary
+        /// <summary>
+        /// Obtém um resumo dos fechamentos em um intervalo de datas.
+        /// </summary>
+        /// <param name="unidadeId">ID da unidade</param>
+        /// <param name="dataInicio">Data de início</param>
+        /// <param name="dataFim">Data de fim</param>
         private IActionResult HandleErrorResponse(string errorMessage)
         {
             if (string.IsNullOrEmpty(errorMessage))
@@ -305,15 +393,16 @@ namespace BillingService.Controllers
                 case string s when s.Contains("já existe"):
                     _logger.LogWarning("Conflito ao processar requisição: {ErrorMessage}", errorMessage);
                     return Conflict(errorMessage);
-                
+
                 case string s when s.Contains("não encontrado") || s.Contains("não encontrada"):
                     _logger.LogWarning("Recurso não encontrado: {ErrorMessage}", errorMessage);
                     return NotFound(errorMessage);
-                
+
                 default:
                     _logger.LogWarning("Erro na requisição: {ErrorMessage}", errorMessage);
                     return BadRequest(errorMessage);
             }
         }
+        #endregion
     }
 }

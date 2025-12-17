@@ -24,7 +24,11 @@ public class MensalistasController : ControllerBase
         _mensalistaService = mensalistaService;
         _logger = logger;
     }
-
+    #region Método auxiliar para extrair UserId do token
+    /// <summary>
+    /// Extrai o UserId do token JWT do usuário autenticado
+    /// </summary>
+    /// <returns>Guid do UserId</returns>aleatorizar UserId { get; }aleatorizar UserId { get; }
     private Guid GetUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -44,7 +48,14 @@ public class MensalistasController : ControllerBase
 
         return userId;
     }
+    #endregion
 
+    #region GET - Obter Todos os Mensalistas
+    /// <summary>
+    /// Endpoint para obter todos os mensalistas de uma unidade específica
+    /// </summary>
+    /// <param name="unidadeId">ID da unidade</param>
+    /// <returns>Lista de mensalistas</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<MensalistaDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -77,7 +88,15 @@ public class MensalistasController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while processing your request." });
         }
     }
+    #endregion
 
+    #region POST - Criar Novo Mensalista
+    /// <summary>
+    /// Endpoint para criar um novo mensalista em uma unidade específica
+    /// </summary>
+    /// <param name="unidadeId">ID da unidade</param>
+    /// <param name="mensalistaDto">Dados do mensalista a ser criado</param>
+    /// <returns>Resultado da criação</returns>
     [HttpPost]
     [Authorize(Roles = "Admin,Gerente,Financeiro")]
     [ProducesResponseType(typeof(MensalistaDto), StatusCodes.Status201Created)]
@@ -133,7 +152,16 @@ public class MensalistasController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while creating mensalista." });
         }
     }
+    #endregion
 
+    #region PUT - Atualizar Mensalista
+    /// <summary>
+    /// Endpoint para atualizar um mensalista existente em uma unidade específica
+    /// </summary>
+    /// <param name="unidadeId">ID da unidade</param>
+    /// <param name="mensalistaId">ID do mensalista a ser atualizado</param>
+    /// <param name="mensalistaDto">Dados do mensalista a ser atualizado</param>
+    /// <returns>Resultado da atualização</returns>
     [HttpPut("{mensalistaId}")]
     [Authorize(Roles = "Admin,Gerente,Financeiro")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -184,7 +212,15 @@ public class MensalistasController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while updating mensalista." });
         }
     }
+    #endregion
 
+    #region PATCH - Desativar Mensalista
+    /// <summary>
+    /// Endpoint para desativar um mensalista existente em uma unidade específica
+    /// </summary>
+    /// <param name="unidadeId">ID da unidade</param>
+    /// <param name="mensalistaId">ID do mensalista a ser desativado</param>
+    /// <returns>Resultado da desativação</returns>
     [HttpPatch("{mensalistaId}/desativar")]
     [Authorize(Roles = "Admin,Gerente,Financeiro")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -227,7 +263,15 @@ public class MensalistasController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while deactivating mensalista." });
         }
     }
+    #endregion
 
+    #region GET - Obter Mensalista por ID
+    /// <summary>
+    /// Endpoint para obter um mensalista específico por ID em uma unidade
+    /// </summary>
+    /// <param name="unidadeId">ID da unidade</param>
+    /// <param name="mensalistaId">ID do mensalista</param>
+    /// <returns>Detalhes do mensalista</returns>
     [HttpGet("{mensalistaId}")]
     [ProducesResponseType(typeof(MensalistaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -262,4 +306,5 @@ public class MensalistasController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while retrieving mensalista." });
         }
     }
+    #endregion
 }

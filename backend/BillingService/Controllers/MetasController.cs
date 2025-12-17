@@ -23,25 +23,35 @@ public class MetasController : ControllerBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    #region Métodos Auxiliares
     /// <summary>
     /// Obtém o TenantId do usuário autenticado
     /// </summary>
+    /// <returns>Guid do TenantId</returns>
+    /// <param name="unidadeId">ID da unidade</param>
+    /// <returns>Guid do TenantId</returns>
     private Guid GetTenantId()
     {
-        var tenantIdClaim = User.FindFirst("tenantId")?.Value 
+        var tenant_idClaim = User.FindFirst("tenant_id")?.Value 
             ?? throw new UnauthorizedAccessException("Tenant ID não encontrado no token de autenticação.");
         
-        if (!Guid.TryParse(tenantIdClaim, out var tenantId))
+        if (!Guid.TryParse(tenant_idClaim, out var tenant_id))
         {
             throw new UnauthorizedAccessException("Tenant ID inválido no token de autenticação.");
         }
 
-        return tenantId;
+        return tenant_id;
     }
+    #endregion
 
+    #region Validação de Parâmetros
     /// <summary>
     /// Valida os parâmetros de mês e ano
     /// </summary>
+    /// <param name="mes">Mês</param>
+    /// <param name="ano">Ano</param>
+    /// <param name="errorMessage">Mensagem de erro, se houver</param>
+    /// <returns>True se válidos, false caso contrário</returns>
     private bool ValidateMesAno(int mes, int ano, out string? errorMessage)
     {
         errorMessage = null;
@@ -60,11 +70,14 @@ public class MetasController : ControllerBase
 
         return true;
     }
+    #endregion
 
+    #region GET - Listar Metas da Unidade
     /// <summary>
     /// Lista todas as metas de uma unidade específica.
     /// </summary>
     /// <param name="unidadeId">ID da unidade</param>
+    /// <param name="tenant_id">ID do tenant</param>
     /// <response code="200">Retorna a lista de metas</response>
     /// <response code="401">Usuário não autenticado</response>
     /// <response code="403">Usuário não tem permissão para acessar esta unidade</response>
@@ -76,12 +89,12 @@ public class MetasController : ControllerBase
     {
         try
         {
-            var tenantId = GetTenantId();
+            var tenant_id = GetTenantId();
             _logger.LogInformation(
                 "Buscando metas para a unidade {UnidadeId} do tenant {TenantId}", 
-                unidadeId, tenantId);
+                unidadeId, tenant_id);
 
-            var metas = await _metaService.GetMetasAsync(unidadeId, tenantId);
+            var metas = await _metaService.GetMetasAsync(unidadeId, tenant_id);
             
             _logger.LogInformation(
                 "Encontradas {Count} metas para a unidade {UnidadeId}", 
@@ -103,7 +116,9 @@ public class MetasController : ControllerBase
                 "Ocorreu um erro interno ao processar sua solicitação.");
         }
     }
+    #endregion
 
+    #region GET - Obter Meta por Período
     /// <summary>
     /// Busca uma meta específica pelo período (mês/ano).
     /// </summary>
@@ -113,6 +128,7 @@ public class MetasController : ControllerBase
     /// <response code="200">Retorna a meta encontrada</response>
     /// <response code="400">Parâmetros inválidos</response>
     /// <response code="404">Meta não encontrada para o período</response>
+    /// <response code="403">Usuário não tem permissão para acessar esta unidade</response>
     [HttpGet("periodo")]
     [ProducesResponseType(typeof(MetaDto), 200)]
     [ProducesResponseType(400)]
@@ -130,12 +146,12 @@ public class MetasController : ControllerBase
                 return BadRequest(validationError);
             }
 
-            var tenantId = GetTenantId();
+            var tenant_id = GetTenantId();
             _logger.LogInformation(
                 "Buscando meta para unidade {UnidadeId}, período {Mes}/{Ano}, tenant {TenantId}",
-                unidadeId, mes, ano, tenantId);
+                unidadeId, mes, ano, tenant_id);
 
-            var meta = await _metaService.GetMetaAsync(unidadeId, mes, ano, tenantId);
+            var meta = await _metaService.GetMetaAsync(unidadeId, mes, ano, tenant_id);
 
             if (meta == null)
             {
@@ -169,7 +185,9 @@ public class MetasController : ControllerBase
                 "Ocorreu um erro interno ao processar sua solicitação.");
         }
     }
+    #endregion
 
+    #region POST - Criar/Atualizar Meta
     /// <summary>
     /// Cria ou atualiza a meta para um período.
     /// </summary>
@@ -205,13 +223,13 @@ public class MetasController : ControllerBase
                 return BadRequest(validationError);
             }
 
-            var tenantId = GetTenantId();
+            var tenant_id = GetTenantId();
             
             _logger.LogInformation(
                 "Criando/atualizando meta para unidade {UnidadeId}, período {Mes}/{Ano}, tenant {TenantId}",
-                unidadeId, metaDto.Mes, metaDto.Ano, tenantId);
+                unidadeId, metaDto.Mes, metaDto.Ano, tenant_id);
 
-            var (metaSalva, errorMessage) = await _metaService.SetMetaAsync(unidadeId, metaDto, tenantId);
+            var (metaSalva, errorMessage) = await _metaService.SetMetaAsync(unidadeId, metaDto, tenant_id);
             
             if (errorMessage != null)
             {
@@ -250,4 +268,5 @@ public class MetasController : ControllerBase
                 "Ocorreu um erro interno ao processar sua solicitação.");
         }
     }
+    #endregion
 }

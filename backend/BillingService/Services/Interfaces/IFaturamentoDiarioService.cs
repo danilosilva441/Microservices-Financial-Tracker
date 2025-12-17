@@ -10,25 +10,25 @@ namespace BillingService.Services.Interfaces
         /// Usado pelo Líder/Operador para submeter o fechamento do dia.
         /// </summary>
         Task<(FaturamentoDiarioResponseDto? dto, string? errorMessage)> SubmeterFechamentoAsync(
-            Guid unidadeId, 
-            FaturamentoDiarioCreateDto dto, 
-            Guid userId, 
+            Guid unidadeId,
+            FaturamentoDiarioCreateDto dto,
+            Guid userId,
             Guid tenantId);
 
         /// <summary>
         /// Usado pelo Supervisor para aprovar/rejeitar ou editar um fechamento.
         /// </summary>
         Task<(FaturamentoDiarioResponseDto? dto, string? errorMessage)> RevisarFechamentoAsync(
-            Guid faturamentoDiarioId, 
-            FaturamentoDiarioSupervisorUpdateDto dto, 
-            Guid supervisorId, 
+            Guid faturamentoDiarioId,
+            FaturamentoDiarioSupervisorUpdateDto dto,
+            Guid supervisorId,
             Guid tenantId);
 
         /// <summary>
         /// Lista todos os fechamentos de uma unidade.
         /// </summary>
         Task<IEnumerable<FaturamentoDiarioResponseDto>> GetFechamentosPorUnidadeAsync(
-            Guid unidadeId, 
+            Guid unidadeId,
             Guid tenantId);
 
         /// <summary>
@@ -41,7 +41,14 @@ namespace BillingService.Services.Interfaces
         /// Pega um único fechamento pelo ID.
         /// </summary>
         Task<FaturamentoDiarioResponseDto?> GetFechamentoByIdAsync(
-            Guid id, 
+            Guid id,
             Guid tenantId);
+
+        Task<IEnumerable<FaturamentoDiario>> GetFechamentosPorDataAsync(
+            Guid unidadeId,
+            DateOnly dataInicio,
+            DateOnly dataFim,
+            Guid tenantId);
+
     }
 }

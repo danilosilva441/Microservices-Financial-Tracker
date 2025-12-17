@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using SharedKernel.Enums;
 
 namespace BillingService.DTOs
 {
@@ -15,7 +16,7 @@ namespace BillingService.DTOs
         public DateTime HoraFim { get; set; }
 
         [Required]
-        public Guid MetodoPagamentoId { get; set; }
+        public MetodoPagamentoEnum MetodoPagamentoId { get; set; }
 
         [Required]
         public string Origem { get; set; } = "AVULSO";

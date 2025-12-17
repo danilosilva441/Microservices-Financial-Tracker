@@ -22,33 +22,38 @@ namespace BillingService.Controllers
             _logger = logger;
         }
 
+        #region Helper to get TenantId from JWT token
         // Função helper para pegar o TenantId do token JWT
         private Guid GetTenantId()
         {
-            var tenantIdClaim = User.FindFirst("tenantId")?.Value;
+            var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
             
-            if (string.IsNullOrWhiteSpace(tenantIdClaim))
+            if (string.IsNullOrWhiteSpace(tenant_idClaim))
             {
                 throw new UnauthorizedAccessException("Tenant ID not found in token.");
             }
 
-            if (!Guid.TryParse(tenantIdClaim, out var tenantId))
+            if (!Guid.TryParse(tenant_idClaim, out var tenant_id))
             {
                 throw new UnauthorizedAccessException("Invalid Tenant ID format in token.");
             }
 
-            return tenantId;
+            return tenant_id;
         }
+        #endregion
 
+        #region Helper to get TenantId from JWT token
+        //<summary>
+        // Função helper para pegar o TenantId do token JWT
         // --- Endpoints de Categoria ---
-
+        //</summary>
         [HttpGet("categories")]
         public async Task<IActionResult> GetCategories()
         {
             try
             {
-                var tenantId = GetTenantId();
-                var categories = await _expenseService.GetCategoriesAsync(tenantId);
+                var tenant_id = GetTenantId();
+                var categories = await _expenseService.GetCategoriesAsync(tenant_id);
                 return Ok(categories);
             }
             catch (UnauthorizedAccessException ex)
@@ -61,16 +66,21 @@ namespace BillingService.Controllers
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
+        #endregion
 
+        #region Create Category
+        /// <summary>
+        /// Creates a new expense category for the current tenant.
+        /// </summary>
         [HttpPost("categories")]
         [Authorize(Roles = "Admin, Gerente")]
         public async Task<IActionResult> CreateCategory([FromBody] ExpenseCategoryCreateDto dto)
         {
             try
             {
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
                 // CORREÇÃO: Acessando a tupla diretamente (sem Result<T>)
-                var (category, errorMessage) = await _expenseService.CreateCategoryAsync(dto, tenantId);
+                var (category, errorMessage) = await _expenseService.CreateCategoryAsync(dto, tenant_id);
 
                 if (errorMessage != null)
                     return BadRequest(errorMessage);
@@ -90,9 +100,15 @@ namespace BillingService.Controllers
                 return StatusCode(500, "An error occurred while creating the category.");
             }
         }
+        #endregion
 
-        // --- Endpoints de Despesa ---
-
+        #region Expense Endpoints
+        // <summary>
+        // Gerenciamento de Despesas
+        // </summary>
+        // GET api/expenses/unidade/{unidadeId}
+        //<param name="unidadeId">ID da unidade para filtrar despesas</param>
+        //<returns>Lista de despesas para a unidade especificada</returns>
         [HttpGet("unidade/{unidadeId:guid}")]
         public async Task<IActionResult> GetExpensesByUnidade(Guid unidadeId)
         {
@@ -101,9 +117,9 @@ namespace BillingService.Controllers
                 if (unidadeId == Guid.Empty)
                     return BadRequest("Invalid unidade ID.");
 
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
                 // CORREÇÃO: Apenas retorna a lista, não tem Result<T>
-                var expenses = await _expenseService.GetExpensesByUnidadeAsync(unidadeId, tenantId);
+                var expenses = await _expenseService.GetExpensesByUnidadeAsync(unidadeId, tenant_id);
                 
                 return Ok(expenses);
             }
@@ -117,15 +133,22 @@ namespace BillingService.Controllers
                 return StatusCode(500, "An error occurred while fetching expenses.");
             }
         }
+        #endregion
 
+        #region Create Expense
+        /// <summary>
+        /// Creates a new expense for the current tenant.
+        /// </summary>
+        /// POST api/expenses
         [HttpPost]
+        [Authorize(Roles = "Admin, Gerente")]
         public async Task<IActionResult> CreateExpense([FromBody] ExpenseCreateDto dto)
         {
             try
             {
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
                 // CORREÇÃO: Acessando a tupla diretamente
-                var (expense, errorMessage) = await _expenseService.CreateExpenseAsync(dto, tenantId);
+                var (expense, errorMessage) = await _expenseService.CreateExpenseAsync(dto, tenant_id);
 
                 if (errorMessage != null)
                 {
@@ -151,7 +174,15 @@ namespace BillingService.Controllers
                 return StatusCode(500, "An error occurred while creating the expense.");
             }
         }
+        #endregion
 
+        #region Delete Expense
+        /// <summary>
+        /// Deletes an expense for the current tenant.
+        /// </summary>
+        /// <param name="id">ID of the expense to delete</param>
+        /// <returns>Result of the delete operation</returns>
+        /// DELETE api/expenses/{id}
         [HttpDelete("{id:guid}")]
         [Authorize(Roles = "Admin, Gerente")]
         public async Task<IActionResult> DeleteExpense(Guid id)
@@ -161,9 +192,9 @@ namespace BillingService.Controllers
                 if (id == Guid.Empty)
                     return BadRequest("Invalid expense ID.");
 
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
                 // CORREÇÃO: Acessando a tupla diretamente
-                var (success, errorMessage) = await _expenseService.DeleteExpenseAsync(id, tenantId);
+                var (success, errorMessage) = await _expenseService.DeleteExpenseAsync(id, tenant_id);
 
                 if (!success)
                     return NotFound(errorMessage);
@@ -180,7 +211,16 @@ namespace BillingService.Controllers
                 return StatusCode(500, "An error occurred while deleting the expense.");
             }
         }
+        #endregion
 
+        #region Upload Expenses from Spreadsheet
+        /// <summary>
+        /// Uploads and imports expenses from a spreadsheet file.
+        /// </summary>
+        /// <param name="upload">The uploaded file.</param>
+        /// <returns>Result of the upload operation.</returns>
+        /// POST api/expenses/upload
+        /// </summary>
         [HttpPost("upload")]
         [Authorize(Roles = "Admin, Gerente")]
         [Consumes("multipart/form-data")]
@@ -210,11 +250,11 @@ namespace BillingService.Controllers
                     return BadRequest($"Invalid file format. Only {string.Join(", ", allowedExtensions)} are allowed.");
                 }
 
-                var tenantId = GetTenantId();
+                var tenant_id = GetTenantId();
 
                 await using var stream = file.OpenReadStream();
                 // CORREÇÃO: Acessando a tupla diretamente
-                var (success, errorMessage, processedRows, skippedRows) = await _expenseService.ImportExpensesAsync(stream, extension, tenantId);
+                var (success, errorMessage, processedRows, skippedRows) = await _expenseService.ImportExpensesAsync(stream, extension, tenant_id);
 
                 if (!success)
                 {
@@ -250,5 +290,6 @@ namespace BillingService.Controllers
                 return StatusCode(500, "An error occurred while importing the spreadsheet.");
             }
         }
+        #endregion
     }
 }

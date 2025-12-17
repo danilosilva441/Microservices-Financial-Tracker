@@ -16,7 +16,7 @@ namespace BillingService.Services
         private readonly ILogger<FaturamentoDiarioService> _logger;
 
         public FaturamentoDiarioService(
-            IFaturamentoDiarioRepository repository, 
+            IFaturamentoDiarioRepository repository,
             IUnidadeRepository unidadeRepository,
             ILogger<FaturamentoDiarioService> logger)
         {
@@ -26,9 +26,9 @@ namespace BillingService.Services
         }
 
         public async Task<(FaturamentoDiarioResponseDto? dto, string? errorMessage)> SubmeterFechamentoAsync(
-            Guid unidadeId, 
-            FaturamentoDiarioCreateDto dto, 
-            Guid userId, 
+            Guid unidadeId,
+            FaturamentoDiarioCreateDto dto,
+            Guid userId,
             Guid tenantId)
         {
             try
@@ -50,23 +50,23 @@ namespace BillingService.Services
                     _logger.LogWarning("Unidade não encontrada: {UnidadeId}", unidadeId);
                     return (null, ErrorMessages.UnidadeNotFound);
                 }
-                
+
                 // Valida se já existe um fechamento para este dia
                 var existente = await _repository.GetByUnidadeAndDateAsync(unidadeId, dto.Data, tenantId);
                 if (existente != null)
                 {
-                    _logger.LogWarning("Fechamento já existe para unidade {UnidadeId} na data {Data}", 
+                    _logger.LogWarning("Fechamento já existe para unidade {UnidadeId} na data {Data}",
                         unidadeId, dto.Data.ToString("yyyy-MM-dd"));
                     return (null, ErrorMessages.FechamentoJaExiste);
                 }
 
                 var novoFechamento = CreateFechamentoEntity(unidadeId, dto, tenantId);
-                
+
                 await _repository.AddAsync(novoFechamento);
                 await _repository.SaveChangesAsync();
 
                 _logger.LogInformation("Fechamento submetido com sucesso: {FechamentoId}", novoFechamento.Id);
-                
+
                 return (MapToResponseDto(novoFechamento), null);
             }
             catch (Exception ex)
@@ -77,14 +77,14 @@ namespace BillingService.Services
         }
 
         public async Task<(FaturamentoDiarioResponseDto? dto, string? errorMessage)> RevisarFechamentoAsync(
-            Guid faturamentoDiarioId, 
-            FaturamentoDiarioSupervisorUpdateDto dto, 
-            Guid supervisorId, 
+            Guid faturamentoDiarioId,
+            FaturamentoDiarioSupervisorUpdateDto dto,
+            Guid supervisorId,
             Guid tenantId)
         {
             try
             {
-                _logger.LogInformation("Iniciando revisão de fechamento {FechamentoId} por supervisor {SupervisorId}", 
+                _logger.LogInformation("Iniciando revisão de fechamento {FechamentoId} por supervisor {SupervisorId}",
                     faturamentoDiarioId, supervisorId);
 
                 // Validação do DTO
@@ -107,18 +107,18 @@ namespace BillingService.Services
                 if (statusValidationError != null)
                 {
                     _logger.LogWarning(
-                        "Transição de status inválida: {StatusAtual} -> {NovoStatus}", 
+                        "Transição de status inválida: {StatusAtual} -> {NovoStatus}",
                         fechamento.Status, dto.Status);
                     return (null, statusValidationError);
                 }
 
                 UpdateFechamentoFromSupervisorDto(fechamento, dto);
-                
+
                 _repository.Update(fechamento);
                 await _repository.SaveChangesAsync();
 
                 _logger.LogInformation(
-                    "Fechamento {FechamentoId} revisado com sucesso. Novo status: {Status}", 
+                    "Fechamento {FechamentoId} revisado com sucesso. Novo status: {Status}",
                     fechamento.Id, dto.Status);
 
                 return (MapToResponseDto(fechamento), null);
@@ -137,7 +137,7 @@ namespace BillingService.Services
                 _logger.LogDebug("Buscando fechamento por ID: {FechamentoId}", id);
 
                 var fechamento = await _repository.GetByIdAsync(id, tenantId);
-                
+
                 if (fechamento == null)
                 {
                     _logger.LogDebug("Fechamento não encontrado: {FechamentoId}", id);
@@ -154,7 +154,7 @@ namespace BillingService.Services
         }
 
         public async Task<IEnumerable<FaturamentoDiarioResponseDto>> GetFechamentosPorUnidadeAsync(
-            Guid unidadeId, 
+            Guid unidadeId,
             Guid tenantId)
         {
             try
@@ -178,7 +178,7 @@ namespace BillingService.Services
                 _logger.LogDebug("Buscando fechamentos pendentes");
 
                 var fechamentos = await _repository.ListByStatusAsync(RegistroStatus.Pendente, tenantId);
-                
+
                 return fechamentos.Select(fd => new FaturamentoDiarioResponseDto
                 {
                     Id = fd.Id,
@@ -202,8 +202,8 @@ namespace BillingService.Services
         // --- Métodos Helper Privados ---
 
         private static FaturamentoDiario CreateFechamentoEntity(
-            Guid unidadeId, 
-            FaturamentoDiarioCreateDto dto, 
+            Guid unidadeId,
+            FaturamentoDiarioCreateDto dto,
             Guid tenantId)
         {
             return new FaturamentoDiario
@@ -222,7 +222,7 @@ namespace BillingService.Services
         }
 
         private static void UpdateFechamentoFromSupervisorDto(
-            FaturamentoDiario fechamento, 
+            FaturamentoDiario fechamento,
             FaturamentoDiarioSupervisorUpdateDto dto)
         {
             fechamento.Status = dto.Status;
@@ -235,7 +235,7 @@ namespace BillingService.Services
 
         private static FaturamentoDiarioResponseDto MapToResponseDto(FaturamentoDiario fechamento)
         {
-            if (fechamento == null) 
+            if (fechamento == null)
                 throw new ArgumentNullException(nameof(fechamento));
 
             return new FaturamentoDiarioResponseDto
@@ -312,6 +312,41 @@ namespace BillingService.Services
             }
 
             return null;
+        }
+
+         public async Task<IEnumerable<FaturamentoDiario>> GetFechamentosPorDataAsync(
+            Guid unidadeId, 
+            DateOnly dataInicio, 
+            DateOnly dataFim, 
+            Guid tenantId)
+        {
+            try
+            {
+                _logger.LogDebug(
+                    "Buscando fechamentos por intervalo de datas - Unidade: {UnidadeId}, Tenant: {TenantId}, Data Início: {DataInicio}, Data Fim: {DataFim}",
+                    unidadeId, tenantId, dataInicio, dataFim);
+
+                // Validações
+                if (dataInicio > dataFim)
+                {
+                    throw new ArgumentException("A data de início não pode ser maior que a data de fim.");
+                }
+
+                // Limita o intervalo máximo (opcional)
+                var maxDias = 90;
+                if ((dataFim.DayNumber - dataInicio.DayNumber) > maxDias)
+                {
+                    throw new ArgumentException($"O intervalo máximo permitido é de {maxDias} dias.");
+                }
+
+                // Use o método correto do repository
+                return await _repository.GetByDateRangeAsync(tenantId, unidadeId, dataInicio, dataFim);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar fechamentos por intervalo de datas");
+                throw;
+            }
         }
     }
 }
