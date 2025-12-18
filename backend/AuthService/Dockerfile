@@ -12,7 +12,7 @@ RUN dotnet restore "backend/AuthService/AuthService.csproj"
 # Copiar todo o código
 COPY . .
 
-# Publicar
+# Publicarr o build
 WORKDIR "/src/backend/AuthService"
 RUN dotnet build "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 RUN dotnet publish "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
