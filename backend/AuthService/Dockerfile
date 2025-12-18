@@ -1,31 +1,23 @@
-# =========================
-# Stage 1 - Build
-# =========================
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# 1. Copia os csproj primeiro
-COPY ["../../SharedKernel/SharedKernel.csproj", "../../SharedKernel/"]
-COPY ["AuthService.csproj", "./"]
+# Copiar arquivos de projeto
+COPY ["SharedKernel/SharedKernel.csproj", "SharedKernel/"]
+COPY ["backend/AuthService/AuthService.csproj", "backend/AuthService/"]
 
-# 2. Restore
-RUN dotnet restore "AuthService.csproj"
+# Restaurar dependências
+RUN dotnet restore "backend/AuthService/AuthService.csproj"
 
-# 3. Copia o código-fonte restante
-COPY ../../SharedKernel/ ../../SharedKernel/
+# Copiar todo o código
 COPY . .
 
-# 4. Publish
-RUN dotnet publish "AuthService.csproj" -c Release -o /app/publish /p:UseAppHost=false
+# Publicar
+WORKDIR "/src/backend/AuthService"
+RUN dotnet build "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet publish "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# =========================
-# Stage 2 - Runtime
-# =========================
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-
 COPY --from=build /app/publish .
-
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
 ENTRYPOINT ["dotnet", "AuthService.dll"]
