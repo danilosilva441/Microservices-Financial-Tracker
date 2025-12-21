@@ -2,19 +2,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia primeiro o SharedKernel (que está em ../SharedKernel/)
+# 1. PRIMEIRO copie APENAS os arquivos .csproj
 COPY ["SharedKernel/SharedKernel.csproj", "SharedKernel/"]
-# Copia o projeto AuthService
 COPY ["backend/AuthService/AuthService.csproj", "backend/AuthService/"]
 
-# Restaura as dependências
+# 2. Restaura as dependências (com cache)
 RUN dotnet restore "backend/AuthService/AuthService.csproj"
 
-# Copia todo o código fonte
+# 3. DEPOIS copie o código fonte completo
 COPY SharedKernel/ ./SharedKernel/
 COPY backend/AuthService/ ./backend/AuthService/
 
-# Trabalha no diretório do projeto
+# 4. Trabalha no diretório do projeto
 WORKDIR "/src/backend/AuthService"
 RUN dotnet publish "AuthService.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
