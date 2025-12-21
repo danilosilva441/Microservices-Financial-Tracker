@@ -2,26 +2,27 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Instala dependências do sistema e o dos2unix (para corrigir arquivos do Windows)
-RUN apk add --no-cache curl dos2unix
+# Instala dependências do sistema
+RUN apk add --no-cache curl
 
-# 1. Copia primeiro o package.json (Melhora o cache do Docker)
-COPY backend/analysis_service/package*.json ./
+# Copia arquivos de dependências
+COPY package*.json ./
 
-# 2. Instala as dependências do Node (Faltava isso!)
+# Instala dependências da aplicação
 RUN npm install
 
-# 3. Copia o restante do código fonte
-COPY backend/analysis_service/ .
+# Copia o código da aplicação
+COPY . .
 
-# 4. Corrige a quebra de linha do script (CRLF -> LF) e dá permissão
-# O '*' garante que pegue o arquivo independente se você renomeou ou não, 
-# mas o ideal é que o arquivo esteja em minúsculo.
-RUN dos2unix scripts/*.sh && \
-    chmod +x scripts/*.sh
+# Copia e configura o script (certifique-se do caminho correto)
+COPY ./scripts/create-system-user.sh /app/create-system-user.sh
 
+
+
+RUN chmod +x /app/create-system-user.sh
+
+# Expõe a porta
 EXPOSE 3000
 
-# 5. Executa o script e depois inicia o servidor
-# Atenção: Certifique-se que o arquivo na pasta chama-se 'create-system-user.sh'
-CMD ["sh", "-c", "./scripts/create-system-user.sh && npm run dev"]
+# Comando de inicialização
+CMD ["npm", "start"]

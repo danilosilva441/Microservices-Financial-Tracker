@@ -1,23 +1,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["AuthService.csproj", "."] 
 
-# Copiar arquivos de projeto
-COPY ["SharedKernel/SharedKernel.csproj", "SharedKernel/"]
-COPY ["backend/AuthService/AuthService.csproj", "backend/AuthService/"]
 
-# Restaurar dependências
-RUN dotnet restore "backend/AuthService/AuthService.csproj"
+RUN dotnet restore "./AuthService.csproj"
 
-# Copiar todo o código
+
 COPY . .
+WORKDIR "/src/."
+RUN dotnet publish "AuthService.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Publicarr o build
-WORKDIR "/src/backend/AuthService"
-RUN dotnet build "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/build
-RUN dotnet publish "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+# Estágio 2: Final (Produção)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# Instala o 'curl', necessário para o healthcheck funcionar
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "AuthService.dll"]
+ENTRYPOINT ["dotnet", "AuthService.dll"] 
