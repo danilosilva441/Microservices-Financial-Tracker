@@ -2,17 +2,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia TUDO
+# Copia TUDO da raiz
 COPY . .
 
-# Vai para o diretório do projeto e faz restore EXPLÍCITO
-WORKDIR /src/backend/BillingService
-RUN dotnet restore BillingService.csproj
-RUN dotnet publish BillingService.csproj -c Release -o /out /p:UseAppHost=false
+# RESTAURA usando caminho COMPLETO da raiz
+RUN dotnet restore backend/BillingService/BillingService.csproj
+
+# PUBLIC usando caminho COMPLETO
+RUN dotnet publish backend/BillingService/BillingService.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Estágio 2: Final
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-WORKDIR /src
-COPY --from=build /out .
+WORKDIR /app
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "BillingService.dll"]
