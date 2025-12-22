@@ -98,7 +98,7 @@ public class MensalistasController : ControllerBase
     /// <param name="mensalistaDto">Dados do mensalista a ser criado</param>
     /// <returns>Resultado da criação</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin,Gerente,Financeiro")]
+    [Authorize(Roles = "Admin, Gerente, Financeiro")]
     [ProducesResponseType(typeof(MensalistaDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -163,7 +163,7 @@ public class MensalistasController : ControllerBase
     /// <param name="mensalistaDto">Dados do mensalista a ser atualizado</param>
     /// <returns>Resultado da atualização</returns>
     [HttpPut("{mensalistaId}")]
-    [Authorize(Roles = "Admin,Gerente,Financeiro")]
+    [Authorize(Roles = "Admin, Gerente, Financeiro")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -222,7 +222,7 @@ public class MensalistasController : ControllerBase
     /// <param name="mensalistaId">ID do mensalista a ser desativado</param>
     /// <returns>Resultado da desativação</returns>
     [HttpPatch("{mensalistaId}/desativar")]
-    [Authorize(Roles = "Admin,Gerente,Financeiro")]
+    [Authorize(Roles = "Admin, Gerente, Financeiro")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

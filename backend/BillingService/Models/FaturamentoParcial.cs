@@ -35,7 +35,7 @@ namespace BillingService.Models
 
         
         [ForeignKey("MetodoPagamentoId")]
-        public MetodoPagamentoEnum MetodoPagamento { get; set; }
+        public MetodoPagamentoEnum MetodoPagamentoId { get; set; }
 
         [Required]
         public string Origem { get; set; } = "AVULSO";
