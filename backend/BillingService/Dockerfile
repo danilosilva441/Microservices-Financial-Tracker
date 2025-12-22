@@ -2,12 +2,20 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# --- AQUI ESTÁ O SEGREDO ---
-# Copia TODO o contexto (backend, SharedKernel, etc) para dentro de /src
+# Copia TUDO
 COPY . .
 
-# Restaura usando o CAMINHO COMPLETO a partir da raiz
-# Isso garante que ele ache o SharedKernel e o BillingService
+# --- COMANDOS DE DEBUG (REMOVER DEPOIS) ---
+RUN echo "=========================================="
+RUN echo "LISTANDO ARQUIVOS .CSPROJ ENCONTRADOS:"
+RUN find . -name "*.csproj"
+RUN echo "=========================================="
+RUN echo "LISTANDO ESTRUTURA DA PASTA BACKEND:"
+RUN ls -R backend || echo "Pasta backend não encontrada na raiz /src"
+RUN echo "=========================================="
+# ---------------------------------------------
+
+# O comando original que está falhando
 RUN dotnet restore "backend/BillingService/BillingService.csproj"
 
 # Publica usando o CAMINHO COMPLETO
