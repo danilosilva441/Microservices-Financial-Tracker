@@ -5,10 +5,10 @@ WORKDIR /app
 # Copia TUDO
 COPY . .
 
-# Restaura e build
+# Vai para o diretório do projeto e faz restore EXPLÍCITO
 WORKDIR /app/backend/BillingService
-RUN dotnet restore
-RUN dotnet publish -c Release -o /out /p:UseAppHost=false
+RUN dotnet restore BillingService.csproj
+RUN dotnet publish BillingService.csproj -c Release -o /out /p:UseAppHost=false
 
 # Estágio 2: Final
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
