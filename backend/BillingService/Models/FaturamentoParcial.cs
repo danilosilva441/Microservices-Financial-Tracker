@@ -33,9 +33,6 @@ namespace BillingService.Models
         // public Operacao Operacao { get; set; } = null!;
         // (A Operacao/Unidade agora é acessada através do FaturamentoDiario.Unidade)
 
-        // --- (Campos v2.0 Mantidos) ---
-        [Required]
-        public Guid MetodoPagamentoId { get; set; }
         
         [ForeignKey("MetodoPagamentoId")]
         public MetodoPagamentoEnum MetodoPagamento { get; set; }

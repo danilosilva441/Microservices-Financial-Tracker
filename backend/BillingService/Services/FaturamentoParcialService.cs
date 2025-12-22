@@ -300,7 +300,7 @@ namespace BillingService.Services
                 Valor = dto.Valor,
                 HoraInicio = dto.HoraInicio,
                 HoraFim = dto.HoraFim,
-                MetodoPagamentoId = dto.MetodoPagamentoId,
+                MetodoPagamento = dto.MetodoPagamentoId,
                 Origem = dto.Origem,
                 IsAtivo = true
             };
@@ -311,7 +311,7 @@ namespace BillingService.Services
             faturamento.Valor = dto.Valor;
             faturamento.HoraInicio = dto.HoraInicio;
             faturamento.HoraFim = dto.HoraFim;
-            faturamento.MetodoPagamentoId = dto.MetodoPagamentoId;
+            faturamento.MetodoPagamento = dto.MetodoPagamentoId;
             faturamento.Origem = dto.Origem;
         }
 
