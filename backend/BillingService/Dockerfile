@@ -2,16 +2,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# 1. PRIMEIRO copie APENAS os arquivos .csproj
-COPY ["SharedKernel/SharedKernel.csproj", "SharedKernel/"]
-COPY ["backend/BillingService/BillingService.csproj", "backend/BillingService/"]
+# 1. PRIMEIRO copie APENAS os arquivos .csproj (caminhos COMPLETOS)
+COPY ["SharedKernel/SharedKernel.csproj", "./"]
+COPY ["backend/BillingService/BillingService.csproj", "./"]
 
-# 2. Restaura as dependências (com cache)
-RUN dotnet restore "backend/BillingService/BillingService.csproj"
+# 2. Restaura as dependências
+RUN dotnet restore "./BillingService.csproj"
 
-# 3. DEPOIS copie o código fonte completo
-COPY SharedKernel/ ./SharedKernel/
-COPY backend/BillingService/ ./backend/BillingService/
+# 3. Copie TODO o código fonte
+COPY . .
 
 # 4. Trabalha no diretório do projeto
 WORKDIR "/src/backend/BillingService"
