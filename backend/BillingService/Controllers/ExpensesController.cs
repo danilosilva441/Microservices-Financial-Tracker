@@ -23,11 +23,22 @@ namespace BillingService.Controllers
         }
 
         #region Helper to get TenantId from JWT token
-        // Função helper para pegar o TenantId do token JWT
         private Guid GetTenantId()
         {
             var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
-            
+
+            // NOVA LÓGICA: Se for Admin, permitimos passar mesmo sem TenantId ou com formato diferente
+            if (User.IsInRole("Admin"))
+            {
+                if (string.IsNullOrWhiteSpace(tenant_idClaim) || !Guid.TryParse(tenant_idClaim, out var adminTenantId))
+                {
+                    // Retorna Empty para indicar ao Service que é um contexto global/sistema
+                    return Guid.Empty;
+                }
+                return adminTenantId;
+            }
+
+            // Lógica Padrão (Rígida) para usuários normais
             if (string.IsNullOrWhiteSpace(tenant_idClaim))
             {
                 throw new UnauthorizedAccessException("Tenant ID not found in token.");
@@ -86,8 +97,8 @@ namespace BillingService.Controllers
                     return BadRequest(errorMessage);
 
                 return CreatedAtAction(
-                    nameof(GetCategories), 
-                    null, 
+                    nameof(GetCategories),
+                    null,
                     category);
             }
             catch (UnauthorizedAccessException ex)
@@ -117,10 +128,11 @@ namespace BillingService.Controllers
                 if (unidadeId == Guid.Empty)
                     return BadRequest("Invalid unidade ID.");
 
-                var tenant_id = GetTenantId();
-                // CORREÇÃO: Apenas retorna a lista, não tem Result<T>
+                var tenant_id = GetTenantId(); // Agora passa liso se for Admin
+
+                // OBS: O _expenseService precisa saber lidar com Guid.Empty se for o caso
                 var expenses = await _expenseService.GetExpensesByUnidadeAsync(unidadeId, tenant_id);
-                
+
                 return Ok(expenses);
             }
             catch (UnauthorizedAccessException ex)
@@ -244,7 +256,7 @@ namespace BillingService.Controllers
                 // Validação da extensão
                 var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
                 var allowedExtensions = new[] { ".xlsx", ".csv" };
-                
+
                 if (!allowedExtensions.Contains(extension))
                 {
                     return BadRequest($"Invalid file format. Only {string.Join(", ", allowedExtensions)} are allowed.");
@@ -258,10 +270,10 @@ namespace BillingService.Controllers
 
                 if (!success)
                 {
-                    return BadRequest(new 
-                    { 
-                        ErrorMessage = errorMessage, 
-                        SkippedRows = skippedRows 
+                    return BadRequest(new
+                    {
+                        ErrorMessage = errorMessage,
+                        SkippedRows = skippedRows
                     });
                 }
 

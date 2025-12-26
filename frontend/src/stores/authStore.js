@@ -1,22 +1,25 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import api from '@/services/api';
+import api from '@/services/api'; // Certifique-se que este arquivo existe
 import { jwtDecode } from 'jwt-decode';
 import router from '@/router';
 
 export const useAuthStore = defineStore('auth', () => {
+  // Estado
   const token = ref(localStorage.getItem('authToken'));
   const user = ref(null);
   const loading = ref(false);
   const error = ref(null);
 
+  // --- Actions Auxiliares ---
+
   function clearAuth() {
     token.value = null;
     user.value = null;
     localStorage.removeItem('authToken');
+    // Remove o header padrão do axios
     delete api.defaults.headers.common['Authorization'];
     error.value = null;
-    console.log('🔒 Auth limpo');
   }
 
   function setUserAndToken(newToken) {
@@ -24,17 +27,14 @@ export const useAuthStore = defineStore('auth', () => {
     if (newToken) {
       try {
         const decodedToken = jwtDecode(newToken);
-        console.log('🔍 Token decodificado:', decodedToken);
         
-        // Busca flexível pela role
+        // Lógica para encontrar as Roles no token (compatível com Identity .NET e outros)
         let userRoles = [];
-        
         const possibleRoleClaims = [
           "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
           "role",
           "roles",
-          "Role",
-          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"
+          "Role"
         ];
         
         for (const claim of possibleRoleClaims) {
@@ -42,7 +42,6 @@ export const useAuthStore = defineStore('auth', () => {
             userRoles = Array.isArray(decodedToken[claim]) 
               ? decodedToken[claim] 
               : [decodedToken[claim]];
-            console.log(`✅ Roles encontradas na claim: ${claim}`, userRoles);
             break;
           }
         }
@@ -50,17 +49,16 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = {
           email: decodedToken.email || decodedToken.sub,
           nameid: decodedToken.nameid,
-          roles: userRoles // Agora armazenamos como array
+          roles: userRoles
         };
         
-        console.log('👤 Utilizador definido:', user.value);
-        
+        // Salva e configura o Axios
         localStorage.setItem('authToken', newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         error.value = null;
 
       } catch (decodeError) {
-        console.error('❌ Erro ao descodificar token:', decodeError);
+        console.error('Erro ao decodificar token:', decodeError);
         clearAuth();
       }
     } else {
@@ -68,52 +66,35 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // CORREÇÃO PRINCIPAL: Verificação correta para arrays
-  const isAdmin = computed(() => {
-    if (!user.value || !user.value.roles || user.value.roles.length === 0) {
-      console.log('❌ Sem roles definidas');
-      return false;
-    }
-    
-    console.log('🔍 Verificando roles:', user.value.roles);
-    
-    // Verifica se qualquer uma das roles é 'Admin' (case insensitive)
-    const isAdmin = user.value.roles.some(role => 
-      role.toString().toLowerCase() === 'admin'
-    );
-    
-    console.log('👑 É admin?', isAdmin);
-    return isAdmin;
-  });
-
-  // Para compatibilidade, mantemos também a propriedade role
-  const userRole = computed(() => {
-    if (!user.value || !user.value.roles || user.value.roles.length === 0) {
-      return null;
-    }
-    return user.value.roles[0]; // Retorna a primeira role
-  });
+  // --- Actions Principais ---
 
   async function login(credentials) {
     loading.value = true;
     error.value = null;
     
     try {
+      // ✅ Endpoint correto para pegar o token
       const response = await api.post('/api/token', credentials);
+      
       if (response.data && response.data.token) {
         setUserAndToken(response.data.token);
-        await router.push('/dashboard');
+        // Redirecionamento acontece aqui ou no componente, 
+        // mas retornar true ajuda o componente a saber que deu certo
         return { success: true };
       } else {
-        error.value = 'Token não recebido na resposta';
-        return { success: false, error: error.value };
+        throw new Error('Token não recebido na resposta do servidor');
       }
     } catch (err) {
-      console.error('❌ Erro completo no login:', err);
-      let errorMessage = 'Login ou senha inválidos.';
+      console.error('Erro no login:', err);
+      let errorMessage = 'Email ou senha inválidos.';
+      
       if (err.code === 'ERR_NETWORK') {
-        errorMessage = 'Erro de conexão. O servidor parece estar offline.';
+        errorMessage = 'Erro de conexão. Verifique se o servidor está rodando.';
+      } else if (err.response && err.response.data) {
+        // Tenta pegar mensagem específica do backend
+        errorMessage = err.response.data.message || errorMessage;
       }
+      
       error.value = errorMessage;
       clearAuth();
       return { success: false, error: errorMessage };
@@ -123,9 +104,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
-    console.log('🚪 Fazendo logout...');
     clearAuth();
-    router.push('/');
+    router.push('/'); // Redireciona para o login
   }
 
   function checkAuth() {
@@ -136,27 +116,41 @@ export const useAuthStore = defineStore('auth', () => {
         const currentTime = Date.now() / 1000;
         
         if (decoded.exp < currentTime) {
-          console.warn('⚠️ Token expirado');
-          clearAuth();
+          console.warn('Token expirado');
+          logout();
           return false;
         }
         
         setUserAndToken(storedToken);
         return true;
       } catch (error) {
-        console.error('❌ Erro ao verificar token:', error);
-        clearAuth();
+        logout();
         return false;
       }
     }
     return false;
   }
 
-  console.log('🔄 Inicializando auth store...');
+  // --- Getters ---
+  const isAdmin = computed(() => {
+    if (!user.value?.roles) return false;
+    return user.value.roles.some(role => role.toLowerCase() === 'admin');
+  });
+
+  const isAuthenticated = computed(() => !!token.value);
+
+  // Inicialização
   checkAuth();
 
   return { 
-    token, user, loading, error, isAdmin, userRole,
-    login, logout, checkAuth, clearAuth 
+    token, 
+    user, 
+    loading, 
+    error, 
+    isAdmin, 
+    isAuthenticated,
+    login, 
+    logout, 
+    checkAuth 
   };
 });

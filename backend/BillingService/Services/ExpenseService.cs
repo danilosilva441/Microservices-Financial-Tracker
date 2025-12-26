@@ -29,8 +29,8 @@ namespace BillingService.Services
         private readonly ILogger<ExpenseService> _logger;
 
         public ExpenseService(
-            IExpenseRepository expenseRepo, 
-            IUnidadeRepository unidadeRepo, 
+            IExpenseRepository expenseRepo,
+            IUnidadeRepository unidadeRepo,
             BillingDbContext context,
             ILogger<ExpenseService> logger)
         {
@@ -61,9 +61,9 @@ namespace BillingService.Services
 
                 // Verifica se já existe categoria com mesmo nome (usando método disponível)
                 var existingCategories = await _expenseRepo.GetAllCategoriesAsync(tenantId);
-                var existingCategory = existingCategories.FirstOrDefault(c => 
+                var existingCategory = existingCategories.FirstOrDefault(c =>
                     c.Name.Trim().Equals(dto.Name.Trim(), StringComparison.OrdinalIgnoreCase));
-                    
+
                 if (existingCategory != null)
                 {
                     _logger.LogWarning("Categoria já existe: {CategoryName}", dto.Name);
@@ -138,13 +138,13 @@ namespace BillingService.Services
                 }
 
                 var newExpense = CreateExpenseEntity(dto, tenantId);
-                
+
                 await _expenseRepo.AddAsync(newExpense);
                 await _expenseRepo.SaveChangesAsync();
 
                 // Recupera a expense usando o método disponível no repository
                 var result = await _expenseRepo.GetByIdAsync(newExpense.Id, tenantId);
-                
+
                 _logger.LogInformation("Despesa criada com sucesso: {ExpenseId}", newExpense.Id);
                 return (result, null);
             }
@@ -156,7 +156,7 @@ namespace BillingService.Services
         }
 
         public async Task<IEnumerable<Expense>> GetExpensesByUnidadeAsync(Guid unidadeId, Guid tenantId)
-        {
+        {            
             try
             {
                 _logger.LogDebug("Buscando despesas da unidade {UnidadeId}", unidadeId);
@@ -167,6 +167,7 @@ namespace BillingService.Services
                 _logger.LogError(ex, "Erro ao buscar despesas da unidade {UnidadeId}", unidadeId);
                 throw new ExpenseServiceException("Erro ao buscar despesas", ex);
             }
+            
         }
 
         public async Task<Expense?> GetExpenseByIdAsync(Guid expenseId, Guid tenantId)
@@ -211,7 +212,7 @@ namespace BillingService.Services
 
         #region Import Operations
 
-        public async Task<(bool success, string? errorMessage, int processedRows, List<int>? skippedRows)> 
+        public async Task<(bool success, string? errorMessage, int processedRows, List<int>? skippedRows)>
             ImportExpensesAsync(Stream stream, string fileType, Guid tenantId)
         {
             var processedRows = 0;
@@ -261,7 +262,7 @@ namespace BillingService.Services
                 }
 
                 _logger.LogInformation(
-                    "Importação concluída: {Processed} processadas, {Skipped} ignoradas", 
+                    "Importação concluída: {Processed} processadas, {Skipped} ignoradas",
                     processedRows, skippedRows.Count);
 
                 return (true, null, processedRows, skippedRows);
@@ -319,8 +320,8 @@ namespace BillingService.Services
         }
 
         private static (bool isValid, string reason) ValidateImportRow(
-            ExpenseImportDto row, 
-            HashSet<Guid> validUnidadeIds, 
+            ExpenseImportDto row,
+            HashSet<Guid> validUnidadeIds,
             HashSet<Guid> validCategoryIds,
             int rowNumber)
         {
@@ -393,7 +394,7 @@ namespace BillingService.Services
     public class ExpenseServiceException : Exception
     {
         public ExpenseServiceException(string message) : base(message) { }
-        public ExpenseServiceException(string message, Exception innerException) 
+        public ExpenseServiceException(string message, Exception innerException)
             : base(message, innerException) { }
     }
 }

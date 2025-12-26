@@ -26,13 +26,18 @@ namespace BillingService.Controllers
         }
 
         #region Helper Functions
-        //<summary>
-        // Funções helper para extrair UserId e TenantId do token JWT
-        // --- Funções Helper ---
-        //</summary>
         private Guid GetUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // BYPASS PARA ADMIN
+            if (User.IsInRole("Admin"))
+            {
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var adminId))
+                    return Guid.Empty; // Admin System User
+                return adminId;
+            }
+
             if (string.IsNullOrEmpty(userIdClaim))
             {
                 _logger.LogWarning("User ID not found in token");
@@ -51,6 +56,15 @@ namespace BillingService.Controllers
         private Guid GetTenantId()
         {
             var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
+
+            // BYPASS PARA ADMIN
+            if (User.IsInRole("Admin"))
+            {
+                if (string.IsNullOrEmpty(tenant_idClaim) || !Guid.TryParse(tenant_idClaim, out var adminTenant))
+                    return Guid.Empty;
+                return adminTenant;
+            }
+
             if (string.IsNullOrEmpty(tenant_idClaim))
             {
                 _logger.LogWarning("Tenant ID not found in token");

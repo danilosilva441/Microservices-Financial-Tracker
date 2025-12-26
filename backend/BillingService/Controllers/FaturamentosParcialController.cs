@@ -29,6 +29,13 @@ public class FaturamentoParcialController : ControllerBase
     private Guid GetUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        // ADMIN BYPASS
+        if (User.IsInRole("Admin") && (userIdClaim == null || !Guid.TryParse(userIdClaim, out _)))
+        {
+            return Guid.Empty;
+        }
+
         if (userIdClaim == null)
             throw new System.InvalidOperationException("User ID not found in token.");
         return Guid.Parse(userIdClaim);
@@ -37,6 +44,13 @@ public class FaturamentoParcialController : ControllerBase
     private Guid GetTenantId()
     {
         var tenant_idClaim = User.FindFirst("tenant_id")?.Value;
+
+        // ADMIN BYPASS
+        if (User.IsInRole("Admin") && (tenant_idClaim == null || !Guid.TryParse(tenant_idClaim, out _)))
+        {
+            return Guid.Empty;
+        }
+
         if (tenant_idClaim == null)
             throw new System.InvalidOperationException("Tenant ID (tenant_id) not found in token.");
         return Guid.Parse(tenant_idClaim);

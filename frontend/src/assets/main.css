@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Opcional: Estilo suave para transição de tema */
+html {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Garante fundo escuro se o body não tiver classe específica */
+html.dark body {
+  background-color: #0f172a; /* slate-900 */
+  color: #f8fafc; /* slate-50 */
+}
