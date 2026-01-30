@@ -1,4 +1,4 @@
-# DS Systech Platform
+# DS Systech
 
 **Plataforma de Gestão Operacional & Financeira Multi-Tenant (SaaS)**  
 
@@ -136,4 +136,4 @@ Desenvolvedor Full Stack | DevOps & DataOps Enthusiast
 
 ---
 
-*© 2025 DS Systech Platform. Todos os direitos reservados.*
+*© 2025 DS Systech. Todos os direitos reservados.*
