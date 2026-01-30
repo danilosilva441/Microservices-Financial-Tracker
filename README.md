@@ -9,7 +9,7 @@
 
 ## 📖 Visão Geral
 
-O **DSS Systech** é uma plataforma **SaaS (Software as a Service) B2B** desenvolvida para gestão financeira e operacional de múltiplas unidades de negócio.
+O **DS Systech** é uma plataforma **SaaS (Software as a Service) B2B** desenvolvida para gestão financeira e operacional de múltiplas unidades de negócio.
 
 Diferente de um CRUD simples, este projeto implementa uma **arquitetura de microsserviços multi-tenant robusta**, focada em **Isolamento de Dados (Security-by-Default)**, hierarquia de permissões complexa e inteligência de dados em tempo real.
 
