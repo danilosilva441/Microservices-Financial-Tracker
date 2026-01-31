@@ -50,5 +50,34 @@ namespace BillingService.Services.Interfaces
             DateOnly dataFim,
             Guid tenantId);
 
+        #region Fechamento de Caixa
+
+        /// <summary>
+        /// Fecha o caixa do dia (Operador)
+        /// </summary>
+        Task<ResultadoFechamentoDto> FecharCaixaAsync(
+            Guid faturamentoId,
+            decimal valorConferido,
+            string? observacoes,
+            Guid usuarioId);
+
+        /// <summary>
+        /// Registra conferência do caixa (Supervisor/Gerente)
+        /// </summary>
+        Task<bool> RegistrarConferenciaAsync(
+            Guid faturamentoId,
+            bool aprovado,
+            string? observacoes,
+            Guid usuarioId);
+
+        /// <summary>
+        /// Reabre um caixa fechado (Apenas Admin)
+        /// </summary>
+        Task<bool> ReabrirCaixaAsync(
+            Guid faturamentoId,
+            string motivo,
+            Guid usuarioId);
+
+        #endregion
     }
 }

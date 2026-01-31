@@ -17,7 +17,7 @@ namespace AuthService.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.6")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -59,65 +59,65 @@ namespace AuthService.Migrations
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-7890-a1a1-a1a1a1a1a1a1"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8645),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(3972),
                             IsDeleted = false,
                             Name = "User",
                             NormalizedName = "USER",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8650)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(3975)
                         },
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a7-890b-b2b2-b2b2b2b2b2b2"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8767),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4042),
                             IsDeleted = false,
                             Name = "Admin",
                             NormalizedName = "ADMIN",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8768)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4042)
                         },
                         new
                         {
                             Id = new Guid("c3d4e5f6-a7b8-90c1-c3c3-c3c3c3c3c3c3"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8774),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4049),
                             IsDeleted = false,
                             Name = "Dev",
                             NormalizedName = "DEV",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8774)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4050)
                         },
                         new
                         {
                             Id = new Guid("d4e5f6a7-b8c9-01d2-d4d4-d4d4d4d4d4d4"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8778),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4055),
                             IsDeleted = false,
                             Name = "Gerente",
                             NormalizedName = "GERENTE",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8779)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4056)
                         },
                         new
                         {
                             Id = new Guid("e5f6a7b8-c9d0-12e3-e5e5-e5e5e5e5e5e5"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8783),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4062),
                             IsDeleted = false,
                             Name = "Supervisor",
                             NormalizedName = "SUPERVISOR",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8783)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4062)
                         },
                         new
                         {
                             Id = new Guid("f6a7b8c9-d0e1-23f4-f6f6-f6f6f6f6f6f6"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8806),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4069),
                             IsDeleted = false,
                             Name = "Lider",
                             NormalizedName = "LIDER",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8806)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4069)
                         },
                         new
                         {
                             Id = new Guid("a7b8c9d0-e1f2-34a5-a7a7-a7a7a7a7a7a7"),
-                            CreatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8810),
+                            CreatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4074),
                             IsDeleted = false,
                             Name = "Operador",
                             NormalizedName = "OPERADOR",
-                            UpdatedAt = new DateTime(2025, 11, 15, 0, 14, 42, 982, DateTimeKind.Utc).AddTicks(8811)
+                            UpdatedAt = new DateTime(2025, 12, 31, 1, 0, 48, 294, DateTimeKind.Utc).AddTicks(4075)
                         });
                 });
 
@@ -170,11 +170,21 @@ namespace AuthService.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("ReportsToUserId")

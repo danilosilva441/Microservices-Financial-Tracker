@@ -1,65 +1,79 @@
 <script setup>
 import { ref } from 'vue';
-import { useTheme } from '@/composables/useTheme';
 
 const props = defineProps({
-  title: String,
-  isLoading: Boolean
+  timeframe: {
+    type: String,
+    default: 'month'
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
+  }
 });
 
-const emit = defineEmits(['filter-change', 'refresh', 'open-export']);
-const periodo = ref('month');
-const { isDark, toggleTheme } = useTheme(); // Hook do tema
+const emit = defineEmits(['timeframe-change', 'export', 'refresh']);
 
-const updateFilter = () => {
-  emit('filter-change', { periodo: periodo.value });
+const localTimeframe = ref(props.timeframe);
+
+const handleTimeframeChange = () => {
+  emit('timeframe-change', localTimeframe.value);
 };
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-800 dark:text-white transition-colors">{{ title }}</h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400">Visão consolidada das unidades</p>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+    <div class="header-content">
+      <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-dark mb-2 sm:mb-0 modern-title">
+        Dashboard Geral
+      </h1>
+      <p class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
+        Visão geral do desempenho e métricas avançadas de BI
+      </p>
     </div>
-
-    <div class="flex items-center gap-3">
-      
-      <button 
-        @click="toggleTheme"
-        class="p-2.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-yellow-400 hover:shadow-md transition-all"
-        title="Alternar Tema"
-      >
-        <span v-if="isDark">☀️</span>
-        <span v-else>🌙</span>
-      </button>
-
-      <button 
-        @click="$emit('open-export')"
-        class="p-2.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 hover:shadow-md transition-all flex items-center gap-2"
-      >
-        <span>📥</span>
-        <span class="hidden sm:inline text-sm font-medium">Exportar</span>
-      </button>
-
+    <div class="controls-container flex items-center space-x-2 mt-2 sm:mt-0">
       <select 
-        v-model="periodo" 
-        @change="updateFilter"
-        class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+        v-model="localTimeframe" 
+        @change="handleTimeframeChange"
+        :disabled="isLoading"
+        class="modern-select text-xs sm:text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm hover:shadow-md w-full sm:w-auto"
       >
         <option value="month">Este Mês</option>
-        <option value="last_month">Mês Passado</option>
+        <option value="quarter">Este Trimestre</option>
         <option value="year">Este Ano</option>
       </select>
-
       <button 
-        @click="$emit('refresh')"
+        @click="emit('refresh')"
         :disabled="isLoading"
-        class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors disabled:opacity-50"
+        class="modern-button px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-xs sm:text-sm"
       >
-        <span v-if="isLoading">...</span>
-        <span v-else>↻</span>
+        <svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span v-else>Atualizar</span>
+      </button>
+      <button 
+        @click="emit('export')"
+        :disabled="isLoading"
+        class="modern-button px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-xs sm:text-sm"
+      >
+        Exportar BI
       </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+.modern-title {
+  background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.modern-select:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+</style>

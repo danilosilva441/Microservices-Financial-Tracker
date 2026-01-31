@@ -197,14 +197,33 @@ namespace BillingService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ConferidoPorUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateOnly>("Data")
                         .HasColumnType("date");
 
+                    b.Property<DateTime?>("DataConferencia")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataFechamento")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("Diferenca")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("FechadoPorUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("FundoDeCaixa")
                         .HasColumnType("numeric");
+
+                    b.Property<string>("HashAssinatura")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -213,7 +232,14 @@ namespace BillingService.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("ObservacoesConferencia")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StatusCaixa")
                         .HasColumnType("integer");
 
                     b.Property<Guid?>("TenantId")
@@ -229,6 +255,15 @@ namespace BillingService.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<decimal?>("ValorBoletosMensalistas")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ValorConferido")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("ValorTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ValorTotalCalculado")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");

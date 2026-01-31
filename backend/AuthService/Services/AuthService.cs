@@ -35,7 +35,7 @@ namespace AuthService.Services
             _tokenExpiration = TimeSpan.FromHours(8); // Configurável
         }
 
-        public async Task<AuthResult> LoginAsync(UserDto request)
+        public async Task<AuthResult> LoginAsync(LoginDto request)
         {
             using var logScope = _logger.BeginScope("Login attempt for {Email}", request.Email);
             
@@ -207,10 +207,11 @@ namespace AuthService.Services
                 return AuthResult.Fail("Falha ao renovar token.");
             }
         }
+        
 
         #region Métodos Privados
 
-        private AuthResult ValidateLoginInput(UserDto request)
+        private AuthResult ValidateLoginInput(LoginDto request)
         {
             if (request == null)
                 return AuthResult.Fail("Dados de login não podem ser nulos.");

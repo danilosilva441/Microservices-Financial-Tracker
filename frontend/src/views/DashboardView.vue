@@ -1,108 +1,99 @@
-<script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useDashboardStore } from '@/stores/dashboardStore';
-
-// Componentes
-import DashboardHeader from '@/components/dashboard/DashboardHeader.vue';
-import DashboardTabs from '@/components/dashboard/DashboardTabs.vue';
-import BenchmarkCards from '@/components/dashboard/BenchmarkCards.vue'; // ✅ Novo
-import ExportModal from '@/components/common/ExportModal.vue';       // ✅ Novo
-import LoadingState from '@/components/common/LoadingState.vue';
-import ErrorState from '@/components/common/ErrorState.vue';
-
-// Tabs
-import TabGeral from '@/components/dashboard/tabs/TabGeral.vue';
-import TabFinanceiro from '@/components/dashboard/tabs/TabFinanceiro.vue';
-
-const dashboardStore = useDashboardStore();
-const activeTab = ref('geral');
-const showExportModal = ref(false); // ✅ Controle do modal
-
-const filters = ref({ periodo: 'month' });
-
-const refreshData = () => dashboardStore.fetchDashboardData(filters.value);
-
-onMounted(() => refreshData());
-
-const handleTabChange = (tab) => activeTab.value = tab;
-const handleFilterChange = (newFilters) => {
-  filters.value = { ...filters.value, ...newFilters };
-  refreshData();
-};
-
-// Prepara dados para exportação
-const exportData = computed(() => ({
-  kpis: dashboardStore.kpis,
-  // Achata os dados para tabela
-  tableData: dashboardStore.desempenho.todas.map(u => ({
-    Unidade: u.nome,
-    Receita: u.receita,
-    Despesa: u.despesa,
-    Lucro: u.lucro,
-    Status: u.status
-  }))
-}));
-</script>
-
+<!-- src/views/DashboardView.vue -->
 <template>
-  <div class="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 lg:p-8 transition-colors duration-300">
+  <div class="dashboard-view">
+    <div class="dashboard-header">
+      <h1>Dashboard</h1>
+      <p>Bem-vindo, {{ currentUser?.name || 'Usuário' }}!</p>
+    </div>
     
-    <ExportModal 
-      :is-open="showExportModal" 
-      :data-to-export="exportData"
-      @close="showExportModal = false"
-    />
-
-    <DashboardHeader 
-      :title="`Dashboard - ${dashboardStore.period.mesAtual || 'Geral'}`"
-      :is-loading="dashboardStore.isLoading"
-      @filter-change="handleFilterChange"
-      @refresh="refreshData"
-      @open-export="showExportModal = true"
-    />
-
-    <div v-if="dashboardStore.isLoading" class="mt-8">
-      <LoadingState text="Calculando indicadores..." />
-    </div>
-
-    <div v-else-if="dashboardStore.error" class="mt-8">
-      <ErrorState :message="dashboardStore.error" @retry="refreshData" />
-    </div>
-
-    <div v-else class="mt-6">
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3>Visão Geral</h3>
+        </div>
+        <div class="card-body">
+          <p>Aqui ficará o dashboard principal.</p>
+        </div>
+      </div>
       
-      <BenchmarkCards 
-        :kpis="dashboardStore.kpis" 
-        :benchmark="dashboardStore.kpis.benchmark" 
-      />
-
-      <DashboardTabs :active-tab="activeTab" @change="handleTabChange" />
-
-      <div class="bg-white dark:bg-slate-800 rounded-b-xl rounded-tr-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 min-h-[500px] transition-colors">
-        
-        <TabGeral v-if="activeTab === 'geral'" />
-
-        <TabFinanceiro 
-          v-if="activeTab === 'faturamento'"
-          type="receita"
-          title="Detalhamento de Faturamento"
-          color="green"
-        />
-        
-        <TabFinanceiro 
-          v-if="activeTab === 'despesas'"
-          type="despesa"
-          title="Detalhamento de Despesas"
-          color="red"
-        />
-
-        <TabFinanceiro 
-          v-if="activeTab === 'lucros'"
-          type="lucro"
-          title="Análise de Lucratividade"
-          color="blue"
-        />
+      <div class="card">
+        <div class="card-header">
+          <h3>Estatísticas</h3>
+        </div>
+        <div class="card-body">
+          <p>Em desenvolvimento...</p>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<script>
+import { useAuth } from '@/composables/auth/useAuth'
+
+export default {
+  name: 'DashboardView',
+  
+  setup() {
+    const { currentUser } = useAuth()
+    
+    return {
+      currentUser
+    }
+  }
+}
+</script>
+
+<style scoped>
+.dashboard-view {
+  padding: 30px;
+}
+
+.dashboard-header {
+  margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+  font-size: 36px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.dashboard-header p {
+  color: #666;
+  font-size: 18px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-body p {
+  color: #666;
+  margin: 0;
+}
+</style>

@@ -1,60 +1,73 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/authStore';
+// src/router/index.js
+import { createRouter, createWebHistory } from 'vue-router'
+import authRoutes from './auth.routes'
+// Importe outras rotas aqui depois
 
-// Importa os arrays de rotas dos arquivos modulares
-import authRoutes from './routes/auth.routes';
-import dashboardRoutes from './routes/dashboard.routes';
-
-// Junta todos os arrays em um só
-const allRoutes = [
+// Rotas principais
+const routes = [
+  // Rota inicial
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('@/views/HomeView.vue'),
+    meta: { title: 'Home' }
+  },
+  
+  // Rotas de autenticação (vêm do auth.routes.js)
   ...authRoutes,
-  ...dashboardRoutes,
-  // Rota curinga para 404 (Redireciona para dashboard ou login)
-  { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
-];
+  
+  // Rota 404
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('@/views/NotFoundView.vue'),
+    meta: { title: 'Página não encontrada' }
+  }
+]
 
+// Criar router
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: allRoutes,
-  // Opcional: Scroll para o topo ao mudar de rota
+  history: createWebHistory(),
+  routes,
   scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) return savedPosition;
-    return { top: 0 };
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
   }
-});
+})
 
-// --- GUARDA DE NAVEGAÇÃO GLOBAL ---
+// Middleware global (guards)
 router.beforeEach(async (to, from, next) => {
-  // Inicializa a store dentro do guard para evitar problemas de ciclo de vida
-  const authStore = useAuthStore();
+  // Título da página
+  document.title = to.meta.title || 'DS SysTech'
   
-  // Verifica se o token é válido (se tiver lógica de expiração, o checkAuth cuida disso)
-  // Nota: Se você não chamar checkAuth na inicialização do app, pode chamar aqui:
-  // await authStore.checkAuth(); 
-  
-  const isAuthenticated = !!authStore.token;
-
-  // 1. Rota exige Admin e usuário NÃO é admin
-  if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    console.warn('⛔ Acesso de Admin negado.');
-    next({ name: 'dashboard' });
-  } 
-  
-  // 2. Rota exige Autenticação e usuário NÃO está logado
-  else if (to.meta.requiresAuth && !isAuthenticated) {
-    console.log('🔒 Redirecionando para login.');
-    next({ name: 'login', query: { redirect: to.fullPath } });
-  } 
-  
-  // 3. (Opcional) Usuário logado tentando acessar Login
-  else if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'dashboard' });
+  // Verifica se a rota requer autenticação
+  if (to.meta.requiresAuth) {
+    // Aqui você pode adicionar lógica de verificação de token
+    const token = localStorage.getItem('token')
+    
+    if (!token) {
+      // Redireciona para login com redirect
+      next({
+        name: 'login',
+        query: { redirect: to.fullPath }
+      })
+      return
+    }
+    
+    // Se tem token, prossegue
+    next()
+  } else {
+    next()
   }
+})
 
-  // 4. Permitir navegação
-  else {
-    next();
-  }
-});
+// Depois de cada navegação
+router.afterEach((to, from) => {
+  // Aqui você pode adicionar analytics ou outras lógicas
+  console.log(`Navegou de ${from.name} para ${to.name}`)
+})
 
-export default router;
+export default router

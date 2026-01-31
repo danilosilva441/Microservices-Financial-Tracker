@@ -112,60 +112,68 @@ public class UnidadeController : ControllerBase
     /// <summary>
     /// Obtém todas as unidades (Admin: todas, Gerente: apenas do seu tenant)
     /// </summary>
-    /// <returns>Lista de unidades</returns>
+    /// <returns>Lista de unidades com ID e Status</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<UnidadeDto>), (int)HttpStatusCode.OK)]
+    // MUDANÇA 1: Alterado o tipo de retorno no Swagger
+    [ProducesResponseType(typeof(IEnumerable<UnidadeResponseDto>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> GetUnidades()
     {
         try
         {
-            _logger.LogInformation("Iniciando consulta de unidades. Usuário é Admin: {IsAdmin}", IsAdmin());
+            _logger.LogInformation("Iniciando consulta de unidades...");
+
+            // Precisamos garantir que o Service retorne o tipo correto ou mapear aqui
+            IEnumerable<UnidadeResponseDto> resultado;
 
             if (IsAdmin())
             {
-                var todasUnidades = await _unidadeService.GetAllUnidadesAdminAsync();
-                _logger.LogInformation("Admin consultou {Count} unidades", todasUnidades?.Count() ?? 0);
-                return Ok(todasUnidades);
+                // Supondo que seu serviço retorna a Entidade ou outro DTO, 
+                // aqui estamos simulando o mapeamento se o serviço ainda retornar o DTO antigo ou Entidade.
+                // O IDEAL é mudar dentro do Service, mas se quiser resolver rápido no controller:
+                var unidades = await _unidadeService.GetAllUnidadesAdminAsync();
+                
+                // Mapeamento (Exemplo Manual - Ajuste conforme o retorno real do seu serviço)
+                resultado = unidades.Select(u => new UnidadeResponseDto 
+                {
+                    Id = u.Id, // Certifique-se que 'u' tem Id
+                    Nome = u.Nome,
+                    Descricao = u.Descricao,
+                    Endereco = u.Endereco,
+                    MetaMensal = u.MetaMensal,
+                    DataInicio = u.DataInicio,
+                    DataFim = u.DataFim,
+                    IsAtivo = u.DataFim == null || u.DataFim > DateTime.UtcNow // Lógica de exemplo para ativo
+                });
             }
             else
             {
                 var tenant_id = GetTenantId();
                 var unidades = await _unidadeService.GetAllUnidadesByTenantAsync(tenant_id);
-                _logger.LogInformation("Gerente do tenant {TenantId} consultou {Count} unidades", 
-                    tenant_id, unidades?.Count() ?? 0);
-                return Ok(unidades);
+                
+                resultado = unidades.Select(u => new UnidadeResponseDto 
+                {
+                    Id = u.Id,
+                    Nome = u.Nome,
+                    Descricao = u.Descricao,
+                    Endereco = u.Endereco,
+                    MetaMensal = u.MetaMensal,
+                    DataInicio = u.DataInicio,
+                    DataFim = u.DataFim,
+                    IsAtivo = u.DataFim == null || u.DataFim > DateTime.UtcNow
+                });
             }
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex, "Acesso não autorizado ao consultar unidades");
-            return Unauthorized(new ProblemDetails
-            {
-                Title = "Acesso não autorizado",
-                Detail = ex.Message,
-                Status = (int)HttpStatusCode.Unauthorized
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Operação inválida ao consultar unidades");
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Operação inválida",
-                Detail = ex.Message,
-                Status = (int)HttpStatusCode.BadRequest
-            });
+
+            return Ok(resultado);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro inesperado ao consultar unidades");
+            _logger.LogError(ex, "Erro ao consultar unidades");
             return StatusCode((int)HttpStatusCode.InternalServerError, new ProblemDetails
             {
-                Title = "Erro interno do servidor",
-                Detail = "Ocorreu um erro ao processar sua solicitação.",
-                Status = (int)HttpStatusCode.InternalServerError
+                Title = "Erro interno",
+                Detail = ex.Message
             });
         }
     }

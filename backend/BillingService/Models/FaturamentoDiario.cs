@@ -1,62 +1,80 @@
-// Caminho: backend/BillingService/Models/FaturamentoDiario.cs
+// backend/BillingService/Models/FaturamentoDiario.cs (ATUALIZE)
+
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using BillingService.Models; // 1. MUDANÇA: Usando o namespace local
+using BillingService.Models;
 using SharedKernel.Entities;
 
 namespace BillingService.Models
 {
-    // (Boa prática) Definir os status como um Enum
-    // Isso evita erros de digitação (ex: "PENDENTE" vs "Pendente")
     public enum RegistroStatus
     {
-        Pendente,  // Submetido pelo Líder/Operador
-        Aprovado,  // Aprovado pelo Supervisor
-        Rejeitado  // Rejeitado pelo Supervisor
+        Pendente,   // Submetido pelo Líder/Operador
+        Aprovado,   // Aprovado pelo Supervisor
+        Rejeitado,  // Rejeitado pelo Supervisor
+        Fechado,    // Caixa fechado pelo Operador
+        Conferido   // Caixa conferido pelo Supervisor/Gerente
     }
     
-    // 2. MUDANÇA: Herda do BaseEntity local (para ganhar Id e TenantId)
+    // Enum para Status do Caixa (específico para fechamento)
+    public enum StatusCaixa
+    {
+        Aberto,
+        Fechado,
+        Conferido,
+        Enviado
+    }
+    
     public class FaturamentoDiario : BaseEntity 
     {
-        // 3. MUDANÇA: Link para a "Unidade" (novo nome)
         [Required]
         public Guid UnidadeId { get; set; } 
         
         [ForeignKey("UnidadeId")]
-        public virtual Unidade Unidade { get; set; } = null!; // 4. MUDANÇA: Link para a classe Unidade
+        public virtual Unidade Unidade { get; set; } = null!;
 
         [Required]
-        public DateOnly Data { get; set; } // A data consolidada
+        public DateOnly Data { get; set; }
 
-        // 5. MUDANÇA: Usa o Enum para Status (mais seguro)
         [Required]
         public RegistroStatus Status { get; set; } = RegistroStatus.Pendente;
 
-        
-        // --- 6. NOVOS CAMPOS (Baseado nos formulários de papel / Roadmap 4.1) ---
-
-        // Campos preenchidos pelo "Líder" (Operador) no fechamento
+        // Status específico para controle de fechamento
         [Required]
-        public decimal FundoDeCaixa { get; set; } // "Troco Inicial/Fundo de CX"
+        public StatusCaixa StatusCaixa { get; set; } = StatusCaixa.Aberto;
+        
+        // --- Campos preenchidos pelo "Líder" (Operador) ---
+        [Required]
+        public decimal FundoDeCaixa { get; set; }
 
         [MaxLength(500)]
-        public string? Observacoes { get; set; } // Campo "Observações"
+        public string? Observacoes { get; set; }
 
-        // Campos preenchidos (ou editados) APENAS pelo "Supervisor"
+        // --- Campos do Supervisor ---
         public decimal? ValorAtm { get; set; }
         public decimal? ValorBoletosMensalistas { get; set; }
-
         
-        // --- 7. REMOVIDO (Importante) ---
-        // public decimal ValorTotalConsolidado { get; set; }
-        // POR QUÊ? O valor total será a SOMA dos FaturamentosParciais.
-        // O FaturamentoDiario é o "cabeçalho" (a capa do formulário).
-        // Os FaturamentosParciais são os "itens" (PIX, Dinheiro, etc.).
-        // Vamos calcular o total no serviço, não armazená-lo aqui.
-
+        // --- NOVOS CAMPOS PARA FECHAMENTO ---
+        public decimal? ValorTotalCalculado { get; set; } // Soma dos parciais
+        public decimal? ValorConferido { get; set; } // Valor contado pelo operador
+        public decimal? Diferenca { get; set; } // Diferença entre calculado e conferido
+        
+        [MaxLength(64)]
+        public string? HashAssinatura { get; set; } // Hash de segurança
+        
+        public DateTime? DataFechamento { get; set; }
+        public Guid? FechadoPorUserId { get; set; }
+        
+        public DateTime? DataConferencia { get; set; }
+        public Guid? ConferidoPorUserId { get; set; }
+        
+        [MaxLength(500)]
+        public string? ObservacoesConferencia { get; set; }
         
         // --- Propriedade de Navegação ---
-        // Um FaturamentoDiario (dia) possui muitos FaturamentosParciais (turnos/lançamentos)
         public virtual ICollection<FaturamentoParcial> FaturamentosParciais { get; set; } = new List<FaturamentoParcial>();
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ValorTotal { get; set; }
     }
 }

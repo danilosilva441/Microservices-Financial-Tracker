@@ -6,6 +6,10 @@ namespace AuthService.Controllers;
 public class HealthController : ControllerBase
 {
     // Este endpoint é público e não requer autorização.
+    /// <summary>
+    ///    Verifica a saúde da API AuthService 
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("/health")]
     public IActionResult CheckHealth()
     {

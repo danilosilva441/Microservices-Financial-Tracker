@@ -17,6 +17,14 @@ namespace AuthService.Controllers
             _tenantService = tenantService;
         }
 
+        /// <summary>
+        ///     Provisão de uma nova conta de inquilino (tenant) com usuário gerente
+        /// </summary>
+        /// <param name="request">Dados para provisão do tenant</param>
+        /// <returns>Dados da nova conta ou mensagem de erro</returns>
+        /// response code="201">Conta criada com sucesso</response>
+        /// <response code="400">Dados inválidos ou usuário já existe</response>
+        /// <response code="500">Erro interno do servidor relacionado à provisão</response>
         [HttpPost("provision")]
         // [Authorize(Roles = "Dev")] 
         public async Task<IActionResult> ProvisionTenant([FromBody] TenantProvisionDto request)

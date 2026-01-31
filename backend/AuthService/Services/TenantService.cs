@@ -84,10 +84,11 @@ namespace AuthService.Services
                 var newGerente = new User
                 {
                     Id = Guid.NewGuid(),
+                    FullName = "Gerente" + " " + request.NomeCompletoGerente,
                     Email = request.EmailDoGerente.Trim().ToLower(),
                     PasswordHash = passwordHash,
                     TenantId = newTenant.Id,
-                    ReportsToUserId = null,
+                    ReportsToUserId = null, 
                     Roles = new List<Role> { gerenteRole },
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow

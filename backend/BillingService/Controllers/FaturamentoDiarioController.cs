@@ -142,6 +142,183 @@ namespace BillingService.Controllers
         }
         #endregion
 
+        #region Fechar Caixa
+
+        /// <summary>
+        /// (Operador/Líder) Fecha o caixa do dia
+        /// </summary>
+        [HttpPost("{id}/fechar")]
+        [Authorize(Roles = "Admin, Gerente, Supervisor, Lider, Operador")]
+        [ProducesResponseType(typeof(ResultadoFechamentoDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> FecharCaixa(
+            [FromRoute] Guid unidadeId,
+            [FromRoute] Guid id,
+            [FromBody] FecharCaixaDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var tenantId = GetTenantId();
+
+                _logger.LogInformation(
+                    "Tentativa de fechar caixa - Faturamento: {FaturamentoId}, Usuário: {UserId}",
+                    id, userId);
+
+                // Verifica se o faturamento pertence à unidade
+                var faturamento = await _service.GetFechamentoByIdAsync(id, tenantId);
+                if (faturamento == null || faturamento.UnidadeId != unidadeId)
+                {
+                    _logger.LogWarning(
+                        "Faturamento não encontrado ou não pertence à unidade - ID: {FaturamentoId}, Unidade: {UnidadeId}",
+                        id, unidadeId);
+                    return NotFound("Caixa não encontrado.");
+                }
+
+                var resultado = await _service.FecharCaixaAsync(id, dto.ValorConferido, dto.Observacoes, userId);
+
+                if (!resultado.Sucesso)
+                {
+                    _logger.LogWarning("Falha ao fechar caixa: {Mensagem}", resultado.Mensagem);
+                    return BadRequest(resultado.Mensagem);
+                }
+
+                _logger.LogInformation("Caixa fechado com sucesso - ID: {FaturamentoId}", id);
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Erro de autorização ao fechar caixa");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro inesperado ao fechar caixa");
+                return StatusCode(StatusCodes.Status500InternalServerError, "Ocorreu um erro interno.");
+            }
+        }
+
+        #endregion
+
+        #region Conferir Caixa
+
+        /// <summary>
+        /// (Supervisor/Gerente) Confere um caixa fechado
+        /// </summary>
+        [HttpPost("{id}/conferir")]
+        [Authorize(Roles = "Admin, Gerente, Supervisor")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ConferirCaixa(
+            [FromRoute] Guid unidadeId,
+            [FromRoute] Guid id,
+            [FromBody] ConferenciaCaixaDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var tenantId = GetTenantId();
+
+                _logger.LogInformation(
+                    "Tentativa de conferir caixa - Faturamento: {FaturamentoId}, Usuário: {UserId}",
+                    id, userId);
+
+                // Verifica se o faturamento pertence à unidade
+                var faturamento = await _service.GetFechamentoByIdAsync(id, tenantId);
+                if (faturamento == null || faturamento.UnidadeId != unidadeId)
+                {
+                    _logger.LogWarning(
+                        "Faturamento não encontrado ou não pertence à unidade - ID: {FaturamentoId}, Unidade: {UnidadeId}",
+                        id, unidadeId);
+                    return NotFound("Caixa não encontrado.");
+                }
+
+                var sucesso = await _service.RegistrarConferenciaAsync(id, dto.Aprovado, dto.Observacoes, userId);
+
+                if (!sucesso)
+                {
+                    _logger.LogWarning("Falha ao conferir caixa: {FaturamentoId}", id);
+                    return BadRequest("Não foi possível realizar a conferência.");
+                }
+
+                _logger.LogInformation("Caixa conferido com sucesso - ID: {FaturamentoId}", id);
+                return Ok(new { message = "Conferência registrada com sucesso." });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Erro de autorização ao conferir caixa");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro inesperado ao conferir caixa");
+                return BadRequest(ex.Message);
+            }
+        }
+
+        #endregion
+
+        #region Reabrir Caixa
+
+        /// <summary>
+        /// (Admin) Reabre um caixa fechado
+        /// </summary>
+        [HttpPost("{id}/reabrir")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ReabrirCaixa(
+            [FromRoute] Guid unidadeId,
+            [FromRoute] Guid id,
+            [FromBody] ReabrirCaixaDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var tenantId = GetTenantId();
+
+                _logger.LogInformation(
+                    "Tentativa de reabrir caixa - Faturamento: {FaturamentoId}, Usuário: {UserId}",
+                    id, userId);
+
+                // Verifica se o faturamento pertence à unidade
+                var faturamento = await _service.GetFechamentoByIdAsync(id, tenantId);
+                if (faturamento == null || faturamento.UnidadeId != unidadeId)
+                {
+                    _logger.LogWarning(
+                        "Faturamento não encontrado ou não pertence à unidade - ID: {FaturamentoId}, Unidade: {UnidadeId}",
+                        id, unidadeId);
+                    return NotFound("Caixa não encontrado.");
+                }
+
+                var sucesso = await _service.ReabrirCaixaAsync(id, dto.Motivo, userId);
+
+                if (!sucesso)
+                {
+                    _logger.LogWarning("Falha ao reabrir caixa: {FaturamentoId}", id);
+                    return BadRequest("Não foi possível reabrir o caixa.");
+                }
+
+                _logger.LogInformation("Caixa reaberto com sucesso - ID: {FaturamentoId}", id);
+                return Ok(new { message = "Caixa reaberto com sucesso." });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Erro de autorização ao reabrir caixa");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro inesperado ao reabrir caixa");
+                return BadRequest(ex.Message);
+            }
+        }
+
+        #endregion
+
         #region Get Pending Closings
         /// <summary>
         /// (Supervisor) Lista todos os fechamentos pendentes no seu Tenant.

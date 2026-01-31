@@ -23,20 +23,43 @@ export function useUnidadeDetalhes() {
   };
 
   const addFaturamento = async (data) => {
-    // ✅ CORREÇÃO: Removemos o override da origem. 
-    // Passamos o 'data' puro, pois o formulário já manda tudo correto.
-    await store.addFaturamento(route.params.id, data);
+    // ✅ Adiciona a data de hoje automaticamente
+    const hoje = new Date().toISOString().split('T')[0];
+    const dadosCompletos = {
+      ...data,
+      data: hoje,
+      unidadeId: route.params.id
+    };
+    
+    const result = await store.addFaturamento(route.params.id, dadosCompletos);
+    
+    if (!result.success) {
+      alert(result.error || 'Erro ao adicionar faturamento');
+    }
+    
+    return result;
   };
 
   const deleteFaturamento = async (id) => {
     if (confirm('Apagar este faturamento?')) {
-      await store.deleteFaturamento(store.unidadeAtual.id, id);
+      const result = await store.deleteFaturamento(route.params.id, id);
+      
+      if (!result.success) {
+        alert(result.error || 'Erro ao remover faturamento');
+      }
+      
+      return result;
     }
   };
 
   // Lifecycle
   onMounted(loadData);
-  watch(() => route.params.id, loadData);
+  
+  watch(() => route.params.id, (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      loadData();
+    }
+  });
 
   return {
     unidade: computed(() => store.unidadeAtual),

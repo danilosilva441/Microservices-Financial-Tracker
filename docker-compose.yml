@@ -77,8 +77,8 @@ services:
       PORT: 3000
       SYSTEM_EMAIL: ${SYSTEM_EMAIL}
       SYSTEM_PASSWORD: ${SYSTEM_PASSWORD}
-      AUTH_SERVICE_URL: http://auth_service:8080
-      BILLING_SERVICE_URL: http://billing_service:8080
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_HOST}:${AUTH_SERVICE_PORT}
+      BILLING_SERVICE_URL: ${BILLING_SERVICE_HOST}:${BILLING_SERVICE_PORT}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
       interval: 15s

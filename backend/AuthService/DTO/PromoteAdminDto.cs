@@ -1,9 +1,11 @@
-// Caminho: backend/AuthService/DTO/PromoteAdminDto.cs
+using System.ComponentModel.DataAnnotations;
+
 namespace AuthService.DTO
 {
-    // DTO usado pelo AdminController e pelo script create-system-user.sh
     public class PromoteAdminDto
     {
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
     }
 }

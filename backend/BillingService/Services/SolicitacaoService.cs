@@ -20,9 +20,9 @@ public class SolicitacaoService : ISolicitacaoService
     private const string STATUS_APROVADA = "APROVADA";
     private const string STATUS_REJEITADA = "REJEITADA";
     private const string STATUS_CANCELADA = "CANCELADA";
-    private const string TIPO_REMOCAO = "remocao";
-    private const string TIPO_ALTERACAO = "alteracao";
-    private const string TIPO_ADICAO = "adicao";
+    private const string TIPO_REMOCAO = "REMOCAO";
+    private const string TIPO_ALTERACAO = "ALTERACAO";
+    private const string TIPO_ADICAO = "ADICAO";
 
     public SolicitacaoService(
         ISolicitacaoRepository solicitacaoRepository,

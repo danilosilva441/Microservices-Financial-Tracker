@@ -1,38 +1,73 @@
 // Caminho: backend/BillingService/Services/UnidadeService.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using BillingService.DTOs;
 using BillingService.Models;
 using BillingService.Repositories.Interfaces;
-using BillingService.Services.Interfaces;
+using BillingService.Data;
+
+
 
 namespace BillingService.Services;
 
-public class UnidadeService : IUnidadeService
+public class UnidadeService : Interfaces.IUnidadeService
 {
     private readonly IUnidadeRepository _repository;
+    private readonly BillingDbContext _context;
     private readonly ILogger<UnidadeService> _logger; // Adicionando logging
 
-    public UnidadeService(IUnidadeRepository repository, ILogger<UnidadeService> logger)
+    public UnidadeService(IUnidadeRepository repository, ILogger<UnidadeService> logger, BillingDbContext context)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task<IEnumerable<Unidade>> GetAllUnidadesByTenantAsync(Guid tenantId)
+       public async Task<IEnumerable<UnidadeResponseDto>> GetAllUnidadesByTenantAsync(Guid tenantId)
     {
-        if (tenantId == Guid.Empty)
-        {
-            throw new ArgumentException("TenantId não pode ser vazio", nameof(tenantId));
-        }
-
         _logger.LogInformation("Buscando unidades para o tenant {TenantId}", tenantId);
-        return await _repository.GetAllAsync(tenantId);
+        
+        return await _context.Unidades
+            .AsNoTracking()
+            .Where(u => u.TenantId == tenantId)
+            .Select(u => new UnidadeResponseDto
+            {
+                Id = u.Id,
+                Nome = u.Nome,
+                Descricao = u.Descricao,
+                Endereco = u.Endereco,
+                MetaMensal = u.MetaMensal,
+                DataInicio = u.DataInicio,
+                DataFim = u.DataFim,
+                IsAtivo = u.DataFim == null || u.DataFim > DateTime.UtcNow
+            })
+            .ToListAsync();
     }
 
-    public async Task<IEnumerable<Unidade>> GetAllUnidadesAdminAsync()
+    public async Task<IEnumerable<UnidadeResponseDto>> GetAllUnidadesAdminAsync()
     {
         _logger.LogInformation("Buscando todas as unidades (admin)");
-        return await _repository.GetAllAdminAsync();
+        
+        return await _context.Unidades
+            .AsNoTracking()
+            .Select(u => new UnidadeResponseDto
+            {
+                Id = u.Id,
+                Nome = u.Nome,
+                Descricao = u.Descricao,
+                Endereco = u.Endereco,
+                MetaMensal = u.MetaMensal,
+                DataInicio = u.DataInicio,
+                DataFim = u.DataFim,
+                IsAtivo = u.DataFim == null || u.DataFim > DateTime.UtcNow
+            })
+            .ToListAsync();
     }
+
 
     public async Task<Unidade> CreateUnidadeAsync(UnidadeDto unidadeDto, Guid userId, Guid tenantId)
     {

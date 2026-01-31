@@ -17,8 +17,15 @@ public class TokenController : ControllerBase
         _authService = authService;
     }
 
+    /// <summary>
+    ///     Gera um token JWT para autenticação do utilizador
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
     [HttpPost] // POST /api/token
-    public async Task<IActionResult> Login([FromBody] UserDto request)
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Login([FromBody] LoginDto request)
     {
         var result = await _authService.LoginAsync(request);
 

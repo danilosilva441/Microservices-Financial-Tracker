@@ -1,132 +1,135 @@
+<!-- components/FaturamentoForm.vue -->
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 
 const emit = defineEmits(['submit']);
 
 const form = ref({
-  valor: '',
   origem: '',
-  metodoPagamentoId: 'Dinheiro',
-  dataHora: '' // Novo campo para data/hora manual
+  descricao: '',
+  valor: 0,
+  formaPagamento: 'dinheiro',
+  // Campo responsavel REMOVIDO - será preenchido automaticamente
+  observacoes: ''
 });
 
-// Opções do Enum
-const metodosPagamento = [
-  { label: 'Dinheiro', value: 'Dinheiro' },
-  { label: 'Pix', value: 'Pix' },
-  { label: 'Cartão de Crédito', value: 'CartaoCredito' },
-  { label: 'Cartão de Débito', value: 'CartaoDebito' },
-  { label: 'Vale Refeição', value: 'ValeRefeicao' },
-  { label: 'Outros', value: 'Outros' }
+const formasPagamento = [
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'cartao_credito', label: 'Cartão de Crédito' },
+  { value: 'cartao_debito', label: 'Cartão de Débito' },
+  { value: 'pix', label: 'PIX' },
+  { value: 'transferencia', label: 'Transferência' }
 ];
 
-// Inicializa o campo de data com "Agora" (formato local para o input datetime-local)
-onMounted(() => {
-  resetForm();
-});
-
-const resetForm = () => {
-  const agora = new Date();
-  // Ajuste para o fuso horário local no input datetime-local
-  agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
-  
-  form.value = {
-    valor: '',
-    origem: '',
-    metodoPagamentoId: 'Dinheiro',
-    dataHora: agora.toISOString().slice(0, 16) // Formato YYYY-MM-DDTHH:mm
-  };
-};
-
 const handleSubmit = () => {
-  if (!form.value.valor || !form.value.origem || !form.value.dataHora) {
-    alert('Preencha todos os campos.');
+  if (!form.value.origem || form.value.valor <= 0) {
+    alert('Preencha origem e valor corretamente');
     return;
   }
 
-  // 1. Pega a hora de início escolhida pelo operador
-  const dataInicio = new Date(form.value.dataHora);
-  
-  // 2. Adiciona 1 minuto para a hora fim (Para evitar o erro do backend)
-  const dataFim = new Date(dataInicio.getTime() + 60000); // + 60.000ms (1 min)
+  emit('submit', {
+    ...form.value,
+    dataHora: new Date().toISOString(),
+    valor: parseFloat(form.value.valor)
+    // responsavel será adicionado automaticamente no composable
+  });
 
-  const payload = {
-    valor: parseFloat(form.value.valor),
-    horaInicio: dataInicio.toISOString(),
-    horaFim: dataFim.toISOString(),
-    metodoPagamentoId: form.value.metodoPagamentoId,
-    origem: form.value.origem.toUpperCase()
+  // Reset form
+  form.value = {
+    origem: '',
+    descricao: '',
+    valor: 0,
+    formaPagamento: 'dinheiro',
+    observacoes: ''
   };
-
-  console.log('📤 Payload Ajustado:', payload);
-
-  emit('submit', payload);
-  resetForm(); // Limpa e reseta a hora para "agora"
 };
 </script>
 
 <template>
-  <form @submit.prevent="handleSubmit" class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-    
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-      
+  <form @submit.prevent="handleSubmit" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Origem -->
       <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data/Hora</label>
-        <input 
-          v-model="form.dataHora" 
-          type="datetime-local" 
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Origem *
+        </label>
+        <input
+          v-model="form.origem"
+          type="text"
           required
+          placeholder="Ex: ROTATIVO, 755, AVULSO"
+          class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
         />
       </div>
 
+      <!-- Valor -->
       <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label>
-        <div class="relative">
-          <span class="absolute left-3 top-2 text-slate-400">R$</span>
-          <input 
-            v-model="form.valor" 
-            type="number" step="0.01" min="0" 
-            class="w-full pl-9 pr-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700 dark:text-white"
-            placeholder="0.00"
-            required
-          />
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Origem / Descrição</label>
-        <input 
-          v-model="form.origem" 
-          type="text" 
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none uppercase"
-          placeholder="EX: AVULSO"
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Valor (R$) *
+        </label>
+        <input
+          v-model="form.valor"
+          type="number"
+          step="0.01"
+          min="0"
           required
+          placeholder="0,00"
+          class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
         />
       </div>
+    </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Forma de Pagamento -->
       <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pagamento</label>
-        <select 
-          v-model="form.metodoPagamentoId" 
-          class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Forma de Pagamento
+        </label>
+        <select
+          v-model="form.formaPagamento"
+          class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
         >
-          <option v-for="metodo in metodosPagamento" :key="metodo.value" :value="metodo.value">
-            {{ metodo.label }}
+          <option v-for="fp in formasPagamento" :key="fp.value" :value="fp.value">
+            {{ fp.label }}
           </option>
         </select>
       </div>
 
+      <!-- Descrição -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Descrição
+        </label>
+        <input
+          v-model="form.descricao"
+          type="text"
+          placeholder="Breve descrição"
+          class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+        />
+      </div>
     </div>
 
-    <div class="mt-4 flex justify-end">
-      <button 
-        type="submit" 
-        class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg transition-colors shadow-md active:transform active:scale-95 flex items-center justify-center gap-2"
+    <!-- Observações -->
+    <div>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+        Observações
+      </label>
+      <textarea
+        v-model="form.observacoes"
+        rows="2"
+        placeholder="Observações adicionais..."
+        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+      ></textarea>
+    </div>
+
+    <!-- Botão -->
+    <div class="pt-2">
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors shadow-sm"
       >
-        <span>+</span> Lançar Entrada
+        Adicionar Lançamento
       </button>
     </div>
-
   </form>
 </template>

@@ -112,17 +112,24 @@ class DashboardCalculator {
         const desempenhoUnidades = unidades.map(unidade => {
             const dados = dadosPorUnidade[unidade.id] || { fechamentos: [], despesas: [] };
 
-            // Filtra apenas fechamentos APROVADOS (dinheiro garantido)
-            const fechamentosAprovados = (dados.fechamentos || []).filter(f =>
-                f && f.status === "Aprovado" && f.valorTotalParciais
+            // Filtra apenas fechamentos válidos (Fechados ou Aprovados)
+            const fechamentosValidos = (dados.fechamentos || []).filter(f =>
+                f.valorTotal > 0 // Usa o campo novo direto!
+            );
+
+            // Filtra fechamentos APROVADOS (se esse campo existir)
+            // Se não houver campo 'status', use fechamentosValidos como fechamentosAprovados
+            const fechamentosAprovados = fechamentosValidos.filter(f =>
+                f.status === 'APROVADO' || f.status === 'FECHADO' || !f.status
             );
 
             // Adiciona ao pool global
             totalFechamentos = totalFechamentos.concat(fechamentosAprovados);
 
             // Cálculos da Unidade
-            const receitaUnidade = fechamentosAprovados.reduce((total, f) =>
-                total + parseFloat(f.valorTotalParciais || 0), 0
+            // Soma direta usando o novo campo
+            const receitaUnidade = fechamentosValidos.reduce((total, f) =>
+                total + (f.valorTotal || 0), 0
             );
 
             const despesasValidas = (dados.despesas || []).filter(d => d && d.amount);

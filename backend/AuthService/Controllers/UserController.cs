@@ -22,6 +22,35 @@ public class UsersController : ControllerBase
     #region Public Endpoints
 
     /// <summary>
+    /// Retorna os dados do utilizador logado (Usado pelo Frontend ao iniciar)
+    /// </summary>
+    /// <returns>Dados do utilizador ou mensagem de erro</returns>
+    /// <response code="200">Dados do utilizador retornados com sucesso</response>
+    /// <response code="401">Token de autenticação inválido ou ausente</response>
+    /// response code="404">Utilizador não encontrado</response>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMe()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var result = await _userService.GetUserByIdAsync(userId);
+
+        if (!result.Success)
+            return NotFound(result.ErrorMessage);
+
+        return Ok(result.Data);
+    }
+    #endregion
+
+
+
+    /// <summary>
     /// Regista um novo utilizador no sistema (público para Devs/Admins)
     /// </summary>
     /// <param name="request">Dados do utilizador a registar</param>
@@ -30,13 +59,24 @@ public class UsersController : ControllerBase
     /// <response code="400">Dados inválidos ou erro de validação</response>
     /// <response code="500">Erro interno do servidor relacionado ao perfil</response>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(LoginDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Register([FromBody] UserDto request)
+    public async Task<IActionResult> Register([FromBody] CreateTenantUserDto request)
     {
         try
         {
+            // Garante que a role é "Dev" para registro público
+            if (string.IsNullOrEmpty(request.RoleName))
+            {
+                request.RoleName = "Dev";
+            }
+            else if (!request.RoleName.Equals("Dev", StringComparison.OrdinalIgnoreCase))
+            {
+                // Opcional: restringir para apenas "Dev" no registro público
+                return BadRequest("No registro público, apenas o perfil 'Dev' é permitido.");
+            }
+
             var result = await _userService.RegisterAsync(request);
 
             if (!result.Success)
@@ -53,7 +93,6 @@ public class UsersController : ControllerBase
         }
     }
 
-    #endregion
 
     #region Tenant Management Endpoints
 
@@ -70,9 +109,10 @@ public class UsersController : ControllerBase
     /// <response code="400">Dados inválidos ou erro de validação</response>
     /// <response code="401">Token de autenticação inválido ou ausente</response>
     /// <response code="403">Permissão negada ou perfil não autorizado</response>
+    /// <response code="500">Erro interno do servidor</response>
     [HttpPost("tenant-user")]
     [Authorize(Roles = "Gerente")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(LoginDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
@@ -89,8 +129,8 @@ public class UsersController : ControllerBase
 
             // Delegar lógica para o serviço
             var serviceResult = await _userService.CreateTenantUserAsync(
-                request, 
-                claimsValidation.managerId!.Value, 
+                request,
+                claimsValidation.managerId!.Value,
                 claimsValidation.tenantId!.Value
             );
 
@@ -110,11 +150,59 @@ public class UsersController : ControllerBase
 
     #endregion
 
+    #region System User Management Endpoints
+    /// <summary>
+    /// Cria um usuário de sistema (Admin ou System) usando uma chave de segurança
+    /// </summary>
+    /// <param name="dto">Dados do usuário de sistema a criar</param>
+    /// <returns>Dados do usuário criado ou mensagem de erro</returns>
+    /// <response code="201">Usuário de sistema criado com sucesso</response>
+    /// <response code="400">Dados inválidos ou erro de validação</response>
+    /// <response code="403">Chave de segurança inválida</response>
+    /// <response code="500">Erro interno do servidor</response>
+    [HttpPost("system-user")]
+    [AllowAnonymous] // Precisa ser anônimo pois é o script inicial que vai chamar
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateSystemUser([FromBody] CreateSystemUserDto dto)
+    {
+        try
+        {
+            var user = await _userService.CreateSystemUserAsync(dto);
+
+            // Retorna 201 Created sem expor dados sensíveis
+            return CreatedAtAction(nameof(GetMe), new { id = user.Id }, new
+            {
+                user.Id,
+                user.Email,
+                user.Roles,
+                Message = "Usuário de sistema criado com sucesso."
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { error = ex.Message }); // Forbidden se a chave estiver errada
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message }); // Erro se já existir
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao criar usuário de sistema");
+            return StatusCode(500, new { error = "Erro interno ao criar usuário de sistema." });
+        }
+    }
+    #endregion
+
     #region Private Helper Methods
 
     /// <summary>
     /// Valida as claims do utilizador autenticado
     /// </summary>
+    /// <returns>Tupla indicando validade, ManagerId, TenantId e possível erro HTTP</returns>
     private (bool isValid, Guid? managerId, Guid? tenantId, IActionResult? errorResult) ValidateUserClaims()
     {
         // Extrair e validar ManagerId
@@ -125,8 +213,8 @@ public class UsersController : ControllerBase
         }
 
         // Extrair TenantId (suporta múltiplos nomes de claim)
-        var tenantIdValue = User.FindFirst("tenant_id")?.Value 
-                          ?? User.FindFirst("tenantId")?.Value 
+        var tenantIdValue = User.FindFirst("tenant_id")?.Value
+                          ?? User.FindFirst("tenantId")?.Value
                           ?? User.FindFirst("TenantId")?.Value;
 
         // Validar TenantId
@@ -156,15 +244,15 @@ public class UsersController : ControllerBase
         }
 
         // Mapear mensagens de erro para códigos HTTP apropriados
-        if (result.ErrorMessage.Contains("Perfil", StringComparison.OrdinalIgnoreCase) || 
+        if (result.ErrorMessage.Contains("Perfil", StringComparison.OrdinalIgnoreCase) ||
             result.ErrorMessage.Contains("perfil", StringComparison.OrdinalIgnoreCase) ||
-            result.ErrorMessage.Contains("Permissão", StringComparison.OrdinalIgnoreCase) || 
+            result.ErrorMessage.Contains("Permissão", StringComparison.OrdinalIgnoreCase) ||
             result.ErrorMessage.Contains("permissão", StringComparison.OrdinalIgnoreCase))
         {
             return StatusCode(403, result.ErrorMessage);
         }
 
-        if (result.ErrorMessage.Contains("inexistente", StringComparison.OrdinalIgnoreCase) || 
+        if (result.ErrorMessage.Contains("inexistente", StringComparison.OrdinalIgnoreCase) ||
             result.ErrorMessage.Contains("não encontrado", StringComparison.OrdinalIgnoreCase) ||
             result.ErrorMessage.Contains("não existe", StringComparison.OrdinalIgnoreCase))
         {
@@ -175,7 +263,6 @@ public class UsersController : ControllerBase
         {
             return StatusCode(500, result.ErrorMessage);
         }
-
         return BadRequest(result.ErrorMessage);
     }
 

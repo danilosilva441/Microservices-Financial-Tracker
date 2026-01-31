@@ -1,93 +1,91 @@
+<!-- components/faturamento/FechamentoModal.vue -->
 <script setup>
-import { ref, computed } from 'vue';
-import { formatCurrency } from '@/utils/formatters';
+import { computed } from 'vue';
 
 const props = defineProps({
-  isVisible: Boolean,
-  resumo: { type: Object, required: true }, // Total calculado pelo sistema
-  isLoading: Boolean
+    isVisible: Boolean,
+    resumo: Object,
+    isLoading: Boolean,
+    // Novo prop: usuário atual
+    usuarioAtual: {
+        type: Object,
+        default: () => ({ nome: 'Operador' })
+    }
 });
 
 const emit = defineEmits(['close', 'confirm']);
 
-const form = ref({
-  fundoDeCaixa: '', // Dinheiro que sobra para o dia seguinte
-  observacoes: ''
-});
+const observacoes = ref('');
 
-// Diferença (Apenas visual, se tivéssemos o valor em dinheiro separado)
-const totalEsperado = computed(() => props.resumo.total);
+const handleConfirm = () => {
+    emit('confirm', {
+        observacoes: observacoes.value
+        // responsavel será preenchido automaticamente no composable
+    });
 
-const handleSubmit = () => {
-  emit('confirm', {
-    fundoDeCaixa: parseFloat(form.value.fundoDeCaixa || 0),
-    observacoes: form.value.observacoes
-  });
+    observacoes.value = '';
 };
 </script>
 
 <template>
-  <div v-if="isVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-fade-in">
-      
-      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Fechar Caixa do Dia</h3>
-        <button @click="$emit('close')" class="text-slate-400 hover:text-red-500">✕</button>
-      </div>
+    <div v-if="isVisible" class="fixed inset-0 z-50 overflow-y-auto">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-black/50" @click="$emit('close')"></div>
 
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-5">
-        
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
-          <p class="text-sm text-blue-600 dark:text-blue-300 font-medium mb-1">Total Lançado Hoje</p>
-          <p class="text-2xl font-bold text-blue-800 dark:text-blue-100">{{ formatCurrency(totalEsperado) }}</p>
-          <p class="text-xs text-blue-500 mt-1">Este valor será consolidado ao confirmar.</p>
-        </div>
+        <!-- Modal -->
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+                <!-- Header -->
+                <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white">
+                        Fechar Caixa
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Confirme as informações para fechar o caixa do dia
+                    </p>
+                </div>
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Fundo de Caixa (Troco Final)
-          </label>
-          <div class="relative">
-            <span class="absolute left-3 top-2.5 text-slate-400">R$</span>
-            <input 
-              v-model="form.fundoDeCaixa" 
-              type="number" step="0.01" min="0"
-              class="w-full pl-10 pr-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
-              placeholder="0,00"
-              required 
-            />
-          </div>
-          <p class="text-xs text-slate-500 mt-1">Valor em dinheiro que ficará na gaveta para amanhã.</p>
-        </div>
+                <!-- Conteúdo -->
+                <div class="p-6">
+                    <!-- Resumo -->
+                    <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Total do dia:</p>
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {{ resumo.total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00' }}
+                        </p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {{ resumo.quantidade || 0 }} lançamento(s)
+                        </p>
+                    </div>
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Observações</label>
-          <textarea 
-            v-model="form.observacoes" 
-            rows="3"
-            class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-            placeholder="Alguma divergência ou nota importante..."
-          ></textarea>
-        </div>
+                    <!-- Observações -->
+                    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                            Fechamento será realizado por:
+                        </p>
+                        <p class="font-medium text-slate-800 dark:text-white">
+                            {{ usuarioAtual.nome }}
+                            <span
+                                class="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded ml-2">
+                                Você
+                            </span>
+                        </p>
+                    </div>
+                </div>
 
-        <div class="flex gap-3 pt-2">
-          <button 
-            type="button" 
-            @click="$emit('close')"
-            class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            :disabled="isLoading"
-            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex justify-center items-center gap-2"
-          >
-            <span v-if="isLoading">Processando...</span>
-            <span v-else>Confirmar Fechamento</span>
-          </button>
+                <!-- Footer -->
+                <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                    <button @click="$emit('close')" :disabled="isLoading"
+                        class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50">
+                        Cancelar
+                    </button>
+                    <button @click="handleConfirm" :disabled="isLoading"
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span v-if="isLoading">Processando...</span>
+                        <span v-else>Confirmar Fechamento</span>
+                    </button>
+                </div>
+            </div>
         </div>
-      </form>
     </div>
-  </div>
 </template>

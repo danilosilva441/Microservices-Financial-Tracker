@@ -6,6 +6,10 @@ using SharedKernel;
 using SharedKernel.Exceptions;
 using BillingService.Services.Exceptions;
 using Microsoft.Extensions.Logging;
+using System.Text;
+using System.Security.Cryptography;
+using BillingService.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BillingService.Services
 {
@@ -14,15 +18,18 @@ namespace BillingService.Services
         private readonly IFaturamentoDiarioRepository _repository;
         private readonly IUnidadeRepository _unidadeRepository;
         private readonly ILogger<FaturamentoDiarioService> _logger;
+        private readonly BillingDbContext _context;
 
         public FaturamentoDiarioService(
             IFaturamentoDiarioRepository repository,
             IUnidadeRepository unidadeRepository,
-            ILogger<FaturamentoDiarioService> logger)
+            ILogger<FaturamentoDiarioService> logger,
+            BillingDbContext context)
         {
             _repository = repository;
             _unidadeRepository = unidadeRepository;
             _logger = logger;
+            _context = context;
         }
 
         public async Task<(FaturamentoDiarioResponseDto? dto, string? errorMessage)> SubmeterFechamentoAsync(
@@ -244,12 +251,21 @@ namespace BillingService.Services
                 UnidadeId = fechamento.UnidadeId,
                 Data = fechamento.Data,
                 Status = fechamento.Status.ToString(),
+                StatusCaixa = fechamento.StatusCaixa.ToString(), // Novo
                 FundoDeCaixa = fechamento.FundoDeCaixa,
                 Observacoes = fechamento.Observacoes,
                 ValorAtm = fechamento.ValorAtm,
                 ValorBoletosMensalistas = fechamento.ValorBoletosMensalistas,
+                ValorTotalCalculado = fechamento.ValorTotalCalculado,
+                ValorConferido = fechamento.ValorConferido,
+                Diferenca = fechamento.Diferenca,
+                HashAssinatura = fechamento.HashAssinatura,
+                DataFechamento = fechamento.DataFechamento,
+                DataConferencia = fechamento.DataConferencia,
+                ObservacoesConferencia = fechamento.ObservacoesConferencia,
+                FechadoPorUserId = fechamento.FechadoPorUserId,
+                ConferidoPorUserId = fechamento.ConferidoPorUserId,
                 ValorTotalParciais = CalculateValorTotalParciais(fechamento.FaturamentosParciais)
-                // Removidos CriadoEm e AtualizadoEm pois não existem no DTO
             };
         }
 
@@ -314,11 +330,11 @@ namespace BillingService.Services
             return null;
         }
 
-         public async Task<IEnumerable<FaturamentoDiario>> GetFechamentosPorDataAsync(
-            Guid unidadeId, 
-            DateOnly dataInicio, 
-            DateOnly dataFim, 
-            Guid tenantId)
+        public async Task<IEnumerable<FaturamentoDiario>> GetFechamentosPorDataAsync(
+           Guid unidadeId,
+           DateOnly dataInicio,
+           DateOnly dataFim,
+           Guid tenantId)
         {
             try
             {
@@ -348,5 +364,220 @@ namespace BillingService.Services
                 throw;
             }
         }
+
+        #region Fechamento de Caixa
+
+        /// <summary>
+        /// Fecha o caixa do dia (Operador)
+        /// </summary>
+        public async Task<ResultadoFechamentoDto> FecharCaixaAsync(
+            Guid faturamentoId,
+            decimal valorConferido,
+            string? observacoes,
+            Guid usuarioId)
+        {
+            try
+            {
+                _logger.LogInformation("Iniciando fechamento de caixa {FaturamentoId}", faturamentoId);
+
+                // Busca o faturamento com todos os relacionamentos necessários
+                var faturamento = await _context.FaturamentosDiarios
+                    .Include(f => f.FaturamentosParciais)
+                    .FirstOrDefaultAsync(f => f.Id == faturamentoId);
+
+                if (faturamento == null)
+                {
+                    _logger.LogWarning("Faturamento não encontrado: {FaturamentoId}", faturamentoId);
+                    return new ResultadoFechamentoDto
+                    {
+                        Sucesso = false,
+                        Mensagem = "Caixa não encontrado."
+                    };
+                }
+
+                // Verifica se o caixa já está fechado
+                if (faturamento.StatusCaixa != StatusCaixa.Aberto)
+                {
+                    _logger.LogWarning("Tentativa de fechar caixa já fechado: {FaturamentoId}", faturamentoId);
+                    return new ResultadoFechamentoDto
+                    {
+                        Sucesso = false,
+                        Mensagem = "Este caixa já está fechado."
+                    };
+                }
+
+                // --- MUDANÇA PRINCIPAL AQUI ---
+                // 1. Calcula o total (Adicionei o filtro IsAtivo para segurança)
+                decimal valorTotalParciais = faturamento.FaturamentosParciais?
+                    .Where(fp => fp.IsAtivo) // Garante que só somamos os ativos
+                    .Sum(fp => fp.Valor) ?? 0m;
+
+                decimal diferenca = valorConferido - valorTotalParciais;
+
+                // 2. Atualiza o faturamento
+                // Preenchemos a NOVA PROPRIEDADE para o AnalysisService ler rápido
+                faturamento.ValorTotal = valorTotalParciais;
+
+                // Mantemos a sua propriedade antiga se você usa para exibição interna
+                faturamento.ValorTotalCalculado = valorTotalParciais;
+
+                faturamento.ValorConferido = valorConferido;
+                faturamento.Diferenca = diferenca;
+                faturamento.Observacoes = observacoes;
+                faturamento.StatusCaixa = StatusCaixa.Fechado;
+                faturamento.FechadoPorUserId = usuarioId;
+                faturamento.DataFechamento = DateTime.UtcNow;
+
+                // Gera hash de segurança
+                faturamento.HashAssinatura = GerarHashAssinatura(faturamento, usuarioId);
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Caixa fechado com sucesso: {FaturamentoId}. Valor Total: {Total}. Diferença: {Diferenca}",
+                    faturamentoId, valorTotalParciais, diferenca);
+
+                return new ResultadoFechamentoDto
+                {
+                    Sucesso = true,
+                    Mensagem = "Caixa fechado com sucesso.",
+                    Hash = faturamento.HashAssinatura,
+                    Diferenca = diferenca,
+                    ValorTotalCalculado = valorTotalParciais,
+                    ValorConferido = valorConferido
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao fechar caixa {FaturamentoId}", faturamentoId);
+                throw new FaturamentoServiceException("Erro ao fechar caixa", ex);
+            }
+        }
+
+        /// <summary>
+        /// Registra conferência do caixa (Supervisor/Gerente)
+        /// </summary>
+        public async Task<bool> RegistrarConferenciaAsync(
+            Guid faturamentoId,
+            bool aprovado,
+            string? observacoes,
+            Guid usuarioId)
+        {
+            try
+            {
+                _logger.LogInformation("Iniciando conferência de caixa {FaturamentoId}", faturamentoId);
+
+                var faturamento = await _context.FaturamentosDiarios
+                    .FirstOrDefaultAsync(f => f.Id == faturamentoId);
+
+                if (faturamento == null)
+                {
+                    _logger.LogWarning("Faturamento não encontrado para conferência: {FaturamentoId}", faturamentoId);
+                    throw new KeyNotFoundException("Caixa não encontrado.");
+                }
+
+                // Verifica se o caixa está fechado para poder conferir
+                if (faturamento.StatusCaixa != StatusCaixa.Fechado)
+                {
+                    _logger.LogWarning("Tentativa de conferir caixa não fechado: {FaturamentoId}", faturamentoId);
+                    throw new InvalidOperationException("O caixa precisa estar fechado para ser conferido.");
+                }
+
+                // Atualiza status
+                faturamento.StatusCaixa = aprovado ? StatusCaixa.Conferido : StatusCaixa.Fechado;
+                faturamento.ConferidoPorUserId = usuarioId;
+                faturamento.DataConferencia = DateTime.UtcNow;
+                faturamento.ObservacoesConferencia = observacoes;
+
+                // Se aprovado, também atualiza o status geral
+                if (aprovado)
+                {
+                    faturamento.Status = RegistroStatus.Aprovado;
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Conferência registrada com sucesso: {FaturamentoId}. Aprovado: {Aprovado}",
+                    faturamentoId, aprovado);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao registrar conferência do caixa {FaturamentoId}", faturamentoId);
+                throw new FaturamentoServiceException("Erro ao registrar conferência", ex);
+            }
+        }
+
+        /// <summary>
+        /// Reabre um caixa fechado (Apenas Admin)
+        /// </summary>
+        public async Task<bool> ReabrirCaixaAsync(
+            Guid faturamentoId,
+            string motivo,
+            Guid usuarioId)
+        {
+            try
+            {
+                _logger.LogInformation("Iniciando reabertura de caixa {FaturamentoId}", faturamentoId);
+
+                var faturamento = await _context.FaturamentosDiarios
+                    .FirstOrDefaultAsync(f => f.Id == faturamentoId);
+
+                if (faturamento == null)
+                {
+                    _logger.LogWarning("Faturamento não encontrado para reabertura: {FaturamentoId}", faturamentoId);
+                    throw new KeyNotFoundException("Caixa não encontrado.");
+                }
+
+                // Reset dos campos de fechamento
+                faturamento.StatusCaixa = StatusCaixa.Aberto;
+                faturamento.ValorTotalCalculado = null;
+                faturamento.ValorConferido = null;
+                faturamento.Diferenca = null;
+                faturamento.HashAssinatura = null;
+                faturamento.DataFechamento = null;
+                faturamento.FechadoPorUserId = null;
+                faturamento.DataConferencia = null;
+                faturamento.ConferidoPorUserId = null;
+                faturamento.ObservacoesConferencia = null;
+
+                // Adiciona o motivo da reabertura às observações
+                if (!string.IsNullOrEmpty(motivo))
+                {
+                    faturamento.Observacoes += $"\n[REABERTURA {DateTime.UtcNow:dd/MM/yyyy HH:mm}] {motivo}";
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Caixa reaberto com sucesso: {FaturamentoId}", faturamentoId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao reabrir caixa {FaturamentoId}", faturamentoId);
+                throw new FaturamentoServiceException("Erro ao reabrir caixa", ex);
+            }
+        }
+
+        /// <summary>
+        /// Gera hash de segurança para o fechamento
+        /// </summary>
+        private string GerarHashAssinatura(FaturamentoDiario faturamento, Guid usuarioId)
+        {
+            var dadosParaHash = $"{faturamento.Id}|" +
+                               $"{faturamento.ValorTotalCalculado}|" +
+                               $"{faturamento.DataFechamento:yyyy-MM-dd HH:mm:ss}|" +
+                               $"{usuarioId}|" +
+                               $"{faturamento.UnidadeId}";
+
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(dadosParaHash);
+            var hash = sha256.ComputeHash(bytes);
+            return BitConverter.ToString(hash).Replace("-", "").ToLower()[..16]; // Primeiros 16 caracteres
+        }
+
+        #endregion
     }
 }

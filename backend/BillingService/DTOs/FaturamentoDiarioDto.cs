@@ -51,12 +51,16 @@ namespace BillingService.DTOs
     /// DTO usado para retornar os dados do Faturamento Diário para o frontend.
     /// (Tarefa 3 - Roadmap 4.1)
     /// </summary>
+    /// <summary>
+    /// DTO usado para retornar os dados do Faturamento Diário para o frontend.
+    /// </summary>
     public class FaturamentoDiarioResponseDto
     {
         public Guid Id { get; set; }
         public Guid UnidadeId { get; set; }
         public DateOnly Data { get; set; }
-        public string Status { get; set; } = string.Empty; // Retorna o nome do Enum
+        public string Status { get; set; } = string.Empty;
+        public string StatusCaixa { get; set; } = string.Empty; // Novo campo
 
         // Campos do formulário
         public decimal FundoDeCaixa { get; set; }
@@ -64,7 +68,72 @@ namespace BillingService.DTOs
         public decimal? ValorAtm { get; set; }
         public decimal? ValorBoletosMensalistas { get; set; }
 
-        // Campo calculado (será preenchido pelo Serviço)
-        public decimal ValorTotalParciais { get; set; } // Soma de todos FaturamentoParcial.Valor
+        // Campos de fechamento (novos)
+        public decimal? ValorTotalCalculado { get; set; }
+        public decimal? ValorConferido { get; set; }
+        public decimal? Diferenca { get; set; }
+        public string? HashAssinatura { get; set; }
+        public DateTime? DataFechamento { get; set; }
+        public DateTime? DataConferencia { get; set; }
+        public string? ObservacoesConferencia { get; set; }
+
+        // Campo calculado
+        public decimal ValorTotalParciais { get; set; }
+
+        // Campos de auditoria
+        public Guid? FechadoPorUserId { get; set; }
+        public Guid? ConferidoPorUserId { get; set; }
+        public decimal ValorTotal { get; set; }
+    }
+
+    public class FecharCaixaDto
+    {
+        [Required(ErrorMessage = "O valor conferido é obrigatório.")]
+        [Range(0, double.MaxValue, ErrorMessage = "O valor conferido não pode ser negativo.")]
+        public decimal ValorConferido { get; set; }
+
+        public decimal ValorTotal { get; set; }
+
+        [MaxLength(500)]
+        public string? Observacoes { get; set; }
+        
+    }
+
+    /// <summary>
+    /// DTO para conferência de caixa pelo supervisor/gerente
+    /// </summary>
+    public class ConferenciaCaixaDto
+    {
+        [Required(ErrorMessage = "O status da conferência é obrigatório.")]
+        public bool Aprovado { get; set; }
+
+        public decimal ValorTotal { get; set; }
+
+        [MaxLength(500)]
+        public string? Observacoes { get; set; }
+    }
+
+    /// <summary>
+    /// DTO para reabertura de caixa pelo admin
+    /// </summary>
+    public class ReabrirCaixaDto
+    {
+        [Required(ErrorMessage = "O motivo da reabertura é obrigatório.")]
+        [MaxLength(500)]
+        public string Motivo { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Resultado do fechamento de caixa
+    /// </summary>
+    public class ResultadoFechamentoDto
+    {
+        public bool Sucesso { get; set; }
+        public string? Mensagem { get; set; }
+        public string? Hash { get; set; }
+        public decimal Diferenca { get; set; }
+        public decimal ValorTotalCalculado { get; set; }
+        
+        public decimal ValorConferido { get; set; }
     }
 }

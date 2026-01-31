@@ -18,6 +18,14 @@ public class AdminController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    ///     Promove um utilizador existente ao papel de Admin
+    /// </summary>
+    /// <param name="request">Dados do utilizador a promover</param>
+    /// returns>Dados do utilizador promovido ou mensagem de erro</returns>
+    /// <response code="200">Utilizador promovido com sucesso</response>
+    /// <response code="404">Utilizador não encontrado</response>
+    /// <response code="500">Erro interno do servidor relacionado à promoção</response>
     [HttpPost("promote-to-admin")]
     // [Authorize(Roles = "Dev")] // TODO: Proteger este endpoint
     public async Task<IActionResult> PromoteToAdmin([FromBody] PromoteAdminDto request) // <-- MUDANÇA AQUI
@@ -35,4 +43,5 @@ public class AdminController : ControllerBase
 
         return Ok(result.Data);
     }
+    
 }

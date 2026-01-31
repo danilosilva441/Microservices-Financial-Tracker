@@ -1,9 +1,22 @@
-# --- ESTÁGIO 1: Build ---
-FROM node:20-alpine AS build
+# Dockerfile para frontend
+FROM node:20-alpine as build
+
 WORKDIR /app
+
+# Copia package.json e instala dependências
 COPY package*.json ./
 RUN npm install
+
+# Copia o código fonte
 COPY . .
+
+# Verifica se os arquivos essenciais existem
+RUN echo "Verificando arquivos necessários..." && \
+    ls -la src/ && \
+    ls -la src/layouts/ || true && \
+    ls -la src/components/ || true
+
+# Build da aplicação
 RUN npm run build
 
 # --- ESTÁGIO 2: Serve ---
