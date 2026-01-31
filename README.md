@@ -1,4 +1,4 @@
-# DSS Systech Platform
+# DS Systech
 
 **Plataforma de Gestão Operacional & Financeira Multi-Tenant (SaaS)**  
 
@@ -9,9 +9,9 @@
 
 ## 📖 Visão Geral
 
-O **DSS Systech** é uma plataforma **SaaS (Software as a Service) B2B** desenvolvida para gestão financeira e operacional de múltiplas unidades de negócio.
+O **DS Systech** é uma plataforma **SaaS (Software as a Service) B2B** desenvolvida para gestão financeira e operacional de múltiplas unidades de negócio.
 
-Diferente de um CRUD simples, este projeto implementa uma **arquitetura de microsserviços multi-tenant robusta**, focada em **Isolamento de Dados (Security-by-Default)**, hierarquia de permissões complexa e inteligência de dados em tempo real.
+Diferente de um CRUD simples, este projeto implementa uma **arquitetura de microsserviços multi-tenant**, focada em **Isolamento de Dados (Security-by-Default)**, hierarquia de permissões e inteligência de dados em tempo real.
 
 O sistema resolve o problema da gestão descentralizada (planilhas e papel), oferecendo um fluxo digital onde **líderes operacionais** submetem fechamentos, **supervisores** auditam, e **gerentes** visualizam a lucratividade real.
 
@@ -136,4 +136,4 @@ Desenvolvedor Full Stack | DevOps & DataOps Enthusiast
 
 ---
 
-*© 2024 DSS Systech Platform. Todos os direitos reservados.*
+*© 2025 DS Systech. Todos os direitos reservados.*
