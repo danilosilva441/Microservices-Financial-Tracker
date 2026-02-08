@@ -25,6 +25,19 @@
       </div>
     </div>
 
+    <!-- Nome Empresa -->
+    <div class="form-group">
+      <label for="companyName">Nome da Empresa</label>
+      <div class="input-with-icon">
+        <i class="fas fa-building"></i>
+        <input id="companyName" v-model="form.companyName" type="text" placeholder="Nome da sua empresa" required
+          :disabled="isLoading" @input="clearError" />
+      </div>
+      <div v-if="errors.companyName" class="error-message">
+        {{ errors.companyName }}
+      </div>
+    </div>
+
     <!-- Email -->
     <div class="form-group">
       <label for="email">Email</label>
@@ -43,7 +56,7 @@
       <label for="phone">Telefone <span class="optional">(Opcional)</span></label>
       <div class="input-with-icon">
         <i class="fas fa-phone"></i>
-        <input id="phone" v-model="form.phone" type="tel" placeholder="(11) 99999-9999" :disabled="isLoading"
+        <input id="phone" v-model="form.phone" type="tel" placeholder="(81) 9 9999-9999" :disabled="isLoading"
           @input="clearError" />
       </div>
     </div>
@@ -191,13 +204,14 @@ export default {
 
   setup() {
     const router = useRouter()
-    const { registerTeamUser, isLoading, error, clearError } = useAuth()
+    const { provisionTenant, isLoading, error, clearError } = useAuth()
 
     // Estado do formulário
     const form = reactive({
       name: '',
       email: '',
       phone: '',
+      companyName: '',
       password: '',
       confirmPassword: '',
       acceptTerms: false,
@@ -317,16 +331,17 @@ export default {
 
       try {
         // Prepara dados para registro
-        const userData = {
-          name: form.name,
-          email: form.email,
-          password: form.password,
+        const tenantData = {
+          nomeCompletoGerente: form.name,
+          nomeDaEmpresa: form.companyName,
+          emailDoGerente: form.email,
+          senhaDoGerente: form.password,
           phone: form.phone || undefined,
           newsletter: form.newsletter
         }
 
         // Registra usuário
-        const result = await registerTeamUser(userData)
+        const result = await provisionTenant(tenantData)
 
         if (result.success) {
           successMessage.value = 'Conta criada com sucesso! Redirecionando...'
@@ -387,469 +402,5 @@ export default {
 </script>
 
 <style scoped>
-.register-form {
-  width: 100%;
-}
-
-.optional {
-  color: #999;
-  font-size: 12px;
-  font-weight: normal;
-}
-
-.password-strength {
-  margin-top: 10px;
-}
-
-.strength-bar {
-  height: 4px;
-  border-radius: 2px;
-  margin-bottom: 5px;
-  transition: all 0.3s;
-}
-
-.strength-bar.very-weak {
-  width: 20%;
-  background: #ff4d4d;
-}
-
-.strength-bar.weak {
-  width: 40%;
-  background: #ff944d;
-}
-
-.strength-bar.medium {
-  width: 60%;
-  background: #ffd24d;
-}
-
-.strength-bar.strong {
-  width: 80%;
-  background: #8cff4d;
-}
-
-.strength-bar.very-strong {
-  width: 100%;
-  background: #4dff88;
-}
-
-.strength-text {
-  font-size: 12px;
-  color: #666;
-}
-
-.password-hints {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0 0 0;
-}
-
-.password-hints li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 5px;
-}
-
-.password-hints li.valid {
-  color: #393;
-}
-
-.password-hints li i.fa-check {
-  color: #393;
-}
-
-.password-hints li i.fa-times {
-  color: #c33;
-}
-
-.terms-link {
-  color: #667eea;
-  text-decoration: none;
-}
-
-.terms-link:hover {
-  text-decoration: underline;
-}
-
-.already-have-account {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-  text-align: center;
-  color: #666;
-}
-
-.login-link {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.login-link:hover {
-  text-decoration: underline;
-}
-
-/* Estilos herdados do LoginForm */
-.alert {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.alert-error {
-  background: #fee;
-  color: #c33;
-  border: 1px solid #fcc;
-}
-
-.alert-success {
-  background: #efe;
-  color: #393;
-  border: 1px solid #cfc;
-}
-
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #333;
-}
-
-.input-with-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.input-with-icon i {
-  position: absolute;
-  left: 15px;
-  color: #999;
-  z-index: 1;
-}
-
-.input-with-icon input {
-  width: 100%;
-  padding: 14px 14px 14px 45px;
-  border: 2px solid #eee;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s;
-}
-
-.input-with-icon input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.input-with-icon input:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
-}
-
-.toggle-password {
-  position: absolute;
-  right: 15px;
-  background: none;
-  border: none;
-  color: #999;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.toggle-password:hover {
-  color: #667eea;
-}
-
-.error-message {
-  color: #c33;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  font-size: 14px;
-}
-
-.checkbox-label input {
-  display: none;
-}
-
-.checkbox-custom {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  margin-right: 10px;
-  position: relative;
-  transition: all 0.3s;
-  flex-shrink: 0;
-}
-
-.checkbox-label input:checked+.checkbox-custom {
-  background: #667eea;
-  border-color: #667eea;
-}
-
-.checkbox-label input:checked+.checkbox-custom::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 12px;
-}
-
-.btn-submit {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-}
-
-.btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.checkbox-group {
-  margin-bottom: 1.5rem;
-}
-
-.checkbox-group.has-error .checkbox-custom {
-  border-color: #ff4757;
-}
-
-.checkbox-group.has-error .checkbox-text {
-  color: #ff4757;
-}
-
-.checkbox-wrapper {
-  position: relative;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-  padding: 0.5rem;
-  border-radius: 8px;
-  margin-left: -0.5rem;
-}
-
-.checkbox-label:hover {
-  background: rgba(59, 130, 246, 0.05);
-}
-
-.checkbox-label:active {
-  transform: translateY(1px);
-}
-
-.checkbox-input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-
-.checkbox-custom {
-  position: relative;
-  height: 22px;
-  min-width: 22px;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  margin-right: 12px;
-  margin-top: 2px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.checkbox-label:hover .checkbox-custom {
-  border-color: #9ca3af;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.checkbox-input:checked + .checkbox-custom {
-  background: linear-gradient(135deg, #0B5FFF 0%, #08B3A4 100%);
-  border-color: transparent;
-  animation: checkmark-pop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.checkbox-input:disabled + .checkbox-custom {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f3f4f6;
-}
-
-.checkbox-check {
-  width: 14px;
-  height: 10px;
-  stroke: white;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  fill: none;
-}
-
-.checkbox-text {
-  font-size: 15px;
-  line-height: 1.5;
-  color: #374151;
-  flex: 1;
-  padding-top: 1px;
-}
-
-.terms-link {
-  color: #0B5FFF;
-  text-decoration: none;
-  font-weight: 600;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.terms-link:hover {
-  color: #08B3A4;
-  text-decoration: underline;
-}
-
-.terms-link::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 1px;
-  bottom: -1px;
-  left: 0;
-  background: linear-gradient(90deg, #0B5FFF, #08B3A4);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.terms-link:hover::after {
-  opacity: 1;
-}
-
-.required-asterisk {
-  color: #ef4444;
-  font-weight: bold;
-  margin-left: 2px;
-}
-
-.optional-label {
-  font-size: 13px;
-  color: #6b7280;
-  font-style: italic;
-  margin-left: 6px;
-  font-weight: 400;
-}
-
-.error-message {
-  display: flex;
-  align-items: center;
-  color: #ff4757;
-  font-size: 13px;
-  margin-top: 6px;
-  margin-left: 34px;
-  animation: shake 0.5s ease;
-  font-weight: 500;
-}
-
-.error-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
-  fill: #ff4757;
-  flex-shrink: 0;
-}
-
-@keyframes checkmark-pop {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-2px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(2px);
-  }
-}
-
-/* Responsividade */
-@media (max-width: 640px) {
-  .checkbox-text {
-    font-size: 14px;
-  }
-  
-  .checkbox-custom {
-    height: 20px;
-    min-width: 20px;
-    margin-right: 10px;
-  }
-  
-  .checkbox-check {
-    width: 12px;
-    height: 9px;
-  }
-  
-  .error-message {
-    font-size: 12px;
-    margin-left: 30px;
-  }
-}
+@import './CSS/index.css';
 </style>

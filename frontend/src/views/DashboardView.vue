@@ -3,7 +3,7 @@
   <div class="dashboard-view">
     <div class="dashboard-header">
       <h1>Dashboard</h1>
-      <p>Bem-vindo, {{ currentUser?.name || 'Usuário' }}!</p>
+      <p>Bem-vindo, {{ User?.name || 'Usuário' }}!</p>
     </div>
     
     <div class="dashboard-grid">
@@ -35,10 +35,10 @@ export default {
   name: 'DashboardView',
   
   setup() {
-    const { currentUser } = useAuth()
+    const { userData } = useAuth()
     
     return {
-      currentUser
+      User: userData
     }
   }
 }

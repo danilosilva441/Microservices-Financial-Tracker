@@ -1,6 +1,6 @@
 // despesas.store.js
 import { defineStore } from 'pinia';
-import { DespesasService } from './despesas.service';
+import { DespesasService } from '../services/despesas.service';
 
 export const useDespesasStore = defineStore('despesas', {
   state: () => ({

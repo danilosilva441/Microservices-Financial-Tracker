@@ -1,6 +1,6 @@
 // admin.store.js
 import { defineStore } from 'pinia';
-import { AdminService } from './admin.service';
+import { AdminService } from '../services/admin.service';
 
 // Definição de roles/perfis
 export const RolesEnum = {

@@ -1,6 +1,6 @@
 // shifts.store.js
 import { defineStore } from 'pinia';
-import { ShiftsService } from './shifts.service';
+import { ShiftsService } from '../services/shifts.service';
 
 // Tipos de turno
 export const ShiftTypeEnum = {

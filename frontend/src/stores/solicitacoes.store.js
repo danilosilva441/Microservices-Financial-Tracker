@@ -1,6 +1,6 @@
 // solicitacoes.store.js
 import { defineStore } from 'pinia';
-import { SolicitacoesService } from './solicitacoes.service';
+import { SolicitacoesService } from '../services/solicitacoes.service';
 
 // Tipos de solicitação
 export const TipoSolicitacaoEnum = {

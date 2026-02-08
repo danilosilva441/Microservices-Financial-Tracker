@@ -1,6 +1,6 @@
 // faturamentos-parciais.store.js
 import { defineStore } from 'pinia';
-import { FaturamentosParciaisService } from './faturamentosParciais.service';
+import { FaturamentosParciaisService } from '../services/faturamentosParciais.service';
 
 // Enum de métodos de pagamento (baseado no C#)
 export const MetodoPagamentoEnum = {

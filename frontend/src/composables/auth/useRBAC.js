@@ -4,11 +4,11 @@ import { useAuth } from './useAuth'
 import { ROLES, getUserRole, canManageRole } from '@/utils/roles'
 
 export function useRBAC() {
-  const { userRole, userTenantId, currentUser } = useAuth()
+  const { userRole, userTenantId, userData } = useAuth()
 
   // Helper para obter a role
   const safeUserRole = computed(() => {
-    return getUserRole(currentUser.value) || userRole.value
+    return getUserRole(userData.value) || userRole.value
   })
 
   // Permissões por role

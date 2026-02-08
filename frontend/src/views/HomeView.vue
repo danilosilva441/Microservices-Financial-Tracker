@@ -2,8 +2,8 @@
 <template>
   <div class="home-view">
     <div class="hero">
-      <h1>Bem-vindo ao Sistema</h1>
-      <p>Gerencie seu portfolio de projetos de forma eficiente</p>
+      <h1>Bem-vindo</h1>
+      <p>Gerencie seu negocio de forma eficiente</p>
       <div class="hero-actions">
         <router-link v-if="!isAuthenticated" to="/login" class="btn-primary">
           Começar

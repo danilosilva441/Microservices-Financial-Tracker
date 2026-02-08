@@ -1,4 +1,4 @@
-src/layouts/DefaultLayout.vue
+<!-- src/layouts/DefaultLayout.vue -->
 <template>
   <div class="default-layout">
     <!-- Navbar -->
@@ -7,7 +7,7 @@ src/layouts/DefaultLayout.vue
         <!-- Logo -->
         <div class="navbar-brand">
           <router-link to="/" class="logo">
-            <span>Meu App</span>
+            <span>DS SysTech</span>
           </router-link>
         </div>
 
@@ -18,7 +18,7 @@ src/layouts/DefaultLayout.vue
             :key="item.to"
             :to="item.to"
             class="nav-link"
-            :class="{ active: $route.path === item.to }"
+            :class="{ active: isActive(item.to) }"
           >
             <i v-if="item.icon" :class="item.icon"></i>
             {{ item.text }}
@@ -32,7 +32,7 @@ src/layouts/DefaultLayout.vue
               <div class="user-avatar">
                 {{ userInitials }}
               </div>
-              <span class="user-name">{{ currentUser?.name || 'Usuário' }}</span>
+              <span class="user-name">{{ userData?.fullName || 'Usuário' }}</span>
               <i class="fas fa-chevron-down"></i>
             </button>
             
@@ -70,7 +70,7 @@ src/layouts/DefaultLayout.vue
     <footer v-if="showFooter" class="layout-footer">
       <div class="footer-content">
         <div class="footer-section">
-          <h4>Meu App</h4>
+          <h4>DS SysTech</h4>
           <p>Sistema de gerenciamento de portfolio</p>
         </div>
         <div class="footer-section">
@@ -113,7 +113,7 @@ export default {
   
   setup() {
     const route = useRoute()
-    const { isAuthenticated, currentUser, logout } = useAuth()
+    const { isAuthenticated, userData, logout } = useAuth()
     
     // Estado para menu do usuário
     const showUserMenu = ref(false)
@@ -123,6 +123,7 @@ export default {
       const items = [
         { to: '/', text: 'Home', icon: 'fas fa-home' },
         { to: '/dashboard', text: 'Dashboard', icon: 'fas fa-chart-line' },
+        { to: '/unidades', text: 'Unidades', icon: 'fas fa-store' },
         { to: '/projects', text: 'Projetos', icon: 'fas fa-briefcase' },
         { to: '/reports', text: 'Relatórios', icon: 'fas fa-chart-bar' },
         { to: '/team', text: 'Equipe', icon: 'fas fa-users' }
@@ -130,17 +131,34 @@ export default {
       
       // Filtra itens baseado na autenticação
       return items.filter(item => {
-        if (item.to === '/dashboard' || item.to === '/projects') {
+        // Itens que requerem autenticação
+        const requiresAuth = [
+          '/dashboard',
+          '/unidades',
+          '/projects',
+          '/reports',
+          '/team'
+        ]
+        
+        if (requiresAuth.includes(item.to)) {
           return isAuthenticated.value
         }
         return true
       })
     })
     
+    // Verifica se a rota está ativa (considera rotas filhas)
+    const isActive = (routePath) => {
+      if (routePath === '/') {
+        return route.path === '/'
+      }
+      return route.path.startsWith(routePath)
+    }
+    
     // Iniciais do usuário para avatar
     const userInitials = computed(() => {
-      if (!currentUser.value?.name) return 'U'
-      const names = currentUser.value.name.split(' ')
+      if (!userData.value?.fullName) return 'U'
+      const names = userData.value.fullName.split(' ')
       if (names.length >= 2) {
         return (names[0][0] + names[1][0]).toUpperCase()
       }
@@ -180,13 +198,14 @@ export default {
     return {
       route,
       isAuthenticated,
-      currentUser,
+      userData,
       menuItems,
       userInitials,
       currentYear,
       showUserMenu,
       toggleUserMenu,
-      logout: handleLogout
+      logout: handleLogout,
+      isActive
     }
   }
 }
@@ -242,6 +261,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .nav-link:hover {
@@ -252,6 +272,18 @@ export default {
 .nav-link.active {
   color: #667eea;
   background: rgba(102, 126, 234, 0.1);
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #667eea;
 }
 
 .navbar-user {
@@ -306,6 +338,18 @@ export default {
   min-width: 200px;
   padding: 10px 0;
   z-index: 1001;
+  animation: dropdownFade 0.2s ease;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-item {
@@ -417,10 +461,84 @@ export default {
   font-size: 14px;
 }
 
+/* Menu Mobile */
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #667eea;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-menu .nav-link {
+  display: block;
+  padding: 16px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
 /* Responsividade */
+@media (max-width: 1024px) {
+  .navbar-menu {
+    gap: 15px;
+  }
+  
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
 @media (max-width: 768px) {
   .navbar-menu {
     display: none;
+  }
+  
+  .mobile-menu-toggle {
+    display: block;
+  }
+  
+  .mobile-menu-overlay.active,
+  .mobile-menu.active {
+    display: block;
   }
   
   .navbar {
@@ -438,6 +556,24 @@ export default {
   .footer-content {
     grid-template-columns: 1fr;
     gap: 30px;
+  }
+}
+
+/* Menu para telas muito pequenas */
+@media (max-width: 480px) {
+  .navbar-brand .logo {
+    font-size: 20px;
+  }
+  
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  
+  .dropdown-menu {
+    min-width: 180px;
+    right: -10px;
   }
 }
 </style>

@@ -1,38 +1,62 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
-
-// Views
-import UnidadesView from '@/views/UnidadesView.vue'
-import UnidadeDetalhesView from '@/views/UnidadeDetalhesView.vue'
-
-const router = createRouter({
-  history: createWebHistory(),
+// src/router/unidades.router.js
+export default {
   routes: [
-    // Protegidas
-    { path: '/unidades', name: 'unidades', component: UnidadesView, meta: { requiresAuth: true } },
-    { path: '/unidades/:id', name: 'unidade-detalhes', component: UnidadeDetalhesView, meta: { requiresAuth: true } },
+    {
+      path: '/unidades',
+      name: 'Unidades',
+      component: () => import('@/views/unidades/UnidadesIndexView.vue'),
+      meta: {
+        title: 'Unidades',
+        requiresAuth: true,
+        breadcrumb: [
+          { text: 'Dashboard', to: '/' },
+          { text: 'Unidades', active: true }
+        ]
+      }
+    },
+    {
+      path: '/unidades/nova',
+      name: 'NovaUnidade',
+      component: () => import('@/views/unidades/NovaUnidadeView.vue'),
+      meta: {
+        title: 'Nova Unidade',
+        requiresAuth: true,
+        breadcrumb: [
+          { text: 'Dashboard', to: '/' },
+          { text: 'Unidades', to: '/unidades' },
+          { text: 'Nova Unidade', active: true }
+        ]
+      }
+    },
+    {
+      path: '/unidades/:id',
+      name: 'UnidadeDetalhes',
+      component: () => import('@/views/unidades/UnidadeDetalhesView.vue'),
+      meta: {
+        title: 'Detalhes da Unidade',
+        requiresAuth: true,
+        breadcrumb: [
+          { text: 'Dashboard', to: '/' },
+          { text: 'Unidades', to: '/unidades' },
+          { text: 'Detalhes', active: true }
+        ]
+      },
+      props: true
+    },
+    {
+      path: '/unidades/:id/editar',
+      name: 'EditarUnidade',
+      component: () => import('@/views/unidades/EditarUnidadeView.vue'),
+      meta: {
+        title: 'Editar Unidade',
+        requiresAuth: true,
+        breadcrumb: [
+          { text: 'Dashboard', to: '/' },
+          { text: 'Unidades', to: '/unidades' },
+          { text: 'Editar', active: true }
+        ]
+      },
+      props: true
+    }
   ]
-})
-
-router.beforeEach(async (to) => {
-  const auth = useAuthStore()
-
-  // inicializa sessão (busca /me se precisar)
-  // (isso evita bug de dar refresh e perder user)
-  if (auth.token && !auth.user) {
-    await auth.init()
-  }
-
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return { name: 'login' }
-  }
-
-  // se tentar ir pro login autenticado -> manda pro dashboards
-  if (to.name === 'login' && auth.isAuthenticated) {
-    return { name: 'dashboards' }
-  }
-
-  return true
-})
-
-export default router
+};

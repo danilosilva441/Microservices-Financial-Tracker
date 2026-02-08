@@ -1,6 +1,6 @@
 // fechamentos.store.js
 import { defineStore } from 'pinia';
-import { FechamentosService } from './fechamentos.service';
+import { FechamentosService } from '../services/fechamentos.service';
 
 export const useFechamentosStore = defineStore('fechamentos', {
   state: () => ({

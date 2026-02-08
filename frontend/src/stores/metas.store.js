@@ -1,6 +1,6 @@
 // metas.store.js
 import { defineStore } from 'pinia';
-import { MetasService } from './metas.service';
+import { MetasService } from '../services/metas.service';
 
 export const useMetasStore = defineStore('metas', {
   state: () => ({

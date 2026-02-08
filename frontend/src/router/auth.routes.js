@@ -18,7 +18,7 @@ const authRoutes = [
     }
   },
 
-  // Registro
+  // Registro Tenant
   {
     path: '/provision',
     name: 'provision',
@@ -35,6 +35,91 @@ const authRoutes = [
       }
     }
   },
+
+  // {
+  //   path: '/register',
+  //   name: 'register',
+  //   component: () => import('@/views/auth/RegisterDevView.vue'),
+  //   meta: {
+  //     title: 'Criar Conta',
+  //     layout: 'auth',
+  //     authLayout: {
+  //       pageTitle: 'Crie usuario Gerente',
+  //       showExtras: false,
+  //       showSocial: false,
+  //       hideForgotPassword: true
+  //     }
+  //   }
+  // },
+
+  // {
+  //   path: '/promote-to-admin',
+  //   name: 'promote-to-admin',
+  //   component: () => import('@/views/auth/PromoteToAdminView.vue'),
+  //   meta: {
+  //     title: 'Promover Usuário a Administrador',
+  //     layout: 'auth',
+  //     authLayout: {
+  //       pageTitle: 'Promover Usuário a Administrador',
+  //       subtitle: 'Conceder permissões de administrador',
+  //       showExtras: false,
+  //       showSocial: false,
+  //       hideForgotPassword: true
+  //     }
+  //   }
+  // },
+
+  // {
+  //   path: '/me',
+  //   name: 'me',
+  //   component: () => import('@/views/auth/PerfilUsuarioView.vue'),
+  //   meta: {
+  //     title: 'Meu Perfil',
+  //     layout: 'auth',
+  //     authLayout: {
+  //       pageTitle: 'Meu Perfil',
+  //       subtitle: 'Visualize suas informações pessoais',
+  //       showExtras: false,
+  //       showSocial: false,
+  //       hideForgotPassword: true
+  //     }
+  //   }
+  // },
+
+  // {
+  //   path: '/tenant-user',
+  //   name: 'tenant-user',
+  //   component: () => import('@/views/auth/GerenteCriaUsuariosView.vue'),
+  //   meta: {
+  //     title: 'Criar Usuários',
+  //     layout: 'auth',
+  //     authLayout: {
+  //       pageTitle: 'Criar Usuários',
+  //       subtitle: 'Gerencie os usuários da sua organização',
+  //       showExtras: false,
+  //       showSocial: false,
+  //       hideForgotPassword: true
+  //     }
+  //   }
+  // },
+
+  // {
+  //   path: '/system-user',
+  //   name: 'system-user',
+  //   component: () => import('@/views/auth/CriarUserSistemView.vue'),
+  //   meta: {
+  //     title: 'Criar Usuario System',
+  //     layout: 'auth',
+  //     authLayout: {
+  //       pageTitle: 'Criar Usuário System',
+  //       subtitle: 'Gerencie os usuários do sistema',
+  //       showExtras: false,
+  //       showSocial: false,
+  //       hideForgotPassword: true
+  //     }
+  //   }
+  // },
+
 
   // // Esqueci a senha
   // {

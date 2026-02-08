@@ -8,7 +8,7 @@ export function useAuth() {
 
   // Computeds
   const isAuthenticated = computed(() => authStore.isAuthenticated)
-  const currentUser = computed(() => authStore.currentUser)
+  const userData = computed(() => authStore.userData)
   const userRole = computed(() => authStore.userRole)
   const userTenantId = computed(() => authStore.userTenantId)
   const isLoading = computed(() => authStore.isLoadingState)
@@ -55,7 +55,7 @@ export function useAuth() {
   return {
     // State
     isAuthenticated,
-    currentUser,
+    userData,
     userRole,
     userTenantId,
     isLoading,

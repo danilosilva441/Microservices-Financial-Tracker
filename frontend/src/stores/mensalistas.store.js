@@ -1,6 +1,6 @@
 // mensalistas.store.js
 import { defineStore } from 'pinia';
-import { MensalistasService } from './mensalistas.service';
+import { MensalistasService } from '../services/mensalistas.service';
 
 export const useMensalistasStore = defineStore('mensalistas', {
   state: () => ({

@@ -1,0 +1,328 @@
+.nova-unidade-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Breadcrumb (herdado do EditarUnidade) */
+.breadcrumb-nav {
+  margin-bottom: 24px;
+}
+
+.breadcrumb {
+  display: flex;
+  list-style: none;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin: 0;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: '/';
+  color: #a0aec0;
+  padding: 0 8px;
+}
+
+.breadcrumb-item a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item a:hover {
+  color: var(--unidade-color-primary);
+}
+
+.breadcrumb-item.active {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.breadcrumb-item.active i {
+  color: var(--unidade-color-primary);
+}
+
+/* Header */
+.page-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--unidade-border);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title i {
+  color: var(--unidade-color-primary);
+  font-size: 24px;
+}
+
+.page-subtitle {
+  color: #718096;
+  font-size: 16px;
+  margin: 0;
+}
+
+.header-right {
+  flex-shrink: 0;
+}
+
+/* Conteúdo Principal */
+.page-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 1024px) {
+  .page-content {
+    grid-template-columns: 3fr 1fr;
+  }
+  
+  .help-sidebar {
+    order: 2;
+  }
+  
+  .form-container {
+    order: 1;
+  }
+}
+
+/* Sidebar de Ajuda Aprimorada */
+.help-sidebar {
+  position: sticky;
+  top: 100px;
+  align-self: flex-start;
+}
+
+.help-card {
+  background: white;
+  border: 1px solid var(--unidade-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--unidade-shadow-sm);
+}
+
+.help-card h4 {
+  font-size: 18px;
+  color: #2d3748;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--unidade-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-card h4 i {
+  color: #f59e0b;
+}
+
+.tip-section {
+  margin-bottom: 24px;
+}
+
+.tip-section h5 {
+  font-size: 14px;
+  color: #4a5568;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tip-section h5 i {
+  font-size: 12px;
+}
+
+.tip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tip-list li {
+  padding: 8px 0;
+  padding-left: 24px;
+  position: relative;
+  color: #718096;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tip-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+.tip-list.warning li::before {
+  content: '⚠';
+  color: #f59e0b;
+}
+
+.info-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--unidade-border);
+}
+
+.info-section h5 {
+  font-size: 14px;
+  color: #4a5568;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-section p {
+  color: #718096;
+  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.info-list li {
+  padding: 6px 0;
+  padding-left: 24px;
+  position: relative;
+  color: #718096;
+  font-size: 13px;
+}
+
+.info-list li::before {
+  content: '→';
+  position: absolute;
+  left: 8px;
+  color: var(--unidade-color-primary);
+}
+
+/* Botões de Ação no Formulário (estilos adicionais) */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--unidade-border);
+}
+
+.btn-primary {
+  min-width: 120px;
+}
+
+.btn-secondary {
+  min-width: 120px;
+}
+
+/* Notificação de Sucesso (pode ser um componente separado) */
+.success-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #10b981;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.success-notification i {
+  font-size: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .nova-unidade-container {
+    padding: 15px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+  }
+  
+  .header-right {
+    width: 100%;
+  }
+  
+  .header-right .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .breadcrumb {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .breadcrumb-item + .breadcrumb-item::before {
+    display: none;
+  }
+  
+  .page-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .help-sidebar {
+    order: 1;
+    position: static;
+    margin-bottom: 32px;
+  }
+  
+  .form-container {
+    order: 2;
+  }
+}
