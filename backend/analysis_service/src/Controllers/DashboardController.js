@@ -1,5 +1,5 @@
 // src/Controllers/DashboardController.js
-const dashboardService = require('../Services/DashboardService');
+const DashboardService = require('../Services/DashboardService');
 
 class DashboardController {
     
