@@ -1,11 +1,10 @@
 // src/Services/DashboardService.js
-const billingIntegration = require('./BillingIntegrationService');
-const dashboardCalculator = require('./DashboardCalculator');
+const BillingIntegration = require('./BillingIntegrationService');
+const DashboardCalculator = require('./DashboardCalculator');
 
 class DashboardService {
     
     constructor() {
-        // Inicializa o cache em memória
         this.cache = new Map();
         // Tempo de vida do cache: 5 minutos (300000 ms)
         this.CACHE_TTL = 5 * 60 * 1000; 
