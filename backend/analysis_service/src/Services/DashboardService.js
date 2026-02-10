@@ -1,6 +1,6 @@
 // src/Services/DashboardService.js
 const BillingIntegration = require('./BillingIntegrationService');
-const DashboardCalculator = require('./DashboardCalculator');
+const DashboardCalculator = require('./DashboardCalcular');
 
 
 class DashboardService {
