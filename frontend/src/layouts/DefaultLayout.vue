@@ -1,184 +1,405 @@
 <!-- src/layouts/DefaultLayout.vue -->
 <template>
-  <div class="default-layout">
+  <div 
+    class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"
+    :class="{ 'dark': isDarkMode }"
+  >
     <!-- Navbar -->
-    <header v-if="showHeader" class="layout-header">
-      <nav class="navbar" aria-label="Navegação principal">
-        <!-- Brand -->
-        <div class="navbar-brand">
-          <router-link to="/" class="logo" @click="closeAllMenus">
-            <span>DS SysTech</span>
-          </router-link>
-        </div>
+    <header v-if="showHeader" class="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-md dark:shadow-gray-900/30">
+      <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Brand Logo -->
+          <div class="flex-shrink-0">
+            <router-link 
+              to="/" 
+              class="flex items-center space-x-2 group"
+              @click="closeAllMenus"
+            >
+              <div class="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg group-hover:scale-105 transition-transform duration-200">
+                <i class="fas fa-rocket text-white text-lg"></i>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                  DS SysTech
+                </span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Management System</span>
+              </div>
+            </router-link>
+          </div>
 
-        <!-- Desktop Menu -->
-        <div class="navbar-menu" aria-label="Menu desktop">
-          <router-link
-            v-for="item in menuItems"
-            :key="item.to"
-            :to="item.to"
-            class="nav-link"
-            :class="{ active: isActive(item.to) }"
-            @click="closeAllMenus"
-          >
-            <i v-if="item.icon" :class="item.icon" aria-hidden="true"></i>
-            {{ item.text }}
-          </router-link>
-        </div>
+          <!-- Desktop Menu -->
+          <div class="hidden md:flex flex-1 justify-center">
+            <div class="flex space-x-1">
+              <router-link
+                v-for="item in menuItems"
+                :key="item.to"
+                :to="item.to"
+                class="nav-link-desktop"
+                :class="{ 'nav-link-desktop-active': isActive(item.to) }"
+                @click="closeAllMenus"
+              >
+                <i :class="item.icon" class="mr-2 text-sm"></i>
+                <span class="font-medium">{{ item.text }}</span>
+                <span 
+                  v-if="item.badge"
+                  class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200"
+                >
+                  {{ item.badge }}
+                </span>
+              </router-link>
+            </div>
+          </div>
 
-        <!-- Right Actions -->
-        <div class="navbar-actions">
-          <!-- Mobile toggle -->
-          <button
-            class="mobile-menu-toggle"
-            type="button"
-            @click="toggleMobileMenu"
-            :aria-expanded="showMobileMenu ? 'true' : 'false'"
-            aria-controls="mobileMenu"
-            aria-label="Abrir menu"
-          >
-            <i class="fas" :class="showMobileMenu ? 'fa-times' : 'fa-bars'" aria-hidden="true"></i>
-          </button>
+          <!-- Right Actions -->
+          <div class="flex items-center space-x-4">
+            <!-- Theme Toggle -->
+            <button
+              @click="toggleTheme"
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              aria-label="Alternar tema"
+            >
+              <i class="fas text-lg text-gray-600 dark:text-gray-300" :class="themeIcon"></i>
+            </button>
 
-          <!-- User Menu -->
-          <div class="navbar-user">
-            <div class="user-dropdown" v-if="isAuthenticated">
+            <!-- User Menu -->
+            <div class="relative" v-if="isAuthenticated">
               <button
                 ref="userTriggerRef"
-                class="user-trigger"
-                type="button"
                 @click="toggleUserMenu"
+                class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 :aria-expanded="showUserMenu ? 'true' : 'false'"
-                aria-controls="userDropdown"
               >
-                <div class="user-avatar" aria-hidden="true">
-                  {{ userInitials }}
+                <div class="relative">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold shadow-lg">
+                    {{ userInitials }}
+                  </div>
+                  <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                 </div>
-                <span class="user-name">{{ userData?.fullName || 'Usuário' }}</span>
-                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                <div class="hidden lg:block text-left">
+                  <p class="font-semibold text-sm">{{ userData?.fullName || 'Usuário' }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Admin</p>
+                </div>
+                <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200" :class="{ 'rotate-180': showUserMenu }"></i>
               </button>
 
+              <!-- User Dropdown -->
               <div
                 v-if="showUserMenu"
-                id="userDropdown"
-                class="dropdown-menu"
+                class="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
                 role="menu"
               >
-                <router-link to="/profile" class="dropdown-item" role="menuitem" @click="closeAllMenus">
-                  <i class="fas fa-user" aria-hidden="true"></i>
-                  Meu Perfil
-                </router-link>
-                <router-link to="/settings" class="dropdown-item" role="menuitem" @click="closeAllMenus">
-                  <i class="fas fa-cog" aria-hidden="true"></i>
-                  Configurações
-                </router-link>
-                <div class="dropdown-divider" role="separator"></div>
-                <button class="dropdown-item logout" type="button" role="menuitem" @click="handleLogout">
-                  <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                  Sair
-                </button>
+                <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                  <p class="font-semibold">{{ userData?.fullName || 'Usuário' }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ userData?.email || 'user@example.com' }}</p>
+                </div>
+                
+                <div class="py-1">
+                  <router-link
+                    v-for="item in userMenuItems"
+                    :key="item.to"
+                    :to="item.to"
+                    class="user-menu-item"
+                    @click="closeAllMenus"
+                    role="menuitem"
+                  >
+                    <i :class="item.icon" class="mr-3 text-gray-400"></i>
+                    <span>{{ item.text }}</span>
+                    <i v-if="item.arrow" class="fas fa-chevron-right ml-auto text-xs text-gray-400"></i>
+                  </router-link>
+                  
+                  <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                  
+                  <button
+                    @click="handleLogout"
+                    class="user-menu-item text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    role="menuitem"
+                  >
+                    <i class="fas fa-sign-out-alt mr-3"></i>
+                    <span>Sair</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <router-link v-else to="/login" class="btn-login" @click="closeAllMenus">
-              <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+            <!-- Login Button -->
+            <router-link
+              v-else
+              to="/login"
+              class="btn-primary"
+              @click="closeAllMenus"
+            >
+              <i class="fas fa-sign-in-alt mr-2"></i>
               Entrar
             </router-link>
+
+            <!-- Mobile Menu Toggle -->
+            <button
+              @click="toggleMobileMenu"
+              class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              :aria-expanded="showMobileMenu ? 'true' : 'false'"
+              aria-label="Abrir menu"
+            >
+              <i class="fas text-xl" :class="showMobileMenu ? 'fa-times' : 'fa-bars'"></i>
+            </button>
           </div>
         </div>
       </nav>
 
-      <!-- Mobile overlay -->
+      <!-- Mobile Menu Overlay -->
       <div
-        class="mobile-menu-overlay"
-        :class="{ active: showMobileMenu }"
+        v-if="showMobileMenu"
+        class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
         @click="closeMobileMenu"
         aria-hidden="true"
       ></div>
 
-      <!-- Mobile menu panel -->
+      <!-- Mobile Menu Panel -->
       <div
-        id="mobileMenu"
-        class="mobile-menu"
-        :class="{ active: showMobileMenu }"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Menu mobile"
+        class="fixed inset-y-0 right-0 w-full max-w-sm bg-white dark:bg-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out z-40 md:hidden"
+        :class="{ 'translate-x-0': showMobileMenu, 'translate-x-full': !showMobileMenu }"
       >
-        <div class="mobile-menu-header">
-          <div class="mobile-user" v-if="isAuthenticated">
-            <div class="user-avatar big" aria-hidden="true">{{ userInitials }}</div>
-            <div class="mobile-user-info">
-              <div class="mobile-user-name">{{ userData?.fullName || 'Usuário' }}</div>
-              <div class="mobile-user-subtitle">Conta autenticada</div>
+        <div class="flex flex-col h-full">
+          <!-- Mobile Header -->
+          <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-6">
+              <router-link to="/" @click="closeAllMenus" class="flex items-center space-x-2">
+                <div class="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg">
+                  <i class="fas fa-rocket text-white"></i>
+                </div>
+                <span class="text-xl font-bold">DS SysTech</span>
+              </router-link>
+              <button @click="closeMobileMenu" class="p-2">
+                <i class="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            <!-- User Info -->
+            <div v-if="isAuthenticated" class="flex items-center space-x-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-900">
+              <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                {{ userInitials }}
+              </div>
+              <div>
+                <p class="font-bold">{{ userData?.fullName || 'Usuário' }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Conta verificada</p>
+              </div>
+            </div>
+
+            <!-- Mobile Login -->
+            <div v-else class="space-y-3">
+              <router-link
+                to="/login"
+                class="btn-primary w-full justify-center"
+                @click="closeAllMenus"
+              >
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Entrar
+              </router-link>
+              <router-link
+                to="/register"
+                class="btn-outline w-full justify-center"
+                @click="closeAllMenus"
+              >
+                <i class="fas fa-user-plus mr-2"></i>
+                Cadastrar
+              </router-link>
             </div>
           </div>
 
-          <div class="mobile-auth" v-else>
-            <router-link to="/login" class="btn-login full" @click="closeAllMenus">
-              <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
-              Entrar
-            </router-link>
+          <!-- Mobile Menu Items -->
+          <div class="flex-1 overflow-y-auto p-4">
+            <div class="space-y-1">
+              <router-link
+                v-for="item in menuItems"
+                :key="`mobile-${item.to}`"
+                :to="item.to"
+                class="mobile-nav-link"
+                :class="{ 'mobile-nav-link-active': isActive(item.to) }"
+                @click="closeAllMenus"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <div class="flex items-center">
+                    <i :class="item.icon" class="mr-3 w-6 text-center"></i>
+                    <span class="font-medium">{{ item.text }}</span>
+                  </div>
+                  <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+                </div>
+                <span 
+                  v-if="item.badge"
+                  class="absolute right-12 px-2 py-1 text-xs rounded-full bg-primary-500 text-white"
+                >
+                  {{ item.badge }}
+                </span>
+              </router-link>
+            </div>
+
+            <!-- User Menu Mobile -->
+            <div v-if="isAuthenticated" class="mt-8">
+              <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 mb-2">Minha Conta</p>
+              <div class="space-y-1">
+                <router-link
+                  v-for="item in userMenuItems"
+                  :key="`mobile-user-${item.to}`"
+                  :to="item.to"
+                  class="mobile-nav-link"
+                  @click="closeAllMenus"
+                >
+                  <i :class="item.icon" class="mr-3 w-6 text-center"></i>
+                  <span>{{ item.text }}</span>
+                </router-link>
+              </div>
+              
+              <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  @click="handleLogout"
+                  class="mobile-nav-link text-red-600 dark:text-red-400"
+                >
+                  <i class="fas fa-sign-out-alt mr-3 w-6 text-center"></i>
+                  <span>Sair da Conta</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="mobile-links" aria-label="Links do menu">
-          <router-link
-            v-for="item in menuItems"
-            :key="`m-${item.to}`"
-            :to="item.to"
-            class="nav-link mobile"
-            :class="{ active: isActive(item.to) }"
-            @click="closeAllMenus"
-          >
-            <i v-if="item.icon" :class="item.icon" aria-hidden="true"></i>
-            {{ item.text }}
-          </router-link>
-        </div>
-
-        <div class="mobile-footer" v-if="isAuthenticated">
-          <router-link to="/profile" class="mobile-action" @click="closeAllMenus">
-            <i class="fas fa-user" aria-hidden="true"></i>
-            Meu Perfil
-          </router-link>
-          <router-link to="/settings" class="mobile-action" @click="closeAllMenus">
-            <i class="fas fa-cog" aria-hidden="true"></i>
-            Configurações
-          </router-link>
-          <button class="mobile-action danger" type="button" @click="handleLogout">
-            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-            Sair
-          </button>
+          <!-- Mobile Footer -->
+          <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center">
+              <button
+                @click="toggleTheme"
+                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              >
+                <i class="fas text-lg" :class="themeIcon"></i>
+                <span class="ml-2 text-sm">Tema {{ isDarkMode ? 'Escuro' : 'Claro' }}</span>
+              </button>
+              <span class="text-xs text-gray-500">v1.0.0</span>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
-    <!-- Conteúdo Principal -->
-    <main class="layout-main">
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <slot></slot>
     </main>
 
     <!-- Footer -->
-    <footer v-if="showFooter" class="layout-footer">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h4>DS SysTech</h4>
-          <p>Sistema de gerenciamento de portfolio</p>
+    <footer v-if="showFooter" class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <!-- Company Info -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg">
+                <i class="fas fa-rocket text-white"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">DS SysTech</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Sistema de Gerenciamento Inteligente</p>
+              </div>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Solução completa para gestão de portfólio, unidades e equipes. Transformando dados em insights.
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="social-icon">
+                <i class="fab fa-twitter"></i>
+              </a>
+              <a href="#" class="social-icon">
+                <i class="fab fa-linkedin-in"></i>
+              </a>
+              <a href="#" class="social-icon">
+                <i class="fab fa-github"></i>
+              </a>
+              <a href="#" class="social-icon">
+                <i class="fab fa-discord"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h4 class="font-bold text-lg mb-4">Links Rápidos</h4>
+            <ul class="space-y-2">
+              <li>
+                <router-link to="/" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-home mr-2"></i>
+                  Home
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/dashboard" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-chart-line mr-2"></i>
+                  Dashboard
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/unidades" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-store mr-2"></i>
+                  Unidades
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/projects" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-briefcase mr-2"></i>
+                  Projetos
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Support -->
+          <div>
+            <h4 class="font-bold text-lg mb-4">Suporte</h4>
+            <ul class="space-y-2">
+              <li>
+                <router-link to="/help" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-question-circle mr-2"></i>
+                  Central de Ajuda
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/docs" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-book mr-2"></i>
+                  Documentação
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/contact" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-envelope mr-2"></i>
+                  Contato
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/status" class="footer-link" @click="closeAllMenus">
+                  <i class="fas fa-server mr-2"></i>
+                  Status do Sistema
+                </router-link>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="footer-section">
-          <h4>Links</h4>
-          <router-link to="/" @click="closeAllMenus">Home</router-link>
-          <router-link to="/about" @click="closeAllMenus">Sobre</router-link>
-          <router-link to="/contact" @click="closeAllMenus">Contato</router-link>
+
+        <!-- Copyright -->
+        <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <div class="flex flex-col sm:flex-row justify-between items-center">
+            <p>&copy; {{ currentYear }} DS SysTech. Todos os direitos reservados.</p>
+            <div class="flex space-x-6 mt-4 sm:mt-0">
+              <router-link to="/terms" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                Termos de Uso
+              </router-link>
+              <router-link to="/privacy" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                Política de Privacidade
+              </router-link>
+              <router-link to="/cookies" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                Cookies
+              </router-link>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-center space-x-2 text-xs">
+            <i class="fas fa-shield-alt text-green-500"></i>
+            <span>Sistema seguro • SSL ativado • Atualizado em tempo real</span>
+          </div>
         </div>
-        <div class="footer-section">
-          <h4>Legal</h4>
-          <router-link to="/terms" @click="closeAllMenus">Termos</router-link>
-          <router-link to="/privacy" @click="closeAllMenus">Privacidade</router-link>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; {{ currentYear }} DS SysTech. Todos os direitos reservados.</p>
       </div>
     </footer>
   </div>
@@ -201,20 +422,73 @@ export default {
     const route = useRoute()
     const { isAuthenticated, userData, logout } = useAuth()
 
-    // states
+    // Theme management
+    const isDarkMode = ref(false)
+    const themeIcon = computed(() => 
+      isDarkMode.value ? 'fa-sun' : 'fa-moon'
+    )
+
+    const loadTheme = () => {
+      const savedTheme = localStorage.getItem('theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      isDarkMode.value = savedTheme ? savedTheme === 'dark' : prefersDark
+    }
+
+    const toggleTheme = () => {
+      isDarkMode.value = !isDarkMode.value
+      localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
+    }
+
+    // Menu states
     const showUserMenu = ref(false)
     const showMobileMenu = ref(false)
     const userTriggerRef = ref(null)
 
-    // Itens do menu
+    // Menu items with icons and badges
     const menuItems = computed(() => {
       const items = [
-        { to: '/', text: 'Home', icon: 'fas fa-home' },
-        { to: '/dashboard', text: 'Dashboard', icon: 'fas fa-chart-line' },
-        { to: '/unidades', text: 'Unidades', icon: 'fas fa-store' },
-        { to: '/projects', text: 'Projetos', icon: 'fas fa-briefcase' },
-        { to: '/reports', text: 'Relatórios', icon: 'fas fa-chart-bar' },
-        { to: '/team', text: 'Equipe', icon: 'fas fa-users' }
+        { 
+          to: '/', 
+          text: 'Home', 
+          icon: 'fas fa-home',
+          badge: null
+        },
+        { 
+          to: '/dashboard', 
+          text: 'Dashboard', 
+          icon: 'fas fa-chart-line',
+          badge: 'New'
+        },
+        { 
+          to: '/unidades', 
+          text: 'Unidades', 
+          icon: 'fas fa-store',
+          badge: null
+        },
+        { 
+          to: '/projects', 
+          text: 'Projetos', 
+          icon: 'fas fa-briefcase',
+          badge: '3'
+        },
+        { 
+          to: '/reports', 
+          text: 'Relatórios', 
+          icon: 'fas fa-chart-bar',
+          badge: null
+        },
+        { 
+          to: '/team', 
+          text: 'Equipe', 
+          icon: 'fas fa-users',
+          badge: null
+        },
+        { 
+          to: '/calendar', 
+          text: 'Calendário', 
+          icon: 'fas fa-calendar-alt',
+          badge: '5'
+        }
       ]
 
       const requiresAuth = new Set([
@@ -222,19 +496,47 @@ export default {
         '/unidades',
         '/projects',
         '/reports',
-        '/team'
+        '/team',
+        '/calendar'
       ])
 
       return items.filter((item) => (requiresAuth.has(item.to) ? isAuthenticated.value : true))
     })
 
-    // active route
+    // User menu items
+    const userMenuItems = computed(() => [
+      { 
+        to: '/profile', 
+        text: 'Meu Perfil', 
+        icon: 'fas fa-user-circle',
+        arrow: true
+      },
+      { 
+        to: '/settings', 
+        text: 'Configurações', 
+        icon: 'fas fa-cog',
+        arrow: true
+      },
+      { 
+        to: '/notifications', 
+        text: 'Notificações', 
+        icon: 'fas fa-bell',
+        arrow: true
+      },
+      { 
+        to: '/billing', 
+        text: 'Faturamento', 
+        icon: 'fas fa-credit-card',
+        arrow: true
+      }
+    ])
+
+    // Helpers
     const isActive = (routePath) => {
       if (routePath === '/') return route.path === '/'
       return route.path.startsWith(routePath)
     }
 
-    // user initials
     const userInitials = computed(() => {
       const full = userData.value?.fullName?.trim()
       if (!full) return 'U'
@@ -245,19 +547,14 @@ export default {
 
     const currentYear = computed(() => new Date().getFullYear())
 
-    // helpers
-    const lockBodyScroll = (lock) => {
-      document.documentElement.classList.toggle('no-scroll', lock)
-      document.body.classList.toggle('no-scroll', lock)
-    }
-
+    // Menu controls
     const closeUserMenu = () => {
       showUserMenu.value = false
     }
 
     const closeMobileMenu = () => {
       showMobileMenu.value = false
-      lockBodyScroll(false)
+      document.body.style.overflow = ''
     }
 
     const closeAllMenus = () => {
@@ -265,9 +562,7 @@ export default {
       closeMobileMenu()
     }
 
-    // toggles
     const toggleUserMenu = async () => {
-      // se abrir user menu, fecha mobile
       if (!showUserMenu.value) {
         closeMobileMenu()
         showUserMenu.value = true
@@ -278,27 +573,32 @@ export default {
     }
 
     const toggleMobileMenu = () => {
-      // se abrir mobile, fecha user
-      if (!showMobileMenu.value) closeUserMenu()
-
-      showMobileMenu.value = !showMobileMenu.value
-      lockBodyScroll(showMobileMenu.value)
+      if (!showMobileMenu.value) {
+        closeUserMenu()
+        showMobileMenu.value = true
+        document.body.style.overflow = 'hidden'
+      } else {
+        closeMobileMenu()
+      }
     }
 
-    // click outside
+    // Event handlers
     const onDocumentClick = (e) => {
-      // fecha user menu se clicar fora do dropdown
-      if (showUserMenu.value && !e.target.closest('.user-dropdown')) {
+      if (showUserMenu.value && !e.target.closest('.relative')) {
         closeUserMenu()
       }
     }
 
-    // esc close
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
         closeAllMenus()
-        // devolve foco ao gatilho do user menu, se existir
         if (userTriggerRef.value) userTriggerRef.value.focus?.()
+      }
+    }
+
+    const onResize = () => {
+      if (window.innerWidth >= 768 && showMobileMenu.value) {
+        closeMobileMenu()
       }
     }
 
@@ -308,20 +608,15 @@ export default {
       closeAllMenus()
     }
 
-    // fecha menus ao trocar rota
+    // Watch route changes
     watch(
       () => route.fullPath,
       () => closeAllMenus()
     )
 
-    // fecha mobile ao mudar para desktop (evita overlay preso)
-    const onResize = () => {
-      if (window.innerWidth >= 769 && showMobileMenu.value) {
-        closeMobileMenu()
-      }
-    }
-
+    // Lifecycle
     onMounted(() => {
+      loadTheme()
       document.addEventListener('click', onDocumentClick)
       document.addEventListener('keydown', onKeyDown)
       window.addEventListener('resize', onResize)
@@ -331,7 +626,7 @@ export default {
       document.removeEventListener('click', onDocumentClick)
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('resize', onResize)
-      lockBodyScroll(false)
+      document.body.style.overflow = ''
     })
 
     return {
@@ -339,11 +634,15 @@ export default {
       isAuthenticated,
       userData,
       menuItems,
+      userMenuItems,
       userInitials,
       currentYear,
+      isDarkMode,
+      themeIcon,
       showUserMenu,
       showMobileMenu,
       userTriggerRef,
+      toggleTheme,
       toggleUserMenu,
       toggleMobileMenu,
       closeMobileMenu,
@@ -356,512 +655,69 @@ export default {
 </script>
 
 <style scoped>
-/* Base */
-.default-layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f7fafc;
+/* Custom styles for Tailwind components */
+
+/* Desktop Navigation Links */
+.nav-link-desktop {
+  @apply flex items-center px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative;
 }
 
-.layout-header {
-  background: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+.nav-link-desktop-active {
+  @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 font-semibold;
 }
 
-/* Navbar */
-.navbar {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-  height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.navbar-brand {
-  min-width: 140px;
-}
-
-.navbar-brand .logo {
-  font-size: 22px;
-  font-weight: 800;
-  text-decoration: none;
-  color: #667eea;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-}
-
-/* Desktop menu */
-.navbar-menu {
-  display: flex;
-  gap: 18px;
-  flex: 1;
-  justify-content: center;
-  min-width: 0;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: #666;
-  font-weight: 600;
-  padding: 10px 14px;
-  border-radius: 10px;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.nav-link:hover {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.nav-link.active {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.12);
-}
-
-.nav-link.active::after {
+.nav-link-desktop-active::after {
   content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #667eea;
+  @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-primary-500 dark:bg-primary-400 rounded-full;
 }
 
-/* Right area */
-.navbar-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 170px;
-  justify-content: flex-end;
+/* Mobile Navigation Links */
+.mobile-nav-link {
+  @apply flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 relative;
 }
 
-/* User */
-.navbar-user {
-  position: relative;
+.mobile-nav-link-active {
+  @apply bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-l-4 border-primary-500 dark:border-primary-400 font-semibold;
 }
 
-.user-dropdown {
-  position: relative;
+/* User Menu Items */
+.user-menu-item {
+  @apply flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200;
 }
 
-.user-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px 10px;
-  border-radius: 12px;
-  transition: all 0.2s;
+/* Buttons */
+.btn-primary {
+  @apply inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-lg hover:shadow-xl;
 }
 
-.user-trigger:hover {
-  background: rgba(0, 0, 0, 0.05);
+.btn-outline {
+  @apply inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200;
 }
 
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 14px;
+/* Footer Links */
+.footer-link {
+  @apply flex items-center text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200;
 }
 
-.user-avatar.big {
-  width: 42px;
-  height: 42px;
-  font-size: 14px;
+/* Social Icons */
+.social-icon {
+  @apply w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-primary-500 hover:text-white dark:hover:bg-primary-600 transition-all duration-200;
 }
 
-.user-name {
-  font-weight: 600;
-  color: #333;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Custom scrollbar for mobile menu */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* Dropdown */
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  background: white;
-  border-radius: 14px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-  min-width: 220px;
-  padding: 10px 0;
-  z-index: 1001;
-  animation: dropdownFade 0.16s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
-@keyframes dropdownFade {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
 }
 
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  text-decoration: none;
-  color: #333;
-  transition: all 0.2s;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.dropdown-item:hover {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
-}
-
-.dropdown-item.logout {
-  color: #ff4d4d;
-}
-
-.dropdown-item.logout:hover {
-  background: rgba(255, 77, 77, 0.1);
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: #eee;
-  margin: 10px 0;
-}
-
-/* Login button */
-.btn-login {
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: transform 0.2s, box-shadow 0.2s;
-  line-height: 1;
-}
-
-.btn-login:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.25);
-}
-
-.btn-login.full {
-  width: 100%;
-  justify-content: center;
-}
-
-/* Main */
-.layout-main {
-  flex: 1;
-  padding: 24px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-  min-width: 0;
-}
-
-/* Footer */
-.layout-footer {
-  background: #2d3748;
-  color: white;
-  padding: 40px 20px 20px;
-}
-
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px;
-  margin-bottom: 30px;
-}
-
-.footer-section h4 {
-  margin-bottom: 14px;
-  font-size: 16px;
-}
-
-.footer-section p {
-  color: #a0aec0;
-  line-height: 1.6;
-}
-
-.footer-section a {
-  display: block;
-  color: #a0aec0;
-  text-decoration: none;
-  margin-bottom: 10px;
-  transition: color 0.2s;
-}
-
-.footer-section a:hover {
-  color: white;
-}
-
-.footer-bottom {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-top: 16px;
-  border-top: 1px solid #4a5568;
-  text-align: center;
-  color: #a0aec0;
-  font-size: 13px;
-}
-
-/* Mobile menu */
-.mobile-menu-toggle {
-  display: none;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: white;
-  font-size: 18px;
-  color: #667eea;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.mobile-menu-toggle:hover {
-  background: rgba(102, 126, 234, 0.08);
-  transform: translateY(-1px);
-}
-
-.mobile-menu-overlay {
-  display: none;
-  position: fixed;
-  top: 70px; /* abaixo do header */
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 999;
-}
-
-.mobile-menu-overlay.active {
-  display: block;
-}
-
-.mobile-menu {
-  display: none;
-  position: fixed;
-  top: 70px;
-  right: 0;
-  bottom: 0;
-  width: min(420px, 92vw);
-  background: white;
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
-  z-index: 1000;
-  padding: 18px;
-  animation: slideIn 0.2s ease;
-  overflow: auto;
-}
-
-.mobile-menu.active {
-  display: block;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.mobile-menu-header {
-  padding-bottom: 14px;
-  border-bottom: 1px solid #f0f0f0;
-  margin-bottom: 14px;
-}
-
-.mobile-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.mobile-user-info {
-  min-width: 0;
-}
-
-.mobile-user-name {
-  font-weight: 800;
-  color: #1f2937;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-user-subtitle {
-  color: #6b7280;
-  font-size: 12px;
-  margin-top: 2px;
-}
-
-.mobile-links {
-  display: grid;
-  gap: 8px;
-}
-
-.nav-link.mobile {
-  display: flex;
-  width: 100%;
-  padding: 14px 14px;
-  border-radius: 12px;
-  font-size: 15px;
-}
-
-.mobile-footer {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #f0f0f0;
-  display: grid;
-  gap: 10px;
-}
-
-.mobile-action {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 12px;
-  border-radius: 12px;
-  text-decoration: none;
-  color: #111827;
-  background: #f8fafc;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-  font-weight: 700;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.mobile-action:hover {
-  background: rgba(102, 126, 234, 0.1);
-  transform: translateY(-1px);
-}
-
-.mobile-action.danger {
-  color: #ff4d4d;
-  background: rgba(255, 77, 77, 0.08);
-}
-
-/* Responsividade */
-@media (max-width: 1024px) {
-  .navbar-menu {
-    gap: 10px;
-  }
-
-  .nav-link {
-    padding: 9px 12px;
-    font-size: 14px;
-  }
-
-  .user-name {
-    max-width: 140px;
-  }
-}
-
-@media (max-width: 768px) {
-  .navbar {
-    padding: 0 14px;
-  }
-
-  .navbar-menu {
-    display: none;
-  }
-
-  .mobile-menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .user-name {
-    display: none;
-  }
-
-  .layout-main {
-    padding: 18px 14px;
-  }
-
-  .footer-content {
-    grid-template-columns: 1fr;
-    gap: 22px;
-  }
-}
-
-@media (max-width: 480px) {
-  .navbar-brand .logo {
-    font-size: 18px;
-  }
-
-  .navbar-actions {
-    min-width: 0;
-  }
-
-  .user-avatar {
-    width: 34px;
-    height: 34px;
-    font-size: 12px;
-  }
-
-  .dropdown-menu {
-    min-width: 190px;
-    right: -6px;
-  }
-}
-
-/* Trava scroll quando menu mobile abre (aplicada via JS) */
-:global(html.no-scroll),
-:global(body.no-scroll) {
-  overflow: hidden;
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
 }
 </style>
