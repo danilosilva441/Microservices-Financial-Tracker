@@ -2,6 +2,7 @@
 const BillingIntegration = require('./BillingIntegrationService');
 const DashboardCalculator = require('./DashboardCalculator');
 
+
 class DashboardService {
     
     constructor() {
