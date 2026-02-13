@@ -1,255 +1,383 @@
 <!-- components/unidades/UnidadeList.vue -->
 <template>
-  <div class="unidade-table">
-    <table class="table" aria-label="Lista de unidades">
-      <thead>
-        <tr>
-          <th scope="col" style="width: 50px;">
-            <input 
-              type="checkbox" 
-              v-model="selectAll"
-              @change="toggleSelectAll"
-              :aria-label="selectAll ? 'Desmarcar todas as unidades' : 'Marcar todas as unidades'"
+  <div class="unidade-table" :class="{ 'dark': isDarkMode }">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th scope="col" class="px-6 py-4 w-12">
+              <div class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  v-model="selectAll"
+                  @change="toggleSelectAll"
+                  class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+                  :aria-label="selectAll ? 'Desmarcar todas' : 'Marcar todas'"
+                >
+              </div>
+            </th>
+            <th 
+              v-for="column in columns"
+              :key="column.field"
+              scope="col"
+              @click="column.sortable ? sortBy(column.field) : null"
+              @keyup.enter="column.sortable ? sortBy(column.field) : null"
+              :tabindex="column.sortable ? 0 : -1"
+              class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              :class="{ 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700': column.sortable }"
             >
-          </th>
-          <th 
-            scope="col"
-            @click="sortBy('nome')" 
-            @keyup.enter="sortBy('nome')"
+              <div class="flex items-center gap-2">
+                <i v-if="column.icon" :class="column.icon" class="text-gray-400 dark:text-gray-500"></i>
+                <span>{{ column.label }}</span>
+                <i 
+                  v-if="column.sortable" 
+                  :class="getSortIcon(column.field)"
+                  class="text-gray-400 dark:text-gray-500 text-xs"
+                ></i>
+              </div>
+            </th>
+            <th scope="col" class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Ações
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tr 
+            v-for="unidade in sortedUnidades" 
+            :key="unidade.id"
+            @click="handleRowClick(unidade.id)"
+            @keyup.enter="handleRowClick(unidade.id)"
             tabindex="0"
-            class="sortable"
+            role="button"
+            :aria-label="`Unidade ${unidade.nome}`"
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
+            :class="{
+              'bg-primary-50 dark:bg-primary-900/20': selectedItems.includes(unidade.id),
+              'opacity-60': !unidade.isAtivo
+            }"
           >
-            <div class="th-content">
-              Nome
-              <i v-if="sortField === 'nome'" :class="sortIcon" aria-hidden="true"></i>
-              <i v-else class="fas fa-sort" aria-hidden="true"></i>
-            </div>
-          </th>
-          <th scope="col">Status</th>
-          <th 
-            scope="col"
-            @click="sortBy('metaMensal')" 
-            @keyup.enter="sortBy('metaMensal')"
-            tabindex="0"
-            class="sortable"
-          >
-            <div class="th-content">
-              Meta Mensal
-              <i v-if="sortField === 'metaMensal'" :class="sortIcon" aria-hidden="true"></i>
-              <i v-else class="fas fa-sort" aria-hidden="true"></i>
-            </div>
-          </th>
-          <th scope="col">Progresso</th>
-          <th scope="col">
-            <div class="th-content">
-              <i class="fas fa-users" aria-hidden="true"></i>
-              Funcionários
-            </div>
-          </th>
-          <th scope="col">
-            <div class="th-content">
-              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-              Vencimento
-            </div>
-          </th>
-          <th scope="col">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr 
-          v-for="unidade in sortedUnidades" 
-          :key="unidade.id"
-          :class="{ 
-            'table-row-selected': selectedItems.includes(unidade.id),
-            'table-row-inactive': !unidade.isAtivo 
-          }"
-          @click="handleRowClick(unidade.id)"
-          @keyup.enter="handleRowClick(unidade.id)"
-          tabindex="0"
-          role="button"
-          :aria-label="`Unidade ${unidade.nome}. Clique para ver detalhes`"
-        >
-          <td @click.stop @keyup.enter.stop>
+            <td class="px-6 py-4 w-12" @click.stop>
+              <div class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  :checked="selectedItems.includes(unidade.id)"
+                  @change="toggleSelect(unidade.id)"
+                  class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+                  :aria-label="`Selecionar ${unidade.nome}`"
+                >
+              </div>
+            </td>
+            
+            <!-- Nome e Endereço -->
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-sm">
+                  <i class="fas fa-store text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {{ unidade.nome }}
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                    <i class="fas fa-map-marker-alt text-gray-400 dark:text-gray-500"></i>
+                    <span class="truncate" :title="unidade.endereco">{{ unidade.endereco }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+            
+            <!-- Status -->
+            <td class="px-6 py-4">
+              <span :class="statusClasses(unidade)">
+                <i :class="statusIcon(unidade)" class="mr-1.5 text-xs"></i>
+                {{ statusText(unidade) }}
+              </span>
+            </td>
+            
+            <!-- Meta Mensal -->
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-bullseye text-primary-500 dark:text-primary-400"></i>
+                <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  {{ formatCurrency(unidade.metaMensal) }}
+                </span>
+              </div>
+            </td>
+            
+            <!-- Progresso -->
+            <td class="px-6 py-4">
+              <div class="min-w-[140px]">
+                <div class="flex items-center justify-between mb-1.5">
+                  <div class="flex items-center gap-1.5">
+                    <i :class="progressIcon(unidade)" :style="{ color: progressColor(unidade) }"></i>
+                    <span class="text-sm font-bold" :style="{ color: progressColor(unidade) }">
+                      {{ progress(unidade) }}%
+                    </span>
+                  </div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">da meta</span>
+                </div>
+                <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full rounded-full transition-all duration-300"
+                    :style="progressBarStyle(unidade)"
+                    role="progressbar"
+                    :aria-valuenow="progress(unidade)"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+              </div>
+            </td>
+            
+            <!-- Funcionários -->
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-users text-gray-400 dark:text-gray-500"></i>
+                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ unidade.funcionariosAtivos || 0 }}
+                </span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">ativos</span>
+              </div>
+            </td>
+            
+            <!-- Vencimento -->
+            <td class="px-6 py-4">
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fas fa-calendar-alt text-gray-400 dark:text-gray-500"></i>
+                  <span v-if="unidade.dataFim" class="text-gray-900 dark:text-white">
+                    {{ formatDate(unidade.dataFim) }}
+                  </span>
+                  <span v-else class="text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                    <i class="fas fa-ban text-xs"></i>
+                    Sem data
+                  </span>
+                </div>
+                <div v-if="expirationStatus(unidade)" :class="expirationBadgeClasses(unidade)">
+                  <i :class="expirationIcon(unidade)" class="mr-1 text-xs"></i>
+                  {{ expirationStatus(unidade).label }}
+                </div>
+              </div>
+            </td>
+            
+            <!-- Ações -->
+            <td class="px-6 py-4 text-right" @click.stop>
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  @click="handleEdit(unidade)"
+                  class="action-button text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+                  :title="`Editar ${unidade.nome}`"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+                
+                <button 
+                  v-if="unidade.isAtivo"
+                  @click="handleDeactivate(unidade)"
+                  class="action-button text-gray-600 hover:text-yellow-600 dark:text-gray-400 dark:hover:text-yellow-400"
+                  :title="`Desativar ${unidade.nome}`"
+                >
+                  <i class="fas fa-power-off"></i>
+                </button>
+                
+                <button 
+                  v-else
+                  @click="handleActivate(unidade)"
+                  class="action-button text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
+                  :title="`Ativar ${unidade.nome}`"
+                >
+                  <i class="fas fa-play"></i>
+                </button>
+                
+                <button 
+                  @click="handleDelete(unidade)"
+                  class="action-button text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                  :title="`Excluir ${unidade.nome}`"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden space-y-4">
+      <div 
+        v-for="unidade in sortedUnidades" 
+        :key="unidade.id"
+        @click="handleRowClick(unidade.id)"
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-all duration-200"
+        :class="{
+          'ring-2 ring-primary-500 dark:ring-primary-400': selectedItems.includes(unidade.id),
+          'opacity-60': !unidade.isAtivo
+        }"
+      >
+        <!-- Card Header -->
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3">
             <input 
               type="checkbox" 
               :checked="selectedItems.includes(unidade.id)"
-              @change="toggleSelect(unidade.id)"
-              :id="`checkbox-${unidade.id}`"
-              :aria-label="`Selecionar unidade ${unidade.nome}`"
+              @change.stop="toggleSelect(unidade.id)"
+              class="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
             >
-          </td>
-          <td>
-            <div class="unidade-cell">
-              <div class="unidade-avatar-sm">
-                <!-- Ícone provisório - substituir depois -->
-                <i class="fas fa-store" aria-hidden="true"></i>
-              </div>
-              <div class="unidade-info-sm">
-                <div class="unidade-name">{{ unidade.nome }}</div>
-                <div class="unidade-address" :title="unidade.endereco">
-                  <!-- Ícone provisório para endereço -->
-                  <i class="fas fa-map-marker-alt" aria-hidden="true" style="margin-right: 4px; font-size: 10px;"></i>
-                  {{ unidade.endereco }}
-                </div>
-              </div>
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-sm">
+              <i class="fas fa-store text-lg"></i>
             </div>
-          </td>
-          <td>
-            <span :class="statusBadgeClass(unidade)" :title="statusText(unidade)">
-              <i :class="statusIcon(unidade)" aria-hidden="true"></i>
-              {{ statusText(unidade) }}
-            </span>
-          </td>
-          <td>
-            <div class="meta-cell">
-              <!-- Ícone provisório para meta -->
-              <i class="fas fa-bullseye" aria-hidden="true" style="margin-right: 8px; color: #667eea;"></i>
-              <div class="meta-value">{{ formatCurrency(unidade.metaMensal) }}</div>
-            </div>
-          </td>
-          <td>
-            <div class="progress-cell">
-              <div class="progress-info">
-                <span class="progress-percentage">
-                  <!-- Ícone provisório baseado no progresso -->
-                  <i 
-                    :class="progressIcon(unidade)" 
-                    aria-hidden="true"
-                    style="margin-right: 4px;"
-                  ></i>
-                  {{ progress(unidade) }}%
-                </span>
-                <span class="progress-label">da meta</span>
-              </div>
-              <div class="unidade-progress">
-                <div 
-                  class="unidade-progress-bar"
-                  :style="progressBarStyle(unidade)"
-                  role="progressbar"
-                  :aria-valuenow="progress(unidade)"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  :aria-label="`Progresso: ${progress(unidade)}% da meta`"
-                ></div>
-              </div>
-            </div>
-          </td>
-          <td>
-            <div class="employees-cell">
-              <i class="fas fa-users" aria-hidden="true"></i>
-              <span>{{ funcionariosAtivos(unidade) }}</span>
-              <span class="employees-label">ativos</span>
-            </div>
-          </td>
-          <td>
-            <div class="expiration-cell">
-              <div class="expiration-date">
-                <i class="fas fa-calendar" aria-hidden="true"></i>
-                <span v-if="unidade.dataFim" :title="formatDate(unidade.dataFim)">
-                  {{ formatDate(unidade.dataFim) }}
-                </span>
-                <span v-else class="text-muted">
-                  <i class="fas fa-ban" aria-hidden="true" style="margin-right: 4px;"></i>
-                  Sem data
+            <div>
+              <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ unidade.nome }}</h3>
+              <div class="flex items-center gap-1 mt-0.5">
+                <span :class="statusClasses(unidade)" class="text-xs">
+                  <i :class="statusIcon(unidade)" class="mr-1"></i>
+                  {{ statusText(unidade) }}
                 </span>
               </div>
-              <div 
-                v-if="expirationStatus(unidade)" 
-                class="expiration-badge"
-                :class="expirationBadgeClass(unidade)"
-              >
-                <i :class="expirationIcon(unidade)" aria-hidden="true"></i>
-                {{ expirationStatus(unidade).label }}
-              </div>
             </div>
-          </td>
-          <td>
-            <div class="actions-cell" @click.stop @keyup.enter.stop>
+          </div>
+          <button 
+            @click.stop="handleEdit(unidade)"
+            class="p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+          >
+            <i class="fas fa-edit text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Card Content -->
+        <div class="space-y-3 mt-3">
+          <!-- Endereço -->
+          <div class="flex items-start gap-2 text-sm">
+            <i class="fas fa-map-marker-alt text-gray-400 dark:text-gray-500 mt-0.5"></i>
+            <span class="text-gray-600 dark:text-gray-300 flex-1">{{ unidade.endereco }}</span>
+          </div>
+
+          <!-- Meta e Progresso -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-bullseye text-primary-500 dark:text-primary-400"></i>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                {{ formatCurrency(unidade.metaMensal) }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <i :class="progressIcon(unidade)" :style="{ color: progressColor(unidade) }"></i>
+              <span class="text-sm font-bold" :style="{ color: progressColor(unidade) }">
+                {{ progress(unidade) }}%
+              </span>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso -->
+          <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              class="h-full rounded-full transition-all duration-300"
+              :style="progressBarStyle(unidade)"
+            ></div>
+          </div>
+
+          <!-- Funcionários e Vencimento -->
+          <div class="flex items-center justify-between pt-2">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-users text-gray-400 dark:text-gray-500"></i>
+              <span class="text-sm text-gray-700 dark:text-gray-300">
+                {{ unidade.funcionariosAtivos || 0 }} ativos
+              </span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <i class="fas fa-calendar-alt text-gray-400 dark:text-gray-500"></i>
+              <span v-if="unidade.dataFim" class="text-sm text-gray-700 dark:text-gray-300">
+                {{ formatDate(unidade.dataFim) }}
+              </span>
+              <span v-else class="text-sm text-gray-400 dark:text-gray-500">
+                Sem data
+              </span>
+            </div>
+          </div>
+
+          <!-- Badge de Vencimento e Ações Adicionais -->
+          <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div v-if="expirationStatus(unidade)" :class="expirationBadgeClasses(unidade)" class="text-xs">
+              <i :class="expirationIcon(unidade)" class="mr-1"></i>
+              {{ expirationStatus(unidade).label }}
+            </div>
+            
+            <div class="flex items-center gap-2">
               <button 
-                class="btn-action-sm"
-                @click="handleEdit(unidade)"
-                @keyup.enter="handleEdit(unidade)"
-                :title="`Editar ${unidade.nome}`"
-                :aria-label="`Editar unidade ${unidade.nome}`"
-              >
-                <i class="fas fa-edit" aria-hidden="true"></i>
-              </button>
-              
-              <button 
-                v-if="unidade.isAtivo"
-                class="btn-action-sm btn-warning"
-                @click="handleDeactivate(unidade)"
-                @keyup.enter="handleDeactivate(unidade)"
-                :title="`Desativar ${unidade.nome}`"
-                :aria-label="`Desativar unidade ${unidade.nome}`"
-              >
-                <i class="fas fa-power-off" aria-hidden="true"></i>
-              </button>
-              
-              <button 
-                v-else
-                class="btn-action-sm btn-success"
-                @click="handleActivate(unidade)"
-                @keyup.enter="handleActivate(unidade)"
+                v-if="!unidade.isAtivo"
+                @click.stop="handleActivate(unidade)"
+                class="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                 :title="`Ativar ${unidade.nome}`"
-                :aria-label="`Ativar unidade ${unidade.nome}`"
               >
-                <i class="fas fa-play" aria-hidden="true"></i>
+                <i class="fas fa-play"></i>
               </button>
-              
               <button 
-                class="btn-action-sm btn-danger"
-                @click="handleDelete(unidade)"
-                @keyup.enter="handleDelete(unidade)"
+                @click.stop="handleDelete(unidade)"
+                class="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                 :title="`Excluir ${unidade.nome}`"
-                :aria-label="`Excluir unidade ${unidade.nome}`"
               >
-                <i class="fas fa-trash" aria-hidden="true"></i>
+                <i class="fas fa-trash"></i>
               </button>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    
-    <div v-if="unidades.length === 0" class="table-empty" role="status" aria-live="polite">
-      <i class="fas fa-store-slash" aria-hidden="true"></i>
-      <p>Nenhuma unidade encontrada</p>
-      <button class="btn-add-unidade" @click="$emit('add')">
-        <i class="fas fa-plus" aria-hidden="true"></i>
-        Adicionar primeira unidade
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State Mobile -->
+      <div v-if="unidades.length === 0" class="text-center py-12 px-4">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+          <i class="fas fa-store-slash text-3xl text-gray-400 dark:text-gray-500"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Nenhuma unidade encontrada
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Comece adicionando sua primeira unidade
+        </p>
+        <button @click="$emit('add')" class="btn-primary">
+          <i class="fas fa-plus mr-2"></i>
+          Adicionar unidade
+        </button>
+      </div>
+    </div>
+
+    <!-- Desktop Empty State -->
+    <div v-if="unidades.length === 0" class="hidden md:block text-center py-16 px-4">
+      <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+        <i class="fas fa-store-slash text-4xl text-gray-400 dark:text-gray-500"></i>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        Nenhuma unidade cadastrada
+      </h3>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">
+        Clique no botão abaixo para adicionar sua primeira unidade
+      </p>
+      <button @click="$emit('add')" class="btn-primary">
+        <i class="fas fa-plus mr-2"></i>
+        Adicionar unidade
       </button>
     </div>
-    
-    <!-- Barra de seleção -->
+
+    <!-- Selection Bar -->
     <div v-if="selectedItems.length > 0" class="selection-bar">
       <div class="selection-info">
-        <i class="fas fa-check-circle" aria-hidden="true"></i>
-        {{ selectedItems.length }} unidade(s) selecionada(s)
+        <i class="fas fa-check-circle text-primary-500 dark:text-primary-400"></i>
+        <span class="font-medium">{{ selectedItems.length }} unidade(s) selecionada(s)</span>
       </div>
       <div class="selection-actions">
-        <button 
-          class="btn-selection"
-          @click="emitBulkAction('export')"
-          title="Exportar selecionados"
-        >
-          <i class="fas fa-download" aria-hidden="true"></i>
+        <button @click="emitBulkAction('export')" class="btn-selection">
+          <i class="fas fa-download mr-2"></i>
           Exportar
         </button>
-        <button 
-          class="btn-selection btn-danger"
-          @click="emitBulkAction('delete')"
-          title="Excluir selecionados"
-        >
-          <i class="fas fa-trash" aria-hidden="true"></i>
+        <button @click="emitBulkAction('delete')" class="btn-selection btn-danger">
+          <i class="fas fa-trash mr-2"></i>
           Excluir
         </button>
-        <button 
-          class="btn-selection btn-clear"
-          @click="clearSelection"
-          title="Limpar seleção"
-        >
-          <i class="fas fa-times" aria-hidden="true"></i>
+        <button @click="clearSelection" class="btn-selection">
+          <i class="fas fa-times mr-2"></i>
           Limpar
         </button>
       </div>
@@ -258,7 +386,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUnidadesUI } from '@/composables/unidades/useUnidadesUI';
 
 const props = defineProps({
@@ -286,6 +414,25 @@ const emit = defineEmits([
 
 const { formatCurrency, formatDate, getStatusBadge, getExpirationStatus } = useUnidadesUI();
 
+// Dark mode detection
+const isDarkMode = ref(false);
+
+const loadTheme = () => {
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  isDarkMode.value = savedTheme ? savedTheme === 'dark' : prefersDark;
+};
+
+// Columns configuration
+const columns = [
+  { field: 'nome', label: 'Unidade', icon: 'fas fa-store', sortable: true },
+  { field: 'status', label: 'Status', icon: 'fas fa-circle', sortable: true },
+  { field: 'metaMensal', label: 'Meta Mensal', icon: 'fas fa-bullseye', sortable: true },
+  { field: 'progresso', label: 'Progresso', icon: 'fas fa-chart-line', sortable: false },
+  { field: 'funcionarios', label: 'Funcionários', icon: 'fas fa-users', sortable: true },
+  { field: 'vencimento', label: 'Vencimento', icon: 'fas fa-calendar-alt', sortable: true }
+];
+
 // Local state
 const selectedItems = ref([]);
 const sortField = ref('nome');
@@ -304,10 +451,6 @@ const selectAll = computed({
   }
 });
 
-const sortIcon = computed(() => 
-  sortDirection.value === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'
-);
-
 const sortedUnidades = computed(() => {
   const sorted = [...props.unidades];
   
@@ -315,7 +458,6 @@ const sortedUnidades = computed(() => {
     let aValue = a[sortField.value];
     let bValue = b[sortField.value];
     
-    // Tratamento especial para alguns campos
     if (sortField.value === 'nome') {
       aValue = aValue?.toLowerCase() || '';
       bValue = bValue?.toLowerCase() || '';
@@ -324,6 +466,21 @@ const sortedUnidades = computed(() => {
     if (sortField.value === 'metaMensal') {
       aValue = aValue || 0;
       bValue = bValue || 0;
+    }
+    
+    if (sortField.value === 'funcionarios') {
+      aValue = a.funcionariosAtivos || 0;
+      bValue = b.funcionariosAtivos || 0;
+    }
+    
+    if (sortField.value === 'vencimento') {
+      aValue = a.dataFim || '';
+      bValue = b.dataFim || '';
+    }
+    
+    if (sortField.value === 'status') {
+      aValue = a.isAtivo ? 1 : 0;
+      bValue = b.isAtivo ? 1 : 0;
     }
     
     if (aValue < bValue) return sortDirection.value === 'asc' ? -1 : 1;
@@ -335,6 +492,11 @@ const sortedUnidades = computed(() => {
 });
 
 // Methods
+const getSortIcon = (field) => {
+  if (sortField.value !== field) return 'fas fa-sort text-gray-300 dark:text-gray-600';
+  return sortDirection.value === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+};
+
 const toggleSelectAll = () => {
   selectAll.value = !selectAll.value;
 };
@@ -382,21 +544,22 @@ const handleDelete = (unidade) => {
   emit('delete', unidade);
 };
 
-const statusBadgeClass = (unidade) => {
-  const badge = getStatusBadge(unidade.isAtivo);
-  return `unidade-status-badge ${badge.variant === 'success' ? 'unidade-status-active' : 'unidade-status-inactive'}`;
+// Status helpers
+const statusClasses = (unidade) => {
+  return unidade.isAtivo 
+    ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+    : 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
 };
 
 const statusIcon = (unidade) => {
-  const badge = getStatusBadge(unidade.isAtivo);
-  return `fas fa-${badge.icon}`;
+  return unidade.isAtivo ? 'fas fa-check-circle' : 'fas fa-circle';
 };
 
 const statusText = (unidade) => {
-  const badge = getStatusBadge(unidade.isAtivo);
-  return badge.label;
+  return unidade.isAtivo ? 'Ativo' : 'Inativo';
 };
 
+// Progress helpers
 const progress = (unidade) => {
   const faturamentoAtual = unidade.faturamentoAtual || 0;
   const meta = unidade.metaMensal || 0;
@@ -404,42 +567,60 @@ const progress = (unidade) => {
   return Math.min(Math.round((faturamentoAtual / meta) * 100), 100);
 };
 
+const progressColor = (unidade) => {
+  const p = progress(unidade);
+  if (p >= 75) return '#10b981';
+  if (p >= 50) return '#f59e0b';
+  if (p >= 25) return '#f97316';
+  return '#ef4444';
+};
+
 const progressIcon = (unidade) => {
   const p = progress(unidade);
-  if (p >= 75) return 'fas fa-check-circle';
-  if (p >= 50) return 'fas fa-chart-line';
-  if (p >= 25) return 'fas fa-exclamation-circle';
-  return 'fas fa-times-circle';
+  if (p >= 75) return 'fas fa-check-circle text-green-500';
+  if (p >= 50) return 'fas fa-chart-line text-yellow-500';
+  if (p >= 25) return 'fas fa-exclamation-circle text-orange-500';
+  return 'fas fa-times-circle text-red-500';
 };
 
 const progressBarStyle = (unidade) => {
-  const p = progress(unidade);
-  let backgroundColor = '#ef4444';
-  
-  if (p >= 75) backgroundColor = '#10b981';
-  else if (p >= 50) backgroundColor = '#f59e0b';
-  else if (p >= 25) backgroundColor = '#f97316';
-  
   return {
-    width: `${p}%`,
-    backgroundColor
+    width: `${progress(unidade)}%`,
+    backgroundColor: progressColor(unidade)
   };
 };
 
-const funcionariosAtivos = (unidade) => unidade.funcionariosAtivos || 0;
-
+// Expiration helpers
 const expirationStatus = (unidade) => getExpirationStatus(unidade.dataFim);
 
-const expirationBadgeClass = (unidade) => {
+const expirationBadgeClasses = (unidade) => {
   const status = expirationStatus(unidade);
   if (!status) return '';
-  return `expiration-badge-${status.variant}`;
+  
+  const baseClasses = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium';
+  
+  switch(status.variant) {
+    case 'warning':
+      return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400`;
+    case 'danger':
+      return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400`;
+    case 'success':
+      return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400`;
+    default:
+      return baseClasses;
+  }
 };
 
 const expirationIcon = (unidade) => {
   const status = expirationStatus(unidade);
   if (!status) return '';
-  return `fas fa-${status.icon}`;
+  
+  switch(status.variant) {
+    case 'warning': return 'fas fa-clock';
+    case 'danger': return 'fas fa-exclamation-triangle';
+    case 'success': return 'fas fa-check-circle';
+    default: return 'fas fa-calendar-check';
+  }
 };
 
 const emitBulkAction = (action) => {
@@ -453,439 +634,26 @@ const clearSelection = () => {
   selectedItems.value = [];
   emitSelectionChange();
 };
+
+// Theme setup
+onMounted(() => {
+  loadTheme();
+  
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleThemeChange = (e) => {
+    if (!localStorage.getItem('theme')) {
+      isDarkMode.value = e.matches;
+    }
+  };
+  
+  mediaQuery.addEventListener('change', handleThemeChange);
+  
+  onUnmounted(() => {
+    mediaQuery.removeEventListener('change', handleThemeChange);
+  });
+});
 </script>
 
 <style scoped>
-.unidade-table {
-  width: 100%;
-  overflow-x: auto;
-  position: relative;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 1000px;
-}
-
-.table th {
-  background: #f8fafc;
-  padding: 16px;
-  text-align: left;
-  font-weight: 600;
-  color: #4a5568;
-  border-bottom: 2px solid var(--unidade-border);
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.table td {
-  padding: 16px;
-  border-bottom: 1px solid var(--unidade-border);
-  vertical-align: middle;
-}
-
-.table tbody tr {
-  background: white;
-  transition: all 0.3s;
-}
-
-.table tbody tr:hover {
-  background: #f8fafc;
-  cursor: pointer;
-}
-
-.table tbody tr:focus {
-  outline: 2px solid var(--unidade-color-primary);
-  outline-offset: -2px;
-}
-
-.table-row-selected {
-  background: rgba(102, 126, 234, 0.05) !important;
-}
-
-.table-row-inactive {
-  opacity: 0.7;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.sortable:hover {
-  background: #edf2f7;
-}
-
-.sortable:focus {
-  outline: 2px solid var(--unidade-color-primary);
-}
-
-.th-content {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.th-content i {
-  font-size: 12px;
-  color: var(--unidade-color-primary);
-}
-
-.unidade-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.unidade-avatar-sm {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.unidade-info-sm {
-  flex: 1;
-  min-width: 0;
-}
-
-.unidade-name {
-  font-weight: 600;
-  color: #1a202c;
-  font-size: 14px;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.unidade-address {
-  font-size: 12px;
-  color: #718096;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.unidade-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.unidade-status-active {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.unidade-status-inactive {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.meta-cell {
-  display: flex;
-  align-items: center;
-}
-
-.meta-value {
-  font-weight: 700;
-  color: var(--unidade-color-primary);
-  font-size: 14px;
-}
-
-.progress-cell {
-  min-width: 120px;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.progress-percentage {
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  color: #1a202c;
-  font-size: 14px;
-}
-
-.progress-label {
-  font-size: 12px;
-  color: #718096;
-}
-
-.unidade-progress {
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.unidade-progress-bar {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.employees-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #1a202c;
-}
-
-.employees-cell i {
-  color: var(--unidade-color-primary);
-  font-size: 14px;
-}
-
-.employees-label {
-  font-size: 12px;
-  color: #718096;
-  margin-left: 4px;
-}
-
-.expiration-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.expiration-date {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #1a202c;
-}
-
-.expiration-date i {
-  font-size: 12px;
-  color: #718096;
-}
-
-.expiration-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  width: fit-content;
-}
-
-.expiration-badge-warning {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.expiration-badge-danger {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.expiration-badge-success {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-action-sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid var(--unidade-border);
-  background: white;
-  color: #718096;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 12px;
-}
-
-.btn-action-sm:hover,
-.btn-action-sm:focus {
-  background: #edf2f7;
-  color: #4a5568;
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.btn-action-sm.btn-warning:hover {
-  background: #fef3c7;
-  color: #92400e;
-  border-color: #fde68a;
-}
-
-.btn-action-sm.btn-success:hover {
-  background: #d1fae5;
-  color: #065f46;
-  border-color: #a7f3d0;
-}
-
-.btn-action-sm.btn-danger:hover {
-  background: #fee2e2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-.table-empty {
-  padding: 60px 20px;
-  text-align: center;
-  color: #cbd5e0;
-  background: #f9fafb;
-  border-radius: 8px;
-  margin-top: 20px;
-}
-
-.table-empty i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #d1d5db;
-}
-
-.table-empty p {
-  font-size: 16px;
-  color: #718096;
-  margin-bottom: 20px;
-}
-
-.btn-add-unidade {
-  padding: 10px 20px;
-  background: var(--unidade-color-primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
-}
-
-.btn-add-unidade:hover {
-  background: #5a67d8;
-  transform: translateY(-1px);
-}
-
-.text-muted {
-  color: #a0aec0 !important;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.selection-bar {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  border-top: 1px solid var(--unidade-border);
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 20;
-}
-
-.selection-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #4a5568;
-  font-weight: 600;
-}
-
-.selection-info i {
-  color: var(--unidade-color-primary);
-}
-
-.selection-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-selection {
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid var(--unidade-border);
-  background: white;
-  color: #4a5568;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.3s;
-}
-
-.btn-selection:hover {
-  background: #edf2f7;
-}
-
-.btn-selection.btn-danger {
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-.btn-selection.btn-danger:hover {
-  background: #fee2e2;
-}
-
-.btn-selection.btn-clear {
-  color: #6b7280;
-}
-
-@media (max-width: 768px) {
-  .table th:nth-child(5),
-  .table td:nth-child(5),
-  .table th:nth-child(6),
-  .table td:nth-child(6) {
-    display: none;
-  }
-  
-  .selection-bar {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-  
-  .selection-actions {
-    justify-content: flex-end;
-  }
-}
+@import '@/assets/default.css';
 </style>

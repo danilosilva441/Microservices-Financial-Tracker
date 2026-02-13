@@ -1,52 +1,58 @@
-/**
- * Composable para gerenciamento de Tema (Dark/Light Mode).
- * Persiste a escolha do usuário e detecta preferência do sistema.
- */
-import { ref, onMounted } from 'vue';
+// composables/useTheme.js
+import { ref, onMounted, onUnmounted } from 'vue'
 
 export function useTheme() {
-  const isDark = ref(false);
+  const isDarkMode = ref(false)
 
-  /**
-   * Aplica ou remove a classe 'dark' no elemento HTML root.
-   * @param {boolean} value - True para Dark Mode.
-   */
-  const applyTheme = (value) => {
-    isDark.value = value;
-    const html = document.documentElement;
+  const loadTheme = () => {
+    const savedTheme = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    isDarkMode.value = savedTheme ? savedTheme === 'dark' : prefersDark
     
-    if (value) {
-      html.classList.add('dark');
+    // Aplica a classe dark ao HTML
+    if (isDarkMode.value) {
+      document.documentElement.classList.add('dark')
     } else {
-      html.classList.remove('dark');
+      document.documentElement.classList.remove('dark')
     }
-    
-    localStorage.setItem('theme', value ? 'dark' : 'light');
-  };
+  }
 
-  /**
-   * Alterna entre os temas.
-   */
   const toggleTheme = () => {
-    applyTheme(!isDark.value);
-  };
-
-  /**
-   * Inicializa verificando localStorage ou preferência do sistema.
-   */
-  onMounted(() => {
-    const savedTheme = localStorage.getItem('theme');
+    isDarkMode.value = !isDarkMode.value
+    localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
     
-    if (savedTheme) {
-      applyTheme(savedTheme === 'dark');
+    if (isDarkMode.value) {
+      document.documentElement.classList.add('dark')
     } else {
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      applyTheme(systemPrefersDark);
+      document.documentElement.classList.remove('dark')
     }
-  });
+  }
+
+  onMounted(() => {
+    loadTheme()
+    
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleThemeChange = (e) => {
+      if (!localStorage.getItem('theme')) {
+        isDarkMode.value = e.matches
+        if (isDarkMode.value) {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      }
+    }
+    
+    mediaQuery.addEventListener('change', handleThemeChange)
+    
+    onUnmounted(() => {
+      mediaQuery.removeEventListener('change', handleThemeChange)
+    })
+  })
 
   return {
-    isDark,
-    toggleTheme
-  };
+    isDarkMode,
+    toggleTheme,
+    loadTheme
+  }
 }

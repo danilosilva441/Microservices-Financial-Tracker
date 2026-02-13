@@ -1,135 +1,317 @@
 <!-- components/unidades/EditarUnidade.vue -->
 <template>
-  <Div>
-    <div class="editar-unidade-container">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200" :class="{ 'dark': isDarkMode }">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <!-- Breadcrumb -->
-      <nav class="breadcrumb-nav" aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item">
-            <router-link to="/">
-              <i class="fas fa-home"></i>
-              Home
+      <nav class="flex items-center space-x-2 text-sm mb-6 overflow-x-auto pb-2" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 flex-wrap">
+          <li class="flex items-center">
+            <router-link 
+              to="/" 
+              class="flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors whitespace-nowrap"
+            >
+              <IconHome class="w-4 h-4 mr-1" />
+              <span class="hidden sm:inline">Home</span>
             </router-link>
+            <IconChevronRight class="w-4 h-4 mx-1 text-gray-400 dark:text-gray-600" />
           </li>
-          <li class="breadcrumb-item">
-            <router-link to="/unidades">
-              <i class="fas fa-store"></i>
-              Unidades
+          <li class="flex items-center">
+            <router-link 
+              to="/unidades" 
+              class="flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors whitespace-nowrap"
+            >
+              <IconStore class="w-4 h-4 mr-1" />
+              <span class="hidden sm:inline">Unidades</span>
             </router-link>
+            <IconChevronRight class="w-4 h-4 mx-1 text-gray-400 dark:text-gray-600" />
           </li>
-          <li v-if="unidade" class="breadcrumb-item">
-            <router-link :to="`/unidades/${unidade.id}`">
-              {{ unidade.nome }}
+          <li v-if="unidade" class="flex items-center">
+            <router-link 
+              :to="`/unidades/${unidade.id}`" 
+              class="flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors whitespace-nowrap"
+            >
+              <span class="max-w-[150px] truncate">{{ unidade.nome }}</span>
             </router-link>
+            <IconChevronRight class="w-4 h-4 mx-1 text-gray-400 dark:text-gray-600" />
           </li>
-          <li class="breadcrumb-item active" aria-current="page">
-            <i class="fas fa-edit"></i>
-            Editar
+          <li class="flex items-center text-primary-600 dark:text-primary-400 font-semibold whitespace-nowrap" aria-current="page">
+            <IconEdit class="w-4 h-4 mr-1" />
+            <span>Editar</span>
           </li>
         </ol>
       </nav>
 
-      <!-- Header -->
-      <div class="page-header">
-        <div class="header-content">
-          <div class="header-left">
-            <h1 class="page-title">
-              <i class="fas fa-edit"></i>
-              Editar Unidade
-            </h1>
-            <p class="page-subtitle" v-if="unidade">
-              Editando: <strong>{{ unidade.nome }}</strong>
-            </p>
+      <!-- Header Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-start space-x-4">
+            <div class="flex-shrink-0">
+              <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-lg">
+                <IconStore class="w-6 h-6 sm:w-7 sm:h-7" />
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white truncate">
+                  Editar Unidade
+                </h1>
+                <span class="px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full">
+                  <IconClock class="w-3 h-3 inline mr-1" />
+                  Em edição
+                </span>
+              </div>
+              <p v-if="unidade" class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 flex items-center">
+                <IconInfoCircle class="w-4 h-4 mr-1.5 text-gray-400 dark:text-gray-500" />
+                Editando: <span class="font-semibold text-gray-900 dark:text-white ml-1 truncate">{{ unidade.nome }}</span>
+              </p>
+            </div>
           </div>
-          <div class="header-right">
+          <div class="flex items-center gap-2 sm:gap-3 ml-0 sm:ml-4">
             <router-link 
               :to="`/unidades/${unidadeId}`" 
-              class="btn btn-outline-secondary"
+              class="btn-outline flex-1 sm:flex-initial justify-center"
             >
-              <i class="fas fa-times"></i>
-              Cancelar
+              <IconTimes class="w-4 h-4 mr-2" />
+              <span class="hidden sm:inline">Cancelar</span>
+              <span class="sm:hidden">Cancelar</span>
             </router-link>
           </div>
         </div>
       </div>
 
-      <!-- Conteúdo Principal -->
-      <div class="page-content">
-        <!-- Loading State -->
-        <div v-if="loading" class="loading-state">
-          <div class="spinner-container">
-            <div class="spinner-border text-primary"></div>
-            <p>Carregando dados da unidade...</p>
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Form Column -->
+        <div class="lg:col-span-2">
+          <!-- Loading State -->
+          <div v-if="loading" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 sm:p-12">
+            <div class="flex flex-col items-center justify-center text-center">
+              <div class="relative">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-primary-200 dark:border-primary-900 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <IconStore class="w-6 h-6 sm:w-8 sm:h-8 text-primary-600 dark:text-primary-400 animate-pulse" />
+                </div>
+              </div>
+              <p class="mt-6 text-base sm:text-lg font-medium text-gray-900 dark:text-white">
+                Carregando unidade
+              </p>
+              <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Aguarde enquanto buscamos os dados...
+              </p>
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-red-200 dark:border-red-900/30 p-8 sm:p-12">
+            <div class="flex flex-col items-center justify-center text-center">
+              <div class="w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-6">
+                <IconExclamationTriangle class="w-10 h-10 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                Erro ao carregar
+              </h3>
+              <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                {{ error }}
+              </p>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <button @click="fetchUnidade" class="btn-primary">
+                  <IconRefresh class="w-4 h-4 mr-2" />
+                  Tentar novamente
+                </button>
+                <router-link to="/unidades" class="btn-outline">
+                  <IconArrowLeft class="w-4 h-4 mr-2" />
+                  Voltar para unidades
+                </router-link>
+              </div>
+            </div>
+          </div>
+
+          <!-- Not Found State -->
+          <div v-else-if="!unidade" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 sm:p-12">
+            <div class="flex flex-col items-center justify-center text-center">
+              <div class="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-6">
+                <IconStoreSlash class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                Unidade não encontrada
+              </h3>
+              <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                A unidade que você está tentando editar não existe ou foi removida.
+              </p>
+              <router-link to="/unidades" class="btn-primary">
+                <IconArrowLeft class="w-4 h-4 mr-2" />
+                Voltar para unidades
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <div v-else class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+              <div class="flex items-center gap-2">
+                <IconPencil class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                  Formulário de Edição
+                </h2>
+                <span class="ml-auto text-xs text-gray-500 dark:text-gray-400">
+                  <IconInfoCircle class="w-3.5 h-3.5 inline mr-1" />
+                  Campos com * são obrigatórios
+                </span>
+              </div>
+            </div>
+            <div class="p-4 sm:p-6">
+              <UnidadeForm
+                ref="unidadeForm"
+                :initial-data="unidade"
+                mode="edit"
+                @success="handleSuccess"
+                @cancel="handleCancel"
+                @error="handleError"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Error State -->
-        <div v-else-if="error" class="error-state">
-          <div class="error-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3>Erro ao carregar unidade</h3>
-          <p>{{ error }}</p>
-          <div class="error-actions">
-            <button @click="fetchUnidade" class="btn btn-primary">
-              <i class="fas fa-redo"></i>
-              Tentar novamente
-            </button>
-            <router-link to="/unidades" class="btn btn-outline-secondary">
-              <i class="fas fa-arrow-left"></i>
-              Voltar para unidades
-            </router-link>
-          </div>
-        </div>
+        <!-- Help Sidebar Column -->
+        <div class="lg:col-span-1 space-y-4 sm:space-y-6">
+          <!-- Help Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-20">
+            <div class="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+              <div class="flex items-center gap-2">
+                <IconQuestionCircle class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                  Ajuda Rápida
+                </h3>
+              </div>
+            </div>
+            <div class="p-4 sm:p-6">
+              <div class="space-y-4 sm:space-y-6">
+                <!-- Dicas -->
+                <div>
+                  <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    Dicas para edição
+                  </h4>
+                  <ul class="space-y-3">
+                    <li class="flex items-start gap-3 text-sm">
+                      <div class="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mt-0.5">
+                        <span class="text-xs font-bold text-primary-600 dark:text-primary-400">1</span>
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-900 dark:text-white">Nome da unidade</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Use um nome claro e descritivo que identifique facilmente a unidade.
+                        </p>
+                      </div>
+                    </li>
+                    <li class="flex items-start gap-3 text-sm">
+                      <div class="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mt-0.5">
+                        <span class="text-xs font-bold text-primary-600 dark:text-primary-400">2</span>
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-900 dark:text-white">Endereço completo</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Inclua rua, número, bairro, cidade, estado e CEP para localização precisa.
+                        </p>
+                      </div>
+                    </li>
+                    <li class="flex items-start gap-3 text-sm">
+                      <div class="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mt-0.5">
+                        <span class="text-xs font-bold text-primary-600 dark:text-primary-400">3</span>
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-900 dark:text-white">Meta mensal</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Baseie-se em dados históricos e seja realista para motivar a equipe.
+                        </p>
+                      </div>
+                    </li>
+                    <li class="flex items-start gap-3 text-sm">
+                      <div class="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mt-0.5">
+                        <span class="text-xs font-bold text-primary-600 dark:text-primary-400">4</span>
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-900 dark:text-white">Datas importantes</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Mantenha as datas de início e vencimento sempre atualizadas.
+                        </p>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
 
-        <!-- Formulário -->
-        <div v-else-if="unidade" class="form-container">
-          <UnidadeForm
-            ref="unidadeForm"
-            :initial-data="unidade"
-            mode="edit"
-            @success="handleSuccess"
-            @cancel="handleCancel"
-            @error="handleError"
-          />
-        </div>
+                <!-- Divider -->
+                <div class="border-t border-gray-200 dark:border-gray-700"></div>
 
-        <!-- Not Found -->
-        <div v-else class="not-found-state">
-          <div class="not-found-icon">
-            <i class="fas fa-store-slash"></i>
+                <!-- Status Info -->
+                <div>
+                  <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    Informações da Unidade
+                  </h4>
+                  <div v-if="unidade" class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">Status:</span>
+                      <span :class="unidade.isAtivo ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'">
+                        <span class="flex items-center">
+                          <span class="w-2 h-2 rounded-full mr-2" :class="unidade.isAtivo ? 'bg-green-500' : 'bg-gray-400'"></span>
+                          {{ unidade.isAtivo ? 'Ativo' : 'Inativo' }}
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">ID:</span>
+                      <span class="font-mono text-xs text-gray-900 dark:text-white">{{ unidade.id }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">Criado em:</span>
+                      <span class="text-gray-900 dark:text-white">{{ formatDate(unidade.createdAt) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">Última atualização:</span>
+                      <span class="text-gray-900 dark:text-white">{{ formatDate(unidade.updatedAt) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <button 
+                    @click="$refs.unidadeForm?.submitForm()" 
+                    class="btn-primary w-full justify-center mb-2"
+                  >
+                    <IconSave class="w-4 h-4 mr-2" />
+                    Salvar alterações
+                  </button>
+                  <router-link 
+                    :to="`/unidades/${unidadeId}`" 
+                    class="btn-outline w-full justify-center"
+                  >
+                    <IconEye class="w-4 h-4 mr-2" />
+                    Visualizar unidade
+                  </router-link>
+                </div>
+              </div>
+            </div>
           </div>
-          <h3>Unidade não encontrada</h3>
-          <p>A unidade que você está tentando editar não existe ou foi removida.</p>
-          <router-link to="/unidades" class="btn btn-primary">
-            <i class="fas fa-arrow-left"></i>
-            Voltar para unidades
-          </router-link>
-        </div>
-      </div>
 
-      <!-- Sidebar de Ajuda (Opcional) -->
-      <div class="help-sidebar">
-        <div class="help-card">
-          <h4><i class="fas fa-question-circle"></i> Ajuda</h4>
-          <ul class="help-list">
-            <li>
-              <i class="fas fa-info-circle"></i>
-              <strong>Nome:</strong> Use um nome claro e descritivo
-            </li>
-            <li>
-              <i class="fas fa-map-marker-alt"></i>
-              <strong>Endereço:</strong> Inclua cidade, estado e CEP
-            </li>
-            <li>
-              <i class="fas fa-chart-line"></i>
-              <strong>Meta:</strong> Baseie-se em dados históricos
-            </li>
-            <li>
-              <i class="fas fa-calendar"></i>
-              <strong>Datas:</strong> Mantenha sempre atualizadas
-            </li>
-          </ul>
+          <!-- Recent Activity Card (Opcional) -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hidden lg:block">
+            <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+              <div class="flex items-center gap-2">
+                <IconActivity class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                  Atividade Recente
+                </h3>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="flex flex-col items-center text-center">
+                <IconHistory class="w-8 h-8 text-gray-400 dark:text-gray-600 mb-2" />
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Histórico de alterações disponível em breve
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -137,13 +319,53 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useTheme } from '@/composables/useTheme';
 import UnidadeForm from '@/components/unidades/UnidadeForm.vue';
 import { useUnidades } from '@/composables/unidades';
 
+// Ícones personalizados (assumindo que você tem esses SVGs)
+import IconHome from "@/components/icons/home.vue"
+import IconChartLine from "@/components/icons/chart-line.vue"
+import IconStore from "@/components/icons/store.vue"
+import IconBriefcase from "@/components/icons/briefcase.vue"
+import IconChartBar from "@/components/icons/chart-bar.vue"
+import IconUsers from "@/components/icons/users.vue"
+import IconCalendarAlt from "@/components/icons/calendar-alt.vue"
+
+import IconRocket from "@/components/icons/rocket.vue"
+import IconSignInAlt from "@/components/icons/sign-in-alt.vue"
+import IconUserPlus from "@/components/icons/user-plus.vue"
+
+import IconUserCircle from "@/components/icons/user-circle.vue"
+import IconCog from "@/components/icons/cog.vue"
+import IconBell from "@/components/icons/bell.vue"
+import IconCreditCard from "@/components/icons/credit-card.vue"
+import IconSignOutAlt from "@/components/icons/sign-out-alt.vue"
+
+import IconChevronDown from "@/components/icons/chevron-down.vue"
+import IconChevronRight from "@/components/icons/chevron-right.vue"
+import IconTimes from "@/components/icons/times.vue"
+import IconBars from "@/components/icons/bars.vue"
+
+import IconSun from "@/components/icons/sun.vue"
+import IconMoon from "@/components/icons/moon.vue"
+
+import IconShieldAlt from "@/components/icons/shield-alt.vue"
+import IconQuestionCircle from "@/components/icons/question-circle.vue"
+import IconBook from "@/components/icons/book.vue"
+import IconEnvelope from "@/components/icons/envelope.vue"
+import IconServer from "@/components/icons/server.vue"
+
+import IconTwitter from "@/components/icons/twitter.vue"
+import IconLinkedin from "@/components/icons/linkedin.vue"
+import IconGithub from "@/components/icons/github.vue"
+import IconDiscord from "@/components/icons/discord.vue"
+
 const route = useRoute();
 const router = useRouter();
+const { isDarkMode } = useTheme();
 const unidadeId = route.params.id;
 
 const {
@@ -156,9 +378,20 @@ const {
 // Estado local
 const loading = ref(true);
 const error = ref(null);
+const unidadeForm = ref(null);
 
 // Computed
 const unidade = computed(() => store.unidadeAtual || getUnidadeById(unidadeId));
+
+// Formatação de data
+const formatDate = (date) => {
+  if (!date) return 'N/A';
+  return new Date(date).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
 
 // Métodos
 const fetchUnidade = async () => {
@@ -166,13 +399,11 @@ const fetchUnidade = async () => {
   error.value = null;
   
   try {
-    // Primeiro tenta buscar localmente
     if (!unidade.value) {
-      // Se não encontrar localmente, busca na API
       await actions.getUnidade(unidadeId);
     }
   } catch (err) {
-    error.value = err.message || 'Erro ao carregar unidade';
+    error.value = err.response?.data?.message || err.message || 'Erro ao carregar unidade';
     console.error('Erro ao carregar unidade:', err);
   } finally {
     loading.value = false;
@@ -180,11 +411,10 @@ const fetchUnidade = async () => {
 };
 
 const handleSuccess = (updatedUnidade) => {
-  // Redireciona para a página de detalhes
   router.push({ 
     name: 'UnidadeDetalhes', 
     params: { id: unidadeId },
-    query: { updated: 'true' }
+    query: { updated: 'true', timestamp: Date.now() }
   });
 };
 
@@ -194,21 +424,25 @@ const handleCancel = () => {
 
 const handleError = (errorMessage) => {
   console.error('Erro no formulário:', errorMessage);
-  // Você pode adicionar uma notificação aqui
 };
+
+// Watch para mudanças no ID da rota
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    fetchUnidade();
+  }
+});
 
 // Lifecycle
 onMounted(async () => {
-  // Carrega unidades se necessário
   if (store.unidades.length === 0) {
     await loadUnidades();
   }
-  
-  // Busca a unidade específica
   await fetchUnidade();
 });
 </script>
 
 <style scoped>
+@import '@/assets/default.css';
 @import './CSS/EditarUnidade.css';
 </style>

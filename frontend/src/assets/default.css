@@ -1,0 +1,159 @@
+/* src/assets/default.css */
+/* Global Styles */
+.nav-link-desktop {
+  @apply flex items-center px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative;
+}
+
+.nav-link-desktop-active {
+  @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 font-semibold;
+}
+
+.nav-link-desktop-active::after {
+  content: '';
+  @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-primary-500 dark:bg-primary-400 rounded-full;
+}
+
+/* Mobile Navigation Links */
+.mobile-nav-link {
+  @apply flex items-center px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 relative;
+}
+
+.mobile-nav-link-active {
+  @apply bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 border-l-4 border-primary-500 dark:border-primary-400 font-semibold;
+}
+
+/* User Menu Items */
+.user-menu-item {
+  @apply flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-lg hover:shadow-xl;
+}
+
+.btn-outline {
+  @apply inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200;
+}
+
+/* Footer Links */
+.footer-link {
+  @apply flex items-center text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200;
+}
+
+/* Social Icons */
+.social-icon {
+  @apply w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-primary-500 hover:text-white dark:hover:bg-primary-600 transition-all duration-200;
+}
+
+/* Custom scrollbar for mobile menu */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Action Buttons */
+.action-button {
+  @apply p-2 rounded-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+}
+
+/* Selection Bar */
+.selection-bar {
+  @apply fixed bottom-0 left-0 right-0 md:sticky md:bottom-4 md:left-auto md:right-auto md:mx-4 bg-white dark:bg-gray-800 border-t md:border md:rounded-xl border-gray-200 dark:border-gray-700 shadow-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 z-30;
+}
+
+.selection-info {
+  @apply flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300;
+}
+
+.selection-actions {
+  @apply flex items-center gap-2 self-end md:self-auto;
+}
+
+.btn-selection {
+  @apply px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500;
+}
+
+.btn-selection.btn-danger {
+  @apply border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .selection-bar {
+    @apply mx-0 rounded-none border-x-0 border-b-0;
+  }
+}
+
+/* Animações personalizadas */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+/* Print styles */
+@media print {
+  .btn-primary,
+  .btn-outline,
+  .help-sidebar {
+    display: none !important;
+  }
+}
