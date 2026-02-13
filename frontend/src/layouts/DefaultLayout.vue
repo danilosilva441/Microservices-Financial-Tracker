@@ -369,10 +369,10 @@
               <a href="#" class="social-icon">
                 <IconTwitter class="w-4 h-4" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://www.linkedin.com/in/danilo-ss/" class="social-icon">
                 <IconLinkedin class="w-4 h-4" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://github.com/danilosilva441" class="social-icon">
                 <IconGithub class="w-4 h-4" />
               </a>
               <a href="#" class="social-icon">
