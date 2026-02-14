@@ -234,16 +234,6 @@
   color: var(--unidade-color-primary);
 }
 
-/* Botões de Ação no Formulário (estilos adicionais) */
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--unidade-border);
-}
-
 .btn-primary {
   min-width: 120px;
 }

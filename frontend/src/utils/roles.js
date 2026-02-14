@@ -1,4 +1,4 @@
-// src/utils/roles.js
+// src/utils/roles.js (mantém exatamente igual, sem alterações)
 export const ROLES = {
   USER: 'User',
   ADMIN: 'Admin',

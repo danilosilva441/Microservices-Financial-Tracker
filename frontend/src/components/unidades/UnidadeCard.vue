@@ -1,142 +1,177 @@
 <!-- components/unidades/UnidadeCard.vue -->
 <template>
   <div 
-    class="unidade-card"
-    :class="{ 'cursor-pointer': !disableClick }"
+    class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden h-full flex flex-col"
+    :class="{ 
+      'cursor-pointer hover:scale-[1.02] hover:-translate-y-1': !disableClick,
+      'opacity-75': !unidade.isAtivo
+    }"
     @click="!disableClick ? $emit('click', unidade) : null"
   >
     <!-- Header do Card -->
-    <div class="card-header">
-      <div class="header-left">
-        <div class="unidade-avatar">
-          <i class="fas fa-store"></i>
-        </div>
-        <div class="unidade-info">
-          <h3 class="unidade-name">{{ unidade.nome }}</h3>
-          <div class="unidade-meta">
-            <span class="meta-item">
-              <i class="fas fa-map-marker-alt"></i>
-              {{ truncatedAddress }}
-            </span>
-            <span class="meta-item">
-              <i class="fas fa-calendar"></i>
-              {{ formatDate(unidade.dataInicio) }}
-            </span>
+    <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary-50/50 to-secondary-50/50 dark:from-primary-900/10 dark:to-secondary-900/10">
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div class="flex items-start gap-3 min-w-0">
+          <!-- Avatar -->
+          <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+            <IconStore class="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
-        </div>
-      </div>
-      
-      <div class="header-right">
-        <div :class="statusBadgeClass">
-          <i :class="statusIcon"></i>
-          {{ statusText }}
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                {{ unidade.nome }}
+              </h3>
+              <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
+                :class="statusClasses"
+              >
+                <span :class="statusDotClasses" class="mr-1"></span>
+                {{ statusText }}
+              </span>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <IconMapPin class="w-3.5 h-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+                <span class="truncate" :title="unidade.endereco">{{ truncatedAddress }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <IconCalendar class="w-3.5 h-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+                <span>{{ formatDate(unidade.dataInicio) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Body do Card -->
-    <div class="card-body">
-      <!-- Progresso da Meta -->
-      <div class="meta-section">
-        <div class="meta-header">
-          <span class="meta-label">Meta Mensal</span>
-          <span class="meta-value">{{ formatCurrency(unidade.metaMensal) }}</span>
+    <div class="p-5 flex-1">
+      <!-- Meta Mensal -->
+      <div class="mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Meta Mensal
+          </span>
+          <span class="text-base font-bold text-primary-600 dark:text-primary-400">
+            {{ formatCurrency(unidade.metaMensal) }}
+          </span>
         </div>
-        
-        <div class="progress-container">
-          <div class="progress-labels">
-            <span>0%</span>
-            <span>{{ progress }}%</span>
-            <span>100%</span>
+
+        <!-- Progress Bar -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-500 dark:text-gray-400">0%</span>
+            <span class="font-semibold" :style="{ color: progressColor }">{{ progress }}%</span>
+            <span class="text-gray-500 dark:text-gray-400">100%</span>
           </div>
-          <div class="unidade-progress">
+          <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div 
-              class="unidade-progress-bar"
+              class="h-full rounded-full transition-all duration-500 ease-out"
               :style="progressBarStyle"
             ></div>
           </div>
         </div>
       </div>
 
-      <!-- Estatísticas -->
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ funcionariosAtivos || 0 }}</div>
-            <div class="stat-label">Funcionários</div>
-          </div>
-        </div>
-        
-        <div class="stat-item">
-          <div class="stat-icon">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ formatCurrency(faturamentoAtual) }}</div>
-            <div class="stat-label">Faturamento</div>
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <!-- Funcionários -->
+        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <IconUsers class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div class="min-w-0">
+              <div class="text-base font-bold text-gray-900 dark:text-white">{{ funcionariosAtivos || 0 }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Funcionários</div>
+            </div>
           </div>
         </div>
-        
-        <div class="stat-item">
-          <div class="stat-icon">
-            <i class="fas fa-calendar-check"></i>
+
+        <!-- Faturamento -->
+        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <IconChartLine class="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+            <div class="min-w-0">
+              <div class="text-base font-bold text-gray-900 dark:text-white truncate" :title="formatCurrency(faturamentoAtual)">
+                {{ formatCurrency(faturamentoAtual) }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Faturamento</div>
+            </div>
           </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ diasRestantes || '∞' }}</div>
-            <div class="stat-label">Dias restantes</div>
+        </div>
+
+        <!-- Dias Restantes -->
+        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+              <IconClock class="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div class="min-w-0">
+              <div class="text-base font-bold text-gray-900 dark:text-white">{{ diasRestantes }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Dias restantes</div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Descrição -->
-      <div v-if="unidade.descricao" class="description-section">
-        <p class="description">{{ truncatedDescription }}</p>
+      <div v-if="unidade.descricao" class="pt-3 border-t border-gray-100 dark:border-gray-700">
+        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
+          {{ truncatedDescription }}
+        </p>
       </div>
     </div>
 
     <!-- Footer do Card -->
-    <div class="card-footer">
-      <div class="footer-actions">
-        <button 
-          class="btn-action"
-          @click.stop="$emit('edit', unidade.id)"
-          title="Editar"
-        >
-          <i class="fas fa-edit"></i>
-        </button>
-        
-        <button 
-          v-if="unidade.isAtivo"
-          class="btn-action"
-          @click.stop="$emit('deactivate', unidade)"
-          title="Desativar"
-        >
-          <i class="fas fa-power-off"></i>
-        </button>
-        
-        <button 
-          v-else
-          class="btn-action"
-          @click.stop="$emit('activate', unidade)"
-          title="Ativar"
-        >
-          <i class="fas fa-play"></i>
-        </button>
-        
-        <button 
-          class="btn-action btn-danger"
-          @click.stop="$emit('delete', unidade)"
-          title="Excluir"
-        >
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-      
-      <div class="footer-date">
-        <small>Atualizado em {{ formatDate(unidade.updatedAt || unidade.createdAt) }}</small>
+    <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <!-- Actions -->
+        <div class="flex items-center gap-1">
+          <button 
+            class="action-button text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+            @click.stop="$emit('edit', unidade.id)"
+            :title="`Editar ${unidade.nome}`"
+          >
+            <IconEdit class="w-4 h-4" />
+          </button>
+          
+          <button 
+            v-if="unidade.isAtivo"
+            class="action-button text-gray-600 hover:text-yellow-600 dark:text-gray-400 dark:hover:text-yellow-400"
+            @click.stop="$emit('deactivate', unidade)"
+            :title="`Desativar ${unidade.nome}`"
+          >
+            <IconPower class="w-4 h-4" />
+          </button>
+          
+          <button 
+            v-else
+            class="action-button text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
+            @click.stop="$emit('activate', unidade)"
+            :title="`Ativar ${unidade.nome}`"
+          >
+            <IconPlay class="w-4 h-4" />
+          </button>
+          
+          <button 
+            class="action-button text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+            @click.stop="$emit('delete', unidade)"
+            :title="`Excluir ${unidade.nome}`"
+          >
+            <IconTrash class="w-4 h-4" />
+          </button>
+        </div>
+
+        <!-- Data de atualização -->
+        <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+          <IconClock class="w-3 h-3" />
+          <span>{{ formatDate(unidade.updatedAt || unidade.createdAt) }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -145,6 +180,18 @@
 <script setup>
 import { computed } from 'vue';
 import { useUnidadesUI } from '@/composables/unidades/useUnidadesUI';
+
+// Ícones
+import IconStore from '@/components/icons/store.vue';
+import IconMapPin from '@/components/icons/map-pin.vue';
+import IconCalendar from '@/components/icons/calendar.vue';
+import IconUsers from '@/components/icons/users.vue';
+import IconChartLine from '@/components/icons/chart-line.vue';
+import IconClock from '@/components/icons/clock.vue';
+import IconEdit from '@/components/icons/edit.vue';
+import IconPower from '@/components/icons/power.vue';
+import IconPlay from '@/components/icons/play.vue';
+import IconTrash from '@/components/icons/trash.vue';
 
 const props = defineProps({
   unidade: {
@@ -165,12 +212,21 @@ const emit = defineEmits(['click', 'edit', 'delete', 'deactivate', 'activate']);
 
 const { formatCurrency, formatDate, getStatusBadge, getDaysToExpire } = useUnidadesUI();
 
-// Computed properties
+// Status
 const statusBadge = computed(() => getStatusBadge(props.unidade.isAtivo));
-const statusBadgeClass = computed(() => `unidade-status-badge ${statusBadge.value.variant === 'success' ? 'unidade-status-active' : 'unidade-status-inactive'}`);
-const statusIcon = computed(() => `fas fa-${statusBadge.value.icon}`);
+const statusClasses = computed(() => {
+  const baseClasses = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium';
+  if (props.unidade.isAtivo) {
+    return `${baseClasses} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400`;
+  }
+  return `${baseClasses} bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400`;
+});
+const statusDotClasses = computed(() => {
+  return props.unidade.isAtivo ? 'bg-green-500' : 'bg-gray-400';
+});
 const statusText = computed(() => statusBadge.value.label);
 
+// Truncate helpers
 const truncatedAddress = computed(() => {
   const addr = props.unidade.endereco || '';
   return addr.length > 40 ? addr.substring(0, 40) + '...' : addr;
@@ -181,299 +237,83 @@ const truncatedDescription = computed(() => {
   return desc.length > 100 ? desc.substring(0, 100) + '...' : desc;
 });
 
+// Progress
 const progress = computed(() => {
-  // Aqui você pode calcular o progresso real baseado no faturamento atual vs meta
-  // Por enquanto, vamos usar um valor fictício
   const faturamentoAtual = props.unidade.faturamentoAtual || 0;
   const meta = props.unidade.metaMensal || 0;
   if (meta <= 0) return 0;
   return Math.min(Math.round((faturamentoAtual / meta) * 100), 100);
 });
 
-const progressBarStyle = computed(() => {
-  let backgroundColor = '#ef4444'; // Vermelho
-  if (progress.value >= 75) {
-    backgroundColor = '#10b981'; // Verde
-  } else if (progress.value >= 50) {
-    backgroundColor = '#f59e0b'; // Amarelo
-  } else if (progress.value >= 25) {
-    backgroundColor = '#f97316'; // Laranja
-  }
-  
-  return {
-    width: `${progress.value}%`,
-    backgroundColor
-  };
+const progressColor = computed(() => {
+  if (progress.value >= 75) return '#10b981';
+  if (progress.value >= 50) return '#f59e0b';
+  if (progress.value >= 25) return '#f97316';
+  return '#ef4444';
 });
 
+const progressBarStyle = computed(() => ({
+  width: `${progress.value}%`,
+  backgroundColor: progressColor.value
+}));
+
+// Stats
 const funcionariosAtivos = computed(() => props.unidade.funcionariosAtivos || Math.floor(Math.random() * 20) + 5);
 const faturamentoAtual = computed(() => props.unidade.faturamentoAtual || 0);
 const diasRestantes = computed(() => {
   const dias = getDaysToExpire(props.unidade.dataFim);
-  return dias !== null ? dias : '∞';
+  if (dias === null) return '∞';
+  if (dias < 0) return 'Vencido';
+  return dias;
 });
 </script>
 
 <style scoped>
-.unidade-card {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--unidade-border);
-  box-shadow: var(--unidade-shadow-sm);
-  transition: all 0.3s ease;
-  overflow: hidden;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+@import '@/assets/default.css';
+
+/* Action Buttons */
+.action-button {
+  @apply p-2 rounded-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
 }
 
-.unidade-card:hover {
-  box-shadow: var(--unidade-shadow-md);
-  transform: translateY(-2px);
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 20px;
-  border-bottom: 1px solid var(--unidade-border);
-  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-}
-
-.header-left {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  flex: 1;
-}
-
-.unidade-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 24px;
-  flex-shrink: 0;
-}
-
-.unidade-info {
-  flex: 1;
-}
-
-.unidade-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 8px 0;
-  line-height: 1.3;
-}
-
-.unidade-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #718096;
-}
-
-.meta-item i {
-  width: 14px;
-  font-size: 12px;
-}
-
-.header-right {
-  flex-shrink: 0;
-}
-
-.card-body {
-  padding: 20px;
-  flex: 1;
-}
-
-.meta-section {
-  margin-bottom: 20px;
-}
-
-.meta-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.meta-label {
-  font-size: 14px;
-  color: #718096;
-  font-weight: 500;
-}
-
-.meta-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--unidade-color-primary);
-}
-
-.progress-container {
-  margin-top: 8px;
-}
-
-.progress-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.progress-labels span {
-  font-size: 12px;
-  color: #a0aec0;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin: 20px 0;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-.stat-item:hover {
-  background: #edf2f7;
-}
-
-.stat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--unidade-color-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a202c;
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #718096;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.description-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--unidade-border);
-}
-
-.description {
-  font-size: 14px;
-  color: #4a5568;
-  line-height: 1.5;
-  margin: 0;
+/* Line clamp for description */
+.line-clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.card-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--unidade-border);
-  background: #f8fafc;
+/* Custom scrollbar (opcional) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.footer-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
-.btn-action {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid var(--unidade-border);
-  background: white;
-  color: #718096;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
 }
 
-.btn-action:hover {
-  background: #edf2f7;
-  color: #4a5568;
-  transform: translateY(-1px);
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
 }
 
-.btn-action.btn-danger:hover {
-  background: #fee2e2;
-  color: #dc2626;
-  border-color: #fecaca;
+/* Animações */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.footer-date {
-  text-align: center;
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.footer-date small {
-  font-size: 12px;
-  color: #a0aec0;
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .card-header {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .header-left {
-    width: 100%;
-  }
-  
-  .header-right {
-    width: 100%;
-  }
+/* Hover effects */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
 }
 </style>

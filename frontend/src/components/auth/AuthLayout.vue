@@ -168,7 +168,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import LogoIcon from '@/components/LogoIcon.vue'
+import LogoIcon from '@/components/icons/LogoIcon.vue'
 
 const props = defineProps({
   title: {

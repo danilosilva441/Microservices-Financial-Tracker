@@ -1,4 +1,4 @@
-<!-- src/components/LogoIcon.vue -->
+<!-- src/components/icons/LogoIcon.vue -->
 <template>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DS SysTech icon" :width="width" :height="height" :style="{ color: color }">
     <title>DS SysTech (Icon)</title>

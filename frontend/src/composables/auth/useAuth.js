@@ -6,23 +6,23 @@ export function useAuth() {
   const authStore = useAuthStore()
   const isInitializing = ref(false)
 
-  // Computeds
+  // Computeds - adaptados para o store atual
   const isAuthenticated = computed(() => authStore.isAuthenticated)
-  const userData = computed(() => authStore.userData)
-  const userRole = computed(() => authStore.userRole)
-  const userTenantId = computed(() => authStore.userTenantId)
-  const isLoading = computed(() => authStore.isLoadingState)
-  const error = computed(() => authStore.errorMessage)
+  const userData = computed(() => authStore.user) // user ao invés de userData
+  const userRole = computed(() => authStore.role) // role ao invés de userRole
+  const userTenantId = computed(() => authStore.tenantId) // tenantId ao invés de userTenantId
+  const isLoading = computed(() => authStore.isLoading) // isLoading ao invés de isLoadingState
+  const error = computed(() => authStore.error) // error ao invés de errorMessage
   const token = computed(() => authStore.token)
 
-  // Actions (apenas passando para a store)
-  const login = authStore.login
-  const logout = authStore.logout
-  const provisionTenant = authStore.provisionTenant
-  const registerTeamUser = authStore.registerTeamUser
-  const clearError = authStore.clearError
-  const refreshUserData = authStore.fetchUserData
-  const isTokenExpired = authStore.isTokenExpired
+  // Actions (apenas passando para a store) - mantém os mesmos nomes
+  const login = (credentials) => authStore.login(credentials)
+  const logout = () => authStore.logout()
+  const provisionTenant = (tenantData) => authStore.provisionTenant(tenantData)
+  const registerTeamUser = (userData) => authStore.registerTeamUser(userData)
+  const clearError = () => authStore.clearError()
+  const refreshUserData = () => authStore.fetchUserData()
+  const isTokenExpired = () => authStore.isTokenExpired()
 
   // Inicializar auth
   const initializeAuth = async () => {

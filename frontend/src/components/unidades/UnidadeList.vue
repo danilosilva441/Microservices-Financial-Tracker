@@ -1,8 +1,8 @@
 <!-- components/unidades/UnidadeList.vue -->
 <template>
-  <div class="unidade-table" :class="{ 'dark': isDarkMode }">
+  <div class="w-full" :class="{ 'dark': isDarkMode }">
     <!-- Desktop Table View -->
-    <div class="hidden md:block overflow-x-auto">
+    <div class="hidden md:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
@@ -10,7 +10,7 @@
               <div class="flex items-center">
                 <input 
                   type="checkbox" 
-                  v-model="selectAll"
+                  :checked="selectAll"
                   @change="toggleSelectAll"
                   class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
                   :aria-label="selectAll ? 'Desmarcar todas' : 'Marcar todas'"
@@ -24,17 +24,17 @@
               @click="column.sortable ? sortBy(column.field) : null"
               @keyup.enter="column.sortable ? sortBy(column.field) : null"
               :tabindex="column.sortable ? 0 : -1"
-              class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              :class="{ 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700': column.sortable }"
+              class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              :class="{ 'cursor-pointer': column.sortable }"
             >
               <div class="flex items-center gap-2">
-                <i v-if="column.icon" :class="column.icon" class="text-gray-400 dark:text-gray-500"></i>
+                <component :is="column.iconComponent" class="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <span>{{ column.label }}</span>
-                <i 
+                <component 
                   v-if="column.sortable" 
-                  :class="getSortIcon(column.field)"
-                  class="text-gray-400 dark:text-gray-500 text-xs"
-                ></i>
+                  :is="getSortIcon(column.field)"
+                  class="w-3 h-3 text-gray-400 dark:text-gray-500"
+                />
               </div>
             </th>
             <th scope="col" class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -44,7 +44,7 @@
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
           <tr 
-            v-for="unidade in sortedUnidades" 
+            v-for="unidade in displayedUnidades" 
             :key="unidade.id"
             @click="handleRowClick(unidade.id)"
             @keyup.enter="handleRowClick(unidade.id)"
@@ -73,14 +73,14 @@
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-sm">
-                  <i class="fas fa-store text-sm"></i>
+                  <IconStore class="w-5 h-5" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {{ unidade.nome }}
                   </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
-                    <i class="fas fa-map-marker-alt text-gray-400 dark:text-gray-500"></i>
+                    <IconMapPin class="w-3 h-3 text-gray-400 dark:text-gray-500" />
                     <span class="truncate" :title="unidade.endereco">{{ unidade.endereco }}</span>
                   </div>
                 </div>
@@ -90,7 +90,7 @@
             <!-- Status -->
             <td class="px-6 py-4">
               <span :class="statusClasses(unidade)">
-                <i :class="statusIcon(unidade)" class="mr-1.5 text-xs"></i>
+                <component :is="statusIcon(unidade)" class="w-3 h-3 mr-1.5" />
                 {{ statusText(unidade) }}
               </span>
             </td>
@@ -98,7 +98,7 @@
             <!-- Meta Mensal -->
             <td class="px-6 py-4">
               <div class="flex items-center gap-2">
-                <i class="fas fa-bullseye text-primary-500 dark:text-primary-400"></i>
+                <IconTarget class="w-4 h-4 text-primary-500 dark:text-primary-400" />
                 <span class="text-sm font-semibold text-gray-900 dark:text-white">
                   {{ formatCurrency(unidade.metaMensal) }}
                 </span>
@@ -110,7 +110,7 @@
               <div class="min-w-[140px]">
                 <div class="flex items-center justify-between mb-1.5">
                   <div class="flex items-center gap-1.5">
-                    <i :class="progressIcon(unidade)" :style="{ color: progressColor(unidade) }"></i>
+                    <component :is="progressIcon(unidade)" :style="{ color: progressColor(unidade) }" class="w-4 h-4" />
                     <span class="text-sm font-bold" :style="{ color: progressColor(unidade) }">
                       {{ progress(unidade) }}%
                     </span>
@@ -133,7 +133,7 @@
             <!-- Funcionários -->
             <td class="px-6 py-4">
               <div class="flex items-center gap-2">
-                <i class="fas fa-users text-gray-400 dark:text-gray-500"></i>
+                <IconUsers class="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <span class="text-sm font-medium text-gray-900 dark:text-white">
                   {{ unidade.funcionariosAtivos || 0 }}
                 </span>
@@ -145,17 +145,17 @@
             <td class="px-6 py-4">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-2 text-sm">
-                  <i class="fas fa-calendar-alt text-gray-400 dark:text-gray-500"></i>
+                  <IconCalendar class="w-4 h-4 text-gray-400 dark:text-gray-500" />
                   <span v-if="unidade.dataFim" class="text-gray-900 dark:text-white">
                     {{ formatDate(unidade.dataFim) }}
                   </span>
                   <span v-else class="text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                    <i class="fas fa-ban text-xs"></i>
+                    <IconBan class="w-3 h-3" />
                     Sem data
                   </span>
                 </div>
-                <div v-if="expirationStatus(unidade)" :class="expirationBadgeClasses(unidade)">
-                  <i :class="expirationIcon(unidade)" class="mr-1 text-xs"></i>
+                <div v-if="expirationStatus(unidade)" :class="expirationBadgeClasses(unidade)" class="text-xs">
+                  <component :is="expirationIcon(unidade)" class="w-3 h-3 mr-1" />
                   {{ expirationStatus(unidade).label }}
                 </div>
               </div>
@@ -169,7 +169,7 @@
                   class="action-button text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
                   :title="`Editar ${unidade.nome}`"
                 >
-                  <i class="fas fa-edit"></i>
+                  <IconEdit class="w-4 h-4" />
                 </button>
                 
                 <button 
@@ -178,7 +178,7 @@
                   class="action-button text-gray-600 hover:text-yellow-600 dark:text-gray-400 dark:hover:text-yellow-400"
                   :title="`Desativar ${unidade.nome}`"
                 >
-                  <i class="fas fa-power-off"></i>
+                  <IconPower class="w-4 h-4" />
                 </button>
                 
                 <button 
@@ -187,7 +187,7 @@
                   class="action-button text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
                   :title="`Ativar ${unidade.nome}`"
                 >
-                  <i class="fas fa-play"></i>
+                  <IconPlay class="w-4 h-4" />
                 </button>
                 
                 <button 
@@ -195,7 +195,7 @@
                   class="action-button text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                   :title="`Excluir ${unidade.nome}`"
                 >
-                  <i class="fas fa-trash"></i>
+                  <IconTrash class="w-4 h-4" />
                 </button>
               </div>
             </td>
@@ -207,7 +207,7 @@
     <!-- Mobile Card View -->
     <div class="md:hidden space-y-4">
       <div 
-        v-for="unidade in sortedUnidades" 
+        v-for="unidade in displayedUnidades" 
         :key="unidade.id"
         @click="handleRowClick(unidade.id)"
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-all duration-200"
@@ -226,13 +226,13 @@
               class="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
             >
             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-sm">
-              <i class="fas fa-store text-lg"></i>
+              <IconStore class="w-6 h-6" />
             </div>
             <div>
               <h3 class="text-base font-bold text-gray-900 dark:text-white">{{ unidade.nome }}</h3>
               <div class="flex items-center gap-1 mt-0.5">
                 <span :class="statusClasses(unidade)" class="text-xs">
-                  <i :class="statusIcon(unidade)" class="mr-1"></i>
+                  <component :is="statusIcon(unidade)" class="w-3 h-3 mr-1" />
                   {{ statusText(unidade) }}
                 </span>
               </div>
@@ -242,7 +242,7 @@
             @click.stop="handleEdit(unidade)"
             class="p-2 text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
           >
-            <i class="fas fa-edit text-lg"></i>
+            <IconEdit class="w-5 h-5" />
           </button>
         </div>
 
@@ -250,20 +250,20 @@
         <div class="space-y-3 mt-3">
           <!-- Endereço -->
           <div class="flex items-start gap-2 text-sm">
-            <i class="fas fa-map-marker-alt text-gray-400 dark:text-gray-500 mt-0.5"></i>
+            <IconMapPin class="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
             <span class="text-gray-600 dark:text-gray-300 flex-1">{{ unidade.endereco }}</span>
           </div>
 
           <!-- Meta e Progresso -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <i class="fas fa-bullseye text-primary-500 dark:text-primary-400"></i>
+              <IconTarget class="w-4 h-4 text-primary-500 dark:text-primary-400" />
               <span class="text-sm font-semibold text-gray-900 dark:text-white">
                 {{ formatCurrency(unidade.metaMensal) }}
               </span>
             </div>
             <div class="flex items-center gap-1">
-              <i :class="progressIcon(unidade)" :style="{ color: progressColor(unidade) }"></i>
+              <component :is="progressIcon(unidade)" :style="{ color: progressColor(unidade) }" class="w-4 h-4" />
               <span class="text-sm font-bold" :style="{ color: progressColor(unidade) }">
                 {{ progress(unidade) }}%
               </span>
@@ -281,14 +281,14 @@
           <!-- Funcionários e Vencimento -->
           <div class="flex items-center justify-between pt-2">
             <div class="flex items-center gap-2">
-              <i class="fas fa-users text-gray-400 dark:text-gray-500"></i>
+              <IconUsers class="w-4 h-4 text-gray-400 dark:text-gray-500" />
               <span class="text-sm text-gray-700 dark:text-gray-300">
                 {{ unidade.funcionariosAtivos || 0 }} ativos
               </span>
             </div>
             
             <div class="flex items-center gap-2">
-              <i class="fas fa-calendar-alt text-gray-400 dark:text-gray-500"></i>
+              <IconCalendar class="w-4 h-4 text-gray-400 dark:text-gray-500" />
               <span v-if="unidade.dataFim" class="text-sm text-gray-700 dark:text-gray-300">
                 {{ formatDate(unidade.dataFim) }}
               </span>
@@ -301,7 +301,7 @@
           <!-- Badge de Vencimento e Ações Adicionais -->
           <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
             <div v-if="expirationStatus(unidade)" :class="expirationBadgeClasses(unidade)" class="text-xs">
-              <i :class="expirationIcon(unidade)" class="mr-1"></i>
+              <component :is="expirationIcon(unidade)" class="w-3 h-3 mr-1" />
               {{ expirationStatus(unidade).label }}
             </div>
             
@@ -312,24 +312,27 @@
                 class="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                 :title="`Ativar ${unidade.nome}`"
               >
-                <i class="fas fa-play"></i>
+                <IconPlay class="w-4 h-4" />
               </button>
               <button 
                 @click.stop="handleDelete(unidade)"
                 class="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                 :title="`Excluir ${unidade.nome}`"
               >
-                <i class="fas fa-trash"></i>
+                <IconTrash class="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Empty State Mobile -->
-      <div v-if="unidades.length === 0" class="text-center py-12 px-4">
+    <!-- Empty States -->
+    <template v-if="unidades.length === 0">
+      <!-- Mobile Empty State -->
+      <div class="md:hidden text-center py-12 px-4">
         <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-          <i class="fas fa-store-slash text-3xl text-gray-400 dark:text-gray-500"></i>
+          <IconStoreSlash class="w-10 h-10 text-gray-400 dark:text-gray-500" />
         </div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           Nenhuma unidade encontrada
@@ -338,46 +341,46 @@
           Comece adicionando sua primeira unidade
         </p>
         <button @click="$emit('add')" class="btn-primary">
-          <i class="fas fa-plus mr-2"></i>
+          <IconPlus class="w-4 h-4 mr-2" />
           Adicionar unidade
         </button>
       </div>
-    </div>
 
-    <!-- Desktop Empty State -->
-    <div v-if="unidades.length === 0" class="hidden md:block text-center py-16 px-4">
-      <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-        <i class="fas fa-store-slash text-4xl text-gray-400 dark:text-gray-500"></i>
+      <!-- Desktop Empty State -->
+      <div class="hidden md:block text-center py-16 px-4">
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+          <IconStoreSlash class="w-12 h-12 text-gray-400 dark:text-gray-500" />
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          Nenhuma unidade cadastrada
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+          Clique no botão abaixo para adicionar sua primeira unidade
+        </p>
+        <button @click="$emit('add')" class="btn-primary">
+          <IconPlus class="w-4 h-4 mr-2" />
+          Adicionar unidade
+        </button>
       </div>
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-        Nenhuma unidade cadastrada
-      </h3>
-      <p class="text-gray-500 dark:text-gray-400 mb-6">
-        Clique no botão abaixo para adicionar sua primeira unidade
-      </p>
-      <button @click="$emit('add')" class="btn-primary">
-        <i class="fas fa-plus mr-2"></i>
-        Adicionar unidade
-      </button>
-    </div>
+    </template>
 
     <!-- Selection Bar -->
     <div v-if="selectedItems.length > 0" class="selection-bar">
       <div class="selection-info">
-        <i class="fas fa-check-circle text-primary-500 dark:text-primary-400"></i>
+        <IconCheckCircle class="w-5 h-5 text-primary-500 dark:text-primary-400" />
         <span class="font-medium">{{ selectedItems.length }} unidade(s) selecionada(s)</span>
       </div>
       <div class="selection-actions">
         <button @click="emitBulkAction('export')" class="btn-selection">
-          <i class="fas fa-download mr-2"></i>
+          <IconDownload class="w-4 h-4 mr-2" />
           Exportar
         </button>
         <button @click="emitBulkAction('delete')" class="btn-selection btn-danger">
-          <i class="fas fa-trash mr-2"></i>
+          <IconTrash class="w-4 h-4 mr-2" />
           Excluir
         </button>
         <button @click="clearSelection" class="btn-selection">
-          <i class="fas fa-times mr-2"></i>
+          <IconTimes class="w-4 h-4 mr-2" />
           Limpar
         </button>
       </div>
@@ -386,13 +389,45 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useUnidadesUI } from '@/composables/unidades/useUnidadesUI';
+
+// Ícones
+import IconStore from '@/components/icons/store.vue';
+import IconStoreSlash from '@/components/icons/store-slash.vue';
+import IconMapPin from '@/components/icons/map-pin.vue';
+import IconTarget from '@/components/icons/target.vue';
+import IconUsers from '@/components/icons/users.vue';
+import IconCalendar from '@/components/icons/calendar.vue';
+import IconBan from '@/components/icons/ban.vue';
+import IconEdit from '@/components/icons/edit.vue';
+import IconPower from '@/components/icons/power.vue';
+import IconPlay from '@/components/icons/play.vue';
+import IconTrash from '@/components/icons/trash.vue';
+import IconCheckCircle from '@/components/icons/check-circle.vue';
+import IconDownload from '@/components/icons/download.vue';
+import IconTimes from '@/components/icons/times.vue';
+import IconSort from '@/components/icons/sort.vue';
+import IconSortUp from '@/components/icons/sort-up.vue';
+import IconSortDown from '@/components/icons/sort-down.vue';
+
+// Ícones de status
+import IconCheckCircleSmall from '@/components/icons/check-circle.vue';
+import IconCircle from '@/components/icons/circle.vue';
+import IconChartLine from '@/components/icons/chart-line.vue';
+import IconExclamationCircle from '@/components/icons/exclamation-circle.vue';
+import IconTimesCircle from '@/components/icons/times-circle.vue';
+import IconClock from '@/components/icons/clock.vue';
+import IconAlertTriangle from '@/components/icons/alert-triangle.vue';
 
 const props = defineProps({
   unidades: {
     type: Array,
     required: true,
+    default: () => []
+  },
+  selectedItems: {
+    type: Array,
     default: () => []
   },
   ui: {
@@ -423,20 +458,25 @@ const loadTheme = () => {
   isDarkMode.value = savedTheme ? savedTheme === 'dark' : prefersDark;
 };
 
-// Columns configuration
+// Columns configuration with icon components
 const columns = [
-  { field: 'nome', label: 'Unidade', icon: 'fas fa-store', sortable: true },
-  { field: 'status', label: 'Status', icon: 'fas fa-circle', sortable: true },
-  { field: 'metaMensal', label: 'Meta Mensal', icon: 'fas fa-bullseye', sortable: true },
-  { field: 'progresso', label: 'Progresso', icon: 'fas fa-chart-line', sortable: false },
-  { field: 'funcionarios', label: 'Funcionários', icon: 'fas fa-users', sortable: true },
-  { field: 'vencimento', label: 'Vencimento', icon: 'fas fa-calendar-alt', sortable: true }
+  { field: 'nome', label: 'Unidade', iconComponent: IconStore, sortable: true },
+  { field: 'status', label: 'Status', iconComponent: IconCircle, sortable: true },
+  { field: 'metaMensal', label: 'Meta Mensal', iconComponent: IconTarget, sortable: true },
+  { field: 'progresso', label: 'Progresso', iconComponent: IconChartLine, sortable: false },
+  { field: 'funcionarios', label: 'Funcionários', iconComponent: IconUsers, sortable: true },
+  { field: 'vencimento', label: 'Vencimento', iconComponent: IconCalendar, sortable: true }
 ];
 
 // Local state
-const selectedItems = ref([]);
+const selectedItems = ref([...props.selectedItems]);
 const sortField = ref('nome');
 const sortDirection = ref('asc');
+
+// Watch for changes in props.selectedItems
+watch(() => props.selectedItems, (newVal) => {
+  selectedItems.value = [...newVal];
+}, { deep: true });
 
 // Computed
 const selectAll = computed({
@@ -451,13 +491,15 @@ const selectAll = computed({
   }
 });
 
-const sortedUnidades = computed(() => {
+// Apenas ordenação local, sem filtragem
+const displayedUnidades = computed(() => {
   const sorted = [...props.unidades];
   
   sorted.sort((a, b) => {
     let aValue = a[sortField.value];
     let bValue = b[sortField.value];
     
+    // Tratamento especial para campos específicos
     if (sortField.value === 'nome') {
       aValue = aValue?.toLowerCase() || '';
       bValue = bValue?.toLowerCase() || '';
@@ -493,8 +535,8 @@ const sortedUnidades = computed(() => {
 
 // Methods
 const getSortIcon = (field) => {
-  if (sortField.value !== field) return 'fas fa-sort text-gray-300 dark:text-gray-600';
-  return sortDirection.value === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+  if (sortField.value !== field) return IconSort;
+  return sortDirection.value === 'asc' ? IconSortUp : IconSortDown;
 };
 
 const toggleSelectAll = () => {
@@ -552,7 +594,7 @@ const statusClasses = (unidade) => {
 };
 
 const statusIcon = (unidade) => {
-  return unidade.isAtivo ? 'fas fa-check-circle' : 'fas fa-circle';
+  return unidade.isAtivo ? IconCheckCircleSmall : IconCircle;
 };
 
 const statusText = (unidade) => {
@@ -577,10 +619,10 @@ const progressColor = (unidade) => {
 
 const progressIcon = (unidade) => {
   const p = progress(unidade);
-  if (p >= 75) return 'fas fa-check-circle text-green-500';
-  if (p >= 50) return 'fas fa-chart-line text-yellow-500';
-  if (p >= 25) return 'fas fa-exclamation-circle text-orange-500';
-  return 'fas fa-times-circle text-red-500';
+  if (p >= 75) return IconCheckCircleSmall;
+  if (p >= 50) return IconChartLine;
+  if (p >= 25) return IconExclamationCircle;
+  return IconTimesCircle;
 };
 
 const progressBarStyle = (unidade) => {
@@ -616,10 +658,10 @@ const expirationIcon = (unidade) => {
   if (!status) return '';
   
   switch(status.variant) {
-    case 'warning': return 'fas fa-clock';
-    case 'danger': return 'fas fa-exclamation-triangle';
-    case 'success': return 'fas fa-check-circle';
-    default: return 'fas fa-calendar-check';
+    case 'warning': return IconClock;
+    case 'danger': return IconAlertTriangle;
+    case 'success': return IconCheckCircleSmall;
+    default: return IconCalendar;
   }
 };
 
@@ -656,4 +698,48 @@ onMounted(() => {
 
 <style scoped>
 @import '@/assets/default.css';
+
+/* Selection Bar (reutilizando do default.css) */
+.selection-bar {
+  @apply fixed bottom-0 left-0 right-0 md:sticky md:bottom-4 md:left-auto md:right-auto md:mx-4 bg-white dark:bg-gray-800 border-t md:border md:rounded-xl border-gray-200 dark:border-gray-700 shadow-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 z-30;
+}
+
+.selection-info {
+  @apply flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300;
+}
+
+.selection-actions {
+  @apply flex items-center gap-2 self-end md:self-auto;
+}
+
+.btn-selection {
+  @apply px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500;
+}
+
+.btn-selection.btn-danger {
+  @apply border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20;
+}
+
+/* Action Buttons */
+.action-button {
+  @apply p-2 rounded-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
 </style>

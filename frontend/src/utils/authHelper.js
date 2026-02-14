@@ -1,4 +1,4 @@
-// utils/authHelper.js
+// src/utils/authHelper.js (mantém igual, com pequeno ajuste no nome da store)
 export function getSafeUsuarioLogado() {
   try {
     // Tentar importar dinamicamente para evitar erros de importação
@@ -33,7 +33,7 @@ export function getSafeUsuarioLogado() {
   
   // Fallback: tentar pegar do localStorage
   try {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token'); // Alterado de authToken para token
     if (token) {
       const { jwtDecode } = require('jwt-decode');
       const decoded = jwtDecode(token);

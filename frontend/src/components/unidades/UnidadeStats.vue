@@ -1,93 +1,224 @@
 <!-- components/unidades/UnidadeStats.vue -->
 <template>
-  <div class="unidade-stats">
-    <div class="stats-grid">
+  <div class="w-full">
+    <!-- Loading State -->
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div v-for="i in 4" :key="i" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-14 h-14 rounded-xl bg-gray-200 dark:bg-gray-700"></div>
+          <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+        </div>
+        <div class="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+        <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+        <div class="h-px bg-gray-200 dark:bg-gray-700 my-4"></div>
+        <div class="flex justify-between">
+          <div class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       <!-- Total de Unidades -->
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon total">
-            <i class="fas fa-store"></i>
+      <div class="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+        <!-- Barra Superior Colorida -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-secondary-500"></div>
+        
+        <div class="p-5 sm:p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <IconStore class="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            
+            <div :class="[
+              'flex items-center justify-center w-8 h-8 rounded-full text-xs',
+              trendClass(stats.total)
+            ]">
+              <IconArrowUp v-if="stats.total > 0" class="w-4 h-4" />
+              <IconMinus v-else class="w-4 h-4" />
+            </div>
           </div>
-          <div class="stat-trend" :class="trendClass(stats.total)">
-            <i :class="trendIcon(stats.total)"></i>
+
+          <div class="space-y-1">
+            <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              {{ stats.total }}
+            </div>
+            <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              Total de Unidades
+            </div>
           </div>
-        </div>
-        <div class="stat-body">
-          <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-label">Total de Unidades</div>
-        </div>
-        <div class="stat-footer">
-          <div class="stat-detail">
-            <span class="detail-label">Ativas:</span>
-            <span class="detail-value">{{ stats.ativas }}</span>
+
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Ativas:</span>
+              <span class="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                {{ stats.ativas }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Faturamento Projetado -->
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon revenue">
-            <i class="fas fa-chart-line"></i>
+      <div class="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-emerald-500"></div>
+        
+        <div class="p-5 sm:p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <IconChartLine class="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            
+            <div :class="[
+              'flex items-center justify-center w-8 h-8 rounded-full text-xs',
+              trendClass(stats.faturamentoProjetado)
+            ]">
+              <IconArrowUp v-if="stats.faturamentoProjetado > 0" class="w-4 h-4" />
+              <IconArrowDown v-else-if="stats.faturamentoProjetado < 0" class="w-4 h-4" />
+              <IconMinus v-else class="w-4 h-4" />
+            </div>
           </div>
-          <div class="stat-trend" :class="trendClass(stats.faturamentoProjetado)">
-            <i :class="trendIcon(stats.faturamentoProjetado)"></i>
+
+          <div class="space-y-1">
+            <div class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+              {{ formatCurrency(stats.faturamentoProjetado) }}
+            </div>
+            <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              Faturamento Projetado
+            </div>
           </div>
-        </div>
-        <div class="stat-body">
-          <div class="stat-value">{{ formatCurrency(stats.faturamentoProjetado) }}</div>
-          <div class="stat-label">Faturamento Projetado</div>
-        </div>
-        <div class="stat-footer">
-          <div class="stat-detail">
-            <span class="detail-label">Média:</span>
-            <span class="detail-value">{{ formatCurrency(stats.mediaFaturamento) }}</span>
+
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Média:</span>
+              <span class="font-semibold text-gray-900 dark:text-white">
+                {{ formatCurrency(stats.mediaFaturamento) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Vencimento Próximo -->
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon warning">
-            <i class="fas fa-clock"></i>
+      <div class="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-500"></div>
+        
+        <div class="p-5 sm:p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <IconClock class="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            
+            <div :class="[
+              'flex items-center justify-center w-8 h-8 rounded-full text-xs',
+              trendClass(stats.vencimentoProximo)
+            ]">
+              <IconArrowUp v-if="stats.vencimentoProximo > 5" class="w-4 h-4" />
+              <IconAlertCircle v-else-if="stats.vencimentoProximo > 0" class="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+              <IconCheckCircle v-else class="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
           </div>
-          <div class="stat-trend" :class="trendClass(stats.vencimentoProximo)">
-            <i :class="trendIcon(stats.vencimentoProximo)"></i>
+
+          <div class="space-y-1">
+            <div class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              {{ stats.vencimentoProximo }}
+            </div>
+            <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              Vencem em 30 dias
+            </div>
           </div>
-        </div>
-        <div class="stat-body">
-          <div class="stat-value">{{ stats.vencimentoProximo }}</div>
-          <div class="stat-label">Vencem em 30 dias</div>
-        </div>
-        <div class="stat-footer">
-          <div class="stat-detail">
-            <span class="detail-label">Atenção</span>
-            <span class="detail-value" v-if="stats.vencimentoProximo > 0">⚠️</span>
-            <span class="detail-value" v-else>✅</span>
+
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Status:</span>
+              <span :class="[
+                'inline-flex items-center gap-1 font-semibold',
+                stats.vencimentoProximo > 5 ? 'text-green-600 dark:text-green-400' :
+                stats.vencimentoProximo > 0 ? 'text-yellow-600 dark:text-yellow-400' :
+                'text-gray-600 dark:text-gray-400'
+              ]">
+                <IconAlertCircle v-if="stats.vencimentoProximo > 0 && stats.vencimentoProximo <= 5" class="w-3 h-3" />
+                <IconCheckCircle v-else-if="stats.vencimentoProximo === 0" class="w-3 h-3" />
+                {{ stats.vencimentoProximo > 0 ? 'Atenção' : 'OK' }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Meta de Crescimento -->
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon growth">
-            <i class="fas fa-trophy"></i>
+      <!-- Taxa de Crescimento -->
+      <div class="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-violet-500"></div>
+        
+        <div class="p-5 sm:p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <IconTrophy class="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            
+            <div :class="[
+              'flex items-center justify-center w-8 h-8 rounded-full text-xs',
+              trendClass(growthRate - 20)
+            ]">
+              <IconArrowUp v-if="growthRate >= 20" class="w-4 h-4" />
+              <IconArrowDown v-else class="w-4 h-4" />
+            </div>
           </div>
-          <div class="stat-trend" :class="trendClass(growthRate)">
-            <i :class="trendIcon(growthRate)"></i>
+
+          <div class="space-y-1">
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ growthRate }}</span>
+              <span class="text-lg sm:text-xl text-gray-500 dark:text-gray-400">%</span>
+            </div>
+            <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              Taxa de Crescimento
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <span class="text-gray-500 dark:text-gray-400">Meta 20%:</span>
+              <span :class="[
+                'font-semibold',
+                growthRate >= 20 ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
+              ]">
+                {{ growthRate >= 20 ? '✅ Atingida' : '⚠️ Em andamento' }}
+              </span>
+            </div>
           </div>
         </div>
-        <div class="stat-body">
-          <div class="stat-value">{{ growthRate }}%</div>
-          <div class="stat-label">Taxa de Crescimento</div>
+      </div>
+    </div>
+
+    <!-- Quick Insights (Opcional) -->
+    <div v-if="!loading && stats.total > 0" class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Taxa de Ativação</div>
+        <div class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+          {{ Math.round((stats.ativas / stats.total) * 100) }}%
         </div>
-        <div class="stat-footer">
-          <div class="stat-detail">
-            <span class="detail-label">Meta:</span>
-            <span class="detail-value">20%</span>
-          </div>
+      </div>
+      
+      <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Média por Unidade</div>
+        <div class="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate" :title="formatCurrency(stats.mediaFaturamento)">
+          {{ formatCurrency(stats.mediaFaturamento) }}
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Unidades Inativas</div>
+        <div class="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+          {{ stats.total - stats.ativas }}
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Projeção Anual</div>
+        <div class="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate" :title="formatCurrency(stats.faturamentoProjetado * 12)">
+          {{ formatCurrency(stats.faturamentoProjetado * 12) }}
         </div>
       </div>
     </div>
@@ -97,6 +228,17 @@
 <script setup>
 import { computed } from 'vue';
 import { useUnidadesUI } from '@/composables/unidades/useUnidadesUI';
+
+// Ícones (assumindo que você tem esses componentes SVG)
+import IconStore from '@/components/icons/store.vue';
+import IconChartLine from '@/components/icons/chart-line.vue';
+import IconClock from '@/components/icons/clock.vue';
+import IconTrophy from '@/components/icons/trophy.vue';
+import IconArrowUp from '@/components/icons/arrow-up.vue';
+import IconArrowDown from '@/components/icons/arrow-down.vue';
+import IconMinus from '@/components/icons/minus.vue';
+import IconAlertCircle from '@/components/icons/alert-circle.vue';
+import IconCheckCircle from '@/components/icons/check-circle.vue';
 
 const props = defineProps({
   stats: {
@@ -120,200 +262,64 @@ const { formatCurrency } = useUnidadesUI();
 
 // Computed
 const growthRate = computed(() => {
-  // Cálculo fictício da taxa de crescimento
-  return Math.min(Math.floor((props.stats.ativas / Math.max(props.stats.total, 1)) * 100), 100);
+  if (props.stats.total === 0) return 0;
+  return Math.min(Math.round((props.stats.ativas / props.stats.total) * 100), 100);
 });
 
-// Métodos
+// Trend helpers
 const trendClass = (value) => {
-  if (value > 0) return 'trend-up';
-  if (value < 0) return 'trend-down';
-  return 'trend-neutral';
-};
-
-const trendIcon = (value) => {
-  if (value > 0) return 'fas fa-arrow-up';
-  if (value < 0) return 'fas fa-arrow-down';
-  return 'fas fa-minus';
+  if (value > 0) return 'trend-up bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400';
+  if (value < 0) return 'trend-down bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+  return 'trend-neutral bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
 };
 </script>
 
 <style scoped>
-.unidade-stats {
-  margin-bottom: 30px;
+@import '@/assets/default.css';
+/* Animações */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 20px;
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@media (min-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-@media (min-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
-.stat-card {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--unidade-border);
-  box-shadow: var(--unidade-shadow-sm);
-  padding: 24px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
 }
 
-.stat-card:hover {
-  box-shadow: var(--unidade-shadow-md);
-  transform: translateY(-2px);
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
 }
 
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
+/* Hover effects */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
 }
 
-.stat-card:nth-child(1)::before {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+/* Transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 
-.stat-card:nth-child(2)::before {
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-}
-
-.stat-card:nth-child(3)::before {
-  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
-}
-
-.stat-card:nth-child(4)::before {
-  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
-}
-
-.stat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: white;
-}
-
-.stat-icon.total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.revenue {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-}
-
-.stat-icon.warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-}
-
-.stat-icon.growth {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-}
-
-.stat-trend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 12px;
-}
-
-.trend-up {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-.trend-down {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.trend-neutral {
-  background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
-}
-
-.stat-body {
-  margin-bottom: 20px;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: 800;
-  color: #1a202c;
-  line-height: 1;
-  margin-bottom: 8px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #718096;
-  line-height: 1.4;
-}
-
-.stat-footer {
-  padding-top: 16px;
-  border-top: 1px solid var(--unidade-border);
-}
-
-.stat-detail {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.detail-label {
-  font-size: 13px;
-  color: #718096;
-}
-
-.detail-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a202c;
-}
-
-@media (max-width: 768px) {
-  .stat-card {
-    padding: 20px;
-  }
-  
-  .stat-value {
-    font-size: 28px;
-  }
-  
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 20px;
+/* Responsive text truncation */
+@media (max-width: 640px) {
+  .truncate {
+    max-width: 120px;
   }
 }
 </style>
