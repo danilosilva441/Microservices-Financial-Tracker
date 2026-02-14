@@ -10,7 +10,7 @@
         
         <input 
           type="text" 
-          v-model="searchValue" 
+          :value="searchValue" 
           @input="handleSearchInput" 
           placeholder="Pesquisar unidades por nome, endereço..."
           class="w-full pl-9 pr-9 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500 transition-colors"
@@ -392,7 +392,7 @@ const emit = defineEmits([
 
 const { formatCurrency } = useUnidadesUI();
 
-// Local state - inicializado com valores das props
+// Local state
 const searchValue = ref(props.modelValue || '');
 const showAdvancedFilters = ref(props.showAdvanced || false);
 const sortBy = ref(props.filters?.sort || 'nome');
@@ -406,17 +406,22 @@ const expirationFilter = ref(props.filters?.expiration || 'all');
 // Computed
 const hasActiveFilters = computed(() => {
   return (
+    searchValue.value !== '' ||
     (props.filters?.status && props.filters.status.length > 0) ||
     rangeValues.value[0] > 0 ||
     rangeValues.value[1] < maxMeta.value ||
     sortBy.value !== 'nome' ||
-    expirationFilter.value !== 'all' ||
-    searchValue.value.trim() !== ''
+    expirationFilter.value !== 'all'
   );
 });
 
 const filterSummaryText = computed(() => {
   const parts = [];
+
+  // Pesquisa (agora verifica searchValue local)
+  if (searchValue.value) {
+    parts.push(`"${searchValue.value}"`);
+  }
 
   // Status
   if (props.filters?.status && props.filters.status.length > 0) {
@@ -426,11 +431,6 @@ const filterSummaryText = computed(() => {
     if (statusList.length > 0) {
       parts.push(`Status: ${statusList.join(', ')}`);
     }
-  }
-
-  // Pesquisa
-  if (searchValue.value) {
-    parts.push(`"${searchValue.value}"`);
   }
 
   // Vencimento
@@ -461,7 +461,7 @@ const filterSummaryText = computed(() => {
   return parts.length > 0 ? parts.join(' • ') : 'Nenhum filtro aplicado';
 });
 
-// Watchers - sincronizar com props
+// Watchers
 watch(() => props.modelValue, (newVal) => {
   searchValue.value = newVal || '';
 });
@@ -493,8 +493,11 @@ watch(() => props.filters, (newFilters) => {
 }, { deep: true, immediate: true });
 
 // Methods
-const handleSearchInput = () => {
+const handleSearchInput = (event) => {
+  searchValue.value = event.target.value;
+  // Emite update:modelValue para o v-model
   emit('update:modelValue', searchValue.value);
+  // Emite filter-change com todos os filtros atuais
   emit('filter-change', { 
     ...props.filters,
     search: searchValue.value 
@@ -558,6 +561,7 @@ const toggleStatus = (status) => {
   emit('filter-change', { 
     ...props.filters,
     status: currentStatus,
+    search: searchValue.value,
     hasFilters: currentStatus.length > 0 || hasActiveFilters.value
   });
 };
@@ -567,6 +571,7 @@ const filterByExpiration = (type) => {
   emit('filter-change', { 
     ...props.filters,
     expiration: type,
+    search: searchValue.value,
     hasFilters: true
   });
 };
@@ -585,6 +590,7 @@ const updateMetaRange = () => {
     ...props.filters,
     metaMin: rangeValues.value[0],
     metaMax: rangeValues.value[1],
+    search: searchValue.value,
     hasFilters: true
   });
 };
@@ -593,11 +599,12 @@ const filterBySort = () => {
   emit('filter-change', { 
     ...props.filters,
     sort: sortBy.value,
+    search: searchValue.value,
     hasFilters: true
   });
 };
 
-// Initialize - sincronizar com props no mount
+// Initialize
 onMounted(() => {
   // Garantir que os valores iniciais estejam sincronizados
   if (props.filters) {
@@ -691,4 +698,3 @@ input[type=range]::-moz-range-track {
   background: transparent;
 }
 </style>
-
