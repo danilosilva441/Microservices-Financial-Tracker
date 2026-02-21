@@ -1,7 +1,16 @@
-<!-- components/unidades/UnidadeCard.vue -->
+<!--
+ * src/components/unidades/UnidadeCard.vue
+ * UnidadeCard.vue
+ *
+ * A Vue component that represents a card for displaying information about a business unit (unidade).
+ * It includes details such as the unit's name, address, start date, monthly goal, current revenue, and status.
+ * The card also provides action buttons for editing, activating/deactivating, and deleting the unit.
+ * The component is designed to be responsive and theme-aware, using Tailwind CSS for styling.
+ * It emits events for various actions that can be handled by the parent component.
+ -->
 <template>
   <div 
-    class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden h-full flex flex-col"
+    class="flex flex-col h-full overflow-hidden transition-all duration-300 bg-white border border-gray-200 shadow-sm group dark:bg-gray-800 rounded-xl dark:border-gray-700 hover:shadow-lg"
     :class="{ 
       'cursor-pointer hover:scale-[1.02] hover:-translate-y-1': !disableClick,
       'opacity-75': !unidade.isAtivo
@@ -10,17 +19,17 @@
   >
     <!-- Header do Card -->
     <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-primary-50/50 to-secondary-50/50 dark:from-primary-900/10 dark:to-secondary-900/10">
-      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div class="flex items-start gap-3 min-w-0">
+      <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div class="flex items-start min-w-0 gap-3">
           <!-- Avatar -->
-          <div class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+          <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 text-white transition-transform duration-300 shadow-md sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 group-hover:scale-110">
             <IconStore class="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+              <h3 class="text-base font-bold text-gray-900 truncate sm:text-lg dark:text-white">
                 {{ unidade.nome }}
               </h3>
               <span class="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
@@ -47,11 +56,11 @@
     </div>
 
     <!-- Body do Card -->
-    <div class="p-5 flex-1">
+    <div class="flex-1 p-5">
       <!-- Meta Mensal -->
       <div class="mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Meta Mensal
           </span>
           <span class="text-base font-bold text-primary-600 dark:text-primary-400">
@@ -66,9 +75,9 @@
             <span class="font-semibold" :style="{ color: progressColor }">{{ progress }}%</span>
             <span class="text-gray-500 dark:text-gray-400">100%</span>
           </div>
-          <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div class="h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
             <div 
-              class="h-full rounded-full transition-all duration-500 ease-out"
+              class="h-full transition-all duration-500 ease-out rounded-full"
               :style="progressBarStyle"
             ></div>
           </div>
@@ -76,44 +85,44 @@
       </div>
 
       <!-- Stats Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div class="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-3">
         <!-- Funcionários -->
-        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30">
               <IconUsers class="w-4 h-4 text-primary-600 dark:text-primary-400" />
             </div>
             <div class="min-w-0">
               <div class="text-base font-bold text-gray-900 dark:text-white">{{ funcionariosAtivos || 0 }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Funcionários</div>
+              <div class="text-xs text-gray-500 truncate dark:text-gray-400">Funcionários</div>
             </div>
           </div>
         </div>
 
         <!-- Faturamento -->
-        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg dark:bg-green-900/30">
               <IconChartLine class="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
             <div class="min-w-0">
-              <div class="text-base font-bold text-gray-900 dark:text-white truncate" :title="formatCurrency(faturamentoAtual)">
+              <div class="text-base font-bold text-gray-900 truncate dark:text-white" :title="formatCurrency(faturamentoAtual)">
                 {{ formatCurrency(faturamentoAtual) }}
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Faturamento</div>
+              <div class="text-xs text-gray-500 truncate dark:text-gray-400">Faturamento</div>
             </div>
           </div>
         </div>
 
         <!-- Dias Restantes -->
-        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+            <div class="flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-lg dark:bg-yellow-900/30">
               <IconClock class="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div class="min-w-0">
               <div class="text-base font-bold text-gray-900 dark:text-white">{{ diasRestantes }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Dias restantes</div>
+              <div class="text-xs text-gray-500 truncate dark:text-gray-400">Dias restantes</div>
             </div>
           </div>
         </div>
@@ -121,7 +130,7 @@
 
       <!-- Descrição -->
       <div v-if="unidade.descricao" class="pt-3 border-t border-gray-100 dark:border-gray-700">
-        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
+        <p class="text-xs leading-relaxed text-gray-600 sm:text-sm dark:text-gray-400 line-clamp-2">
           {{ truncatedDescription }}
         </p>
       </div>
@@ -129,11 +138,11 @@
 
     <!-- Footer do Card -->
     <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <!-- Actions -->
         <div class="flex items-center gap-1">
           <button 
-            class="action-button text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+            class="text-gray-600 action-button hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
             @click.stop="$emit('edit', unidade.id)"
             :title="`Editar ${unidade.nome}`"
           >
@@ -142,7 +151,7 @@
           
           <button 
             v-if="unidade.isAtivo"
-            class="action-button text-gray-600 hover:text-yellow-600 dark:text-gray-400 dark:hover:text-yellow-400"
+            class="text-gray-600 action-button hover:text-yellow-600 dark:text-gray-400 dark:hover:text-yellow-400"
             @click.stop="$emit('deactivate', unidade)"
             :title="`Desativar ${unidade.nome}`"
           >
@@ -151,7 +160,7 @@
           
           <button 
             v-else
-            class="action-button text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
+            class="text-gray-600 action-button hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
             @click.stop="$emit('activate', unidade)"
             :title="`Ativar ${unidade.nome}`"
           >
@@ -159,7 +168,7 @@
           </button>
           
           <button 
-            class="action-button text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+            class="text-gray-600 action-button hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
             @click.stop="$emit('delete', unidade)"
             :title="`Excluir ${unidade.nome}`"
           >
@@ -168,7 +177,7 @@
         </div>
 
         <!-- Data de atualização -->
-        <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+        <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
           <IconClock class="w-3 h-3" />
           <span>{{ formatDate(unidade.updatedAt || unidade.createdAt) }}</span>
         </div>

@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\My workspace\\portfolio-microservices\\SharedKernel\\SharedKernel.csproj": {}
+    "E:\\workspace\\Microservices-Financial-Tracker\\SharedKernel\\SharedKernel.csproj": {}
   },
   "projects": {
-    "C:\\My workspace\\portfolio-microservices\\SharedKernel\\SharedKernel.csproj": {
+    "E:\\workspace\\Microservices-Financial-Tracker\\SharedKernel\\SharedKernel.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\My workspace\\portfolio-microservices\\SharedKernel\\SharedKernel.csproj",
+        "projectUniqueName": "E:\\workspace\\Microservices-Financial-Tracker\\SharedKernel\\SharedKernel.csproj",
         "projectName": "SharedKernel",
-        "projectPath": "C:\\My workspace\\portfolio-microservices\\SharedKernel\\SharedKernel.csproj",
-        "packagesPath": "C:\\Users\\Danilo\\.nuget\\packages\\",
-        "outputPath": "C:\\My workspace\\portfolio-microservices\\SharedKernel\\obj\\",
+        "projectPath": "E:\\workspace\\Microservices-Financial-Tracker\\SharedKernel\\SharedKernel.csproj",
+        "packagesPath": "C:\\Users\\danil\\.nuget\\packages\\",
+        "outputPath": "E:\\workspace\\Microservices-Financial-Tracker\\SharedKernel\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Danilo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\danil\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -38,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -60,26 +60,12 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.19, 8.0.19]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.19, 8.0.19]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.19, 8.0.19]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

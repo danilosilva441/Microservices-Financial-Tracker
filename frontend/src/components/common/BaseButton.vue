@@ -1,3 +1,13 @@
+<!--
+ * src/components/common/BaseButton.vue
+ * BaseButton.vue
+ *
+ * A reusable Vue component that serves as a base button for various actions throughout the application.
+ * It supports multiple variants (primary, secondary, success, danger, warning, outline, ghost) and sizes (small, medium, large).
+ * The component also includes features like loading state, disabled state, full width option, and icon support.
+ * It is designed to be flexible and theme-aware, using Tailwind CSS for styling.
+ -->
+
 <template>
   <button
     :type="type"
@@ -14,7 +24,7 @@
   >
     <!-- Loading State -->
     <svg v-if="loading" 
-         class="animate-spin -ml-1 mr-2 h-4 w-4" 
+         class="w-4 h-4 mr-2 -ml-1 animate-spin" 
          xmlns="http://www.w3.org/2000/svg" 
          fill="none" 
          viewBox="0 0 24 24">

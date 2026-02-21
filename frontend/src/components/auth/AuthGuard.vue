@@ -1,4 +1,13 @@
-<!-- src/components/auth/AuthGuard.vue -->
+<!--
+ * src/components/auth/AuthGuard.vue
+ * AuthGuard.vue
+ *
+ * A Vue component that serves as an authentication and authorization guard for protected routes.
+ * It checks if the user is authenticated and has the necessary roles and permissions to access the content.
+ * If the user is not authenticated, it displays an unauthorized message with a link to the login page.
+ * If the user is authenticated but lacks the required access, it shows a forbidden message with a link back to the dashboard.
+ * The component uses composables for authentication and RBAC checks, and provides a slot for protected content.
+ -->
 <template>
   <slot v-if="isAuthenticated && hasAccess"></slot>
   

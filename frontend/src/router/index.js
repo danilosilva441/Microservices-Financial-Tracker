@@ -1,8 +1,8 @@
-// src/router/index.js
+// src/router/index.js (trecho atualizado)
 import { createRouter, createWebHistory } from 'vue-router'
 import authRoutes from './auth.routes'
-// Importe as rotas de unidades
 import unidadesRoutes from './unidades.routes'
+import analysisRoutes from './analysis.routes.js' // <-- Importar as rotas de análise
 
 // Rotas principais
 const routes = [
@@ -11,43 +11,46 @@ const routes = [
     path: '/',
     name: 'home',
     component: () => import('@/views/HomeView.vue'),
-    meta: { 
+    meta: {
       title: 'Home',
       requiresAuth: false,
       breadcrumb: 'Home'
     }
   },
-  
+
   // Dashboard principal
   {
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('@/views/DashboardView.vue'),
-    meta: { 
+    meta: {
       title: 'Dashboard',
       requiresAuth: true,
       layout: 'default',
       breadcrumb: 'Dashboard'
     }
   },
-  
+
   // Rotas de autenticação (vêm do auth.routes.js)
   ...authRoutes,
-  
+
   // Rotas de Unidades (importadas do unidades.router.js)
   ...unidadesRoutes.routes,
-  
+
+  // Rotas de Análise (importadas do analysis.router.js)
+  ...analysisRoutes.routes, // <-- Adicionar rotas de análise
+
   // Rota 404
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),
-    meta: { 
+    meta: {
       title: 'Página não encontrada',
       httpStatus: 404
     }
   }
-]
+];
 
 // Criar router
 const router = createRouter({
@@ -96,63 +99,63 @@ const log = {
       console.log(`%c✅ ${message}`, `color: ${LOG_CONFIG.colors.success}; font-weight: bold`, data)
     }
   },
-  
+
   // Log de erro
   error: (message, error = {}) => {
     if (LOG_CONFIG.enabled) {
       console.error(`%c❌ ${message}`, `color: ${LOG_CONFIG.colors.error}; font-weight: bold`, error)
     }
   },
-  
+
   // Log de warning
   warning: (message, data = {}) => {
     if (LOG_CONFIG.enabled) {
       console.warn(`%c⚠️ ${message}`, `color: ${LOG_CONFIG.colors.warning}; font-weight: bold`, data)
     }
   },
-  
+
   // Log de informação
   info: (message, data = {}) => {
     if (LOG_CONFIG.enabled) {
       console.info(`%cℹ️ ${message}`, `color: ${LOG_CONFIG.colors.info}; font-weight: bold`, data)
     }
   },
-  
+
   // Log específico para autenticação
   auth: (message, data = {}) => {
     if (LOG_CONFIG.enabled) {
       console.log(`%c🔐 ${message}`, `color: ${LOG_CONFIG.colors.auth}; font-weight: bold`, data)
     }
   },
-  
+
   // Log de navegação
   route: (message, data = {}) => {
     if (LOG_CONFIG.enabled) {
       console.log(`%c🧭 ${message}`, `color: ${LOG_CONFIG.colors.route}; font-weight: bold`, data)
     }
   },
-  
+
   // Log específico para Unidades
   unidades: (message, data = {}) => {
     if (LOG_CONFIG.enabled) {
       console.log(`%c🏢 ${message}`, `color: ${LOG_CONFIG.colors.unidades}; font-weight: bold`, data)
     }
   },
-  
+
   // Log para TESTES (sempre visível durante desenvolvimento)
   test: (message, data = {}) => {
     if (LOG_CONFIG.enabled && LOG_CONFIG.debugMode) {
       console.log(`%c🧪 [TESTE] ${message}`, `color: ${LOG_CONFIG.colors.test}; background: #FFF3E0; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px dashed ${LOG_CONFIG.colors.test}`, data)
     }
   },
-  
+
   // Log para desenvolvedor (MODIFICADO: visível durante testes)
   dev: (message, data = {}) => {
     if (LOG_CONFIG.enabled && (isInTestMode() || LOG_CONFIG.debugMode)) {
       console.log(`%c👨‍💻 [DEV] ${message}`, `color: #FF5722; background: #FFF3E0; padding: 2px 6px; border-radius: 4px; font-weight: bold; border-left: 4px solid #FF5722`, data)
     }
   },
-  
+
   // Log de usuário (para testar diferentes roles)
   user: (message, data = {}) => {
     if (LOG_CONFIG.enabled) {
@@ -168,7 +171,7 @@ const log = {
         operador: '#689F38'
       }
       const color = roleColors[userRole] || '#757575'
-      
+
       console.log(`%c👤 [${userRole.toUpperCase()}] ${message}`, `color: ${color}; font-weight: bold; border-left: 3px solid ${color}; padding-left: 5px`, data)
     }
   }
@@ -177,16 +180,16 @@ const log = {
 // Função para simular diferentes usuários (para testes)
 const simulateUser = (role = 'user') => {
   const validRoles = ['admin', 'manager', 'dev', 'supervisor', 'lider', 'operador', 'user']
-  
+
   if (!validRoles.includes(role)) {
-    log.error('Role inválido', { 
-      role, 
+    log.error('Role inválido', {
+      role,
       validRoles,
-      dica: 'Use: admin, manager, dev, supervisor, lider, operador, user' 
+      dica: 'Use: admin, manager, dev, supervisor, lider, operador, user'
     })
     return null
   }
-  
+
   // Dados fictícios baseados no role
   const userProfiles = {
     admin: {
@@ -225,9 +228,9 @@ const simulateUser = (role = 'user') => {
       permissions: []
     }
   }
-  
+
   const profile = userProfiles[role] || userProfiles.user
-  
+
   // Salva dados no localStorage
   localStorage.setItem('userRole', role)
   localStorage.setItem('token', `fake-token-${role}-${Date.now()}`)
@@ -235,7 +238,7 @@ const simulateUser = (role = 'user') => {
   localStorage.setItem('userName', profile.name)
   localStorage.setItem('userEmail', profile.email)
   localStorage.setItem('userPermissions', JSON.stringify(profile.permissions))
-  
+
   log.test('Usuário simulado para testes', {
     role,
     nome: profile.name,
@@ -244,14 +247,14 @@ const simulateUser = (role = 'user') => {
     token: localStorage.getItem('token'),
     userId: localStorage.getItem('userId')
   })
-  
+
   // Mostra informações no console
   console.log('%c🎭 USUÁRIO SIMULADO 🎭', 'background: linear-gradient(90deg, #667eea, #764ba2); color: white; font-size: 14px; font-weight: bold; padding: 10px; border-radius: 5px')
   console.log(`%c👤 Nome: ${profile.name}`, 'color: #4CAF50; font-weight: bold')
   console.log(`%c🏷️ Role: ${role.toUpperCase()}`, 'color: #2196F3; font-weight: bold')
   console.log(`%c📧 Email: ${profile.email}`, 'color: #9C27B0; font-weight: bold')
   console.log(`%c🔑 Permissões: ${profile.permissions.join(', ') || 'Nenhuma'}`, 'color: #FF9800; font-weight: bold')
-  
+
   return role
 }
 
@@ -280,47 +283,47 @@ const showTestBanner = () => {
 // Função para verificar permissões (MODIFICADA: não bloqueia durante testes)
 const checkPermissions = (to, userRole) => {
   const requiredRole = to.meta.requiredRole
-  
+
   if (!requiredRole) {
     return { hasAccess: true, reason: 'Rota pública' }
   }
-  
+
   if (!userRole) {
-    return { 
-      hasAccess: false, 
+    return {
+      hasAccess: false,
       reason: 'Usuário não autenticado',
       code: 'NO_AUTH',
       testOverride: true // Permite override durante testes
     }
   }
-  
+
   // Durante testes, permite acesso mesmo sem role correto (mas loga)
-  const hasAccess = !requiredRole || 
-                   (Array.isArray(requiredRole) && requiredRole.includes(userRole)) ||
-                   (typeof requiredRole === 'string' && userRole === requiredRole)
-  
+  const hasAccess = !requiredRole ||
+    (Array.isArray(requiredRole) && requiredRole.includes(userRole)) ||
+    (typeof requiredRole === 'string' && userRole === requiredRole)
+
   if (!hasAccess) {
-    const reason = requiredRole === 'dev' 
-      ? 'Acesso restrito para desenvolvedores' 
+    const reason = requiredRole === 'dev'
+      ? 'Acesso restrito para desenvolvedores'
       : Array.isArray(requiredRole)
         ? `Permissão necessária: ${requiredRole.join(' ou ')}`
         : `Permissão necessária: ${requiredRole}`
-    
+
     log.test('⚠️ PERMISSÃO INSUFICIENTE (permitido em modo teste)', {
       rota: to.fullPath,
       roleAtual: userRole,
       roleNecessario: requiredRole,
       motivo: reason
     })
-    
-    return { 
+
+    return {
       hasAccess: LOG_CONFIG.debugMode, // Permite acesso durante testes
       reason,
       code: requiredRole === 'dev' ? 'DEV_ONLY' : 'INSUFFICIENT_PERMISSIONS',
       testOverride: LOG_CONFIG.debugMode
     }
   }
-  
+
   return { hasAccess: true, reason: 'Permissão concedida' }
 }
 
@@ -333,7 +336,7 @@ const getUserData = () => {
     const userName = localStorage.getItem('userName')
     const userEmail = localStorage.getItem('userEmail')
     const permissions = JSON.parse(localStorage.getItem('userPermissions') || '[]')
-    
+
     const data = {
       isAuthenticated: !!token,
       role: userRole || 'guest',
@@ -344,7 +347,7 @@ const getUserData = () => {
       token: token || null,
       isTestUser: token && token.includes('fake-token-')
     }
-    
+
     log.user('Dados do usuário obtidos', data)
     return data
   } catch (error) {
@@ -369,7 +372,7 @@ router.beforeEach(async (to, from, next) => {
     showTestBanner()
     window._testBannerShown = true
   }
-  
+
   // Log de início de navegação
   log.route('Iniciando navegação', {
     de: from.fullPath || '/',
@@ -377,7 +380,7 @@ router.beforeEach(async (to, from, next) => {
     nome: to.name || 'sem-nome',
     modulo: to.path.startsWith('/unidades') ? '🏢 Unidades' : '📊 Geral'
   })
-  
+
   // Log específico para módulo de unidades
   if (to.path.startsWith('/unidades')) {
     log.unidades('Acessando módulo de Unidades', {
@@ -386,12 +389,12 @@ router.beforeEach(async (to, from, next) => {
       id: to.params.id || 'N/A'
     })
   }
-  
+
   // Título da página
   const pageTitle = to.meta.title || 'DS SysTech'
   document.title = `${pageTitle} | DS SysTech`
   log.info(`Título da página: ${pageTitle}`)
-  
+
   // Obter dados do usuário
   const userData = getUserData()
   log.auth('Status autenticação', {
@@ -400,7 +403,7 @@ router.beforeEach(async (to, from, next) => {
     userId: userData.id,
     modoTeste: userData.isTestUser ? 'SIM' : 'NÃO'
   })
-  
+
   // Verifica se a rota requer autenticação
   if (to.meta.requiresAuth) {
     if (!userData.isAuthenticated) {
@@ -408,21 +411,21 @@ router.beforeEach(async (to, from, next) => {
         rota: to.fullPath,
         motivo: 'Token não encontrado'
       })
-      
+
       // Redireciona para login com redirect
       next({
         name: 'login',
-        query: { 
+        query: {
           redirect: to.fullPath,
           reason: 'auth_required'
         }
       })
       return
     }
-    
+
     // Verificar permissões baseadas em role
     const permissionCheck = checkPermissions(to, userData.role)
-    
+
     if (!permissionCheck.hasAccess && !permissionCheck.testOverride) {
       log.error('Acesso negado: permissão insuficiente', {
         rota: to.fullPath,
@@ -431,12 +434,12 @@ router.beforeEach(async (to, from, next) => {
         motivo: permissionCheck.reason,
         codigo: permissionCheck.code
       })
-      
+
       // Redirecionar baseado no tipo de erro
       if (permissionCheck.code === 'DEV_ONLY') {
         next({
           name: 'dashboard',
-          query: { 
+          query: {
             error: 'dev_only',
             message: 'Acesso restrito para desenvolvedores'
           }
@@ -444,7 +447,7 @@ router.beforeEach(async (to, from, next) => {
       } else {
         next({
           name: 'access-denied',
-          query: { 
+          query: {
             from: to.fullPath,
             reason: permissionCheck.code
           }
@@ -459,7 +462,7 @@ router.beforeEach(async (to, from, next) => {
         motivo: 'Modo de teste ativado - verificações de role ignoradas'
       })
     }
-    
+
     // Log específico para unidades
     if (to.path.startsWith('/unidades')) {
       log.unidades('Acesso concedido ao módulo Unidades', {
@@ -478,7 +481,7 @@ router.beforeEach(async (to, from, next) => {
   } else {
     log.info('Rota pública acessada', { rota: to.fullPath })
   }
-  
+
   // Logs de teste detalhados
   if (LOG_CONFIG.debugMode) {
     log.dev('🔍 Detalhes da navegação (modo teste)', {
@@ -489,11 +492,11 @@ router.beforeEach(async (to, from, next) => {
       userData: getUserData(),
       timestamp: new Date().toISOString()
     })
-    
+
     // Simular delay para ver logs melhor
     await new Promise(resolve => setTimeout(resolve, 50))
   }
-  
+
   // Próximo middleware ou componente
   next()
 })
@@ -508,7 +511,7 @@ router.afterEach((to, from, failure) => {
     })
   } else {
     const userData = getUserData()
-    
+
     // Log específico para unidades
     if (to.path.startsWith('/unidades')) {
       log.unidades('Navegação em Unidades concluída', {
@@ -525,7 +528,7 @@ router.afterEach((to, from, failure) => {
         autenticado: userData.isAuthenticated ? 'SIM' : 'NÃO'
       })
     }
-    
+
     // Log específico por tipo de usuário
     if (userData.role === 'dev') {
       log.dev('Desenvolvedor navegou com sucesso', {
@@ -538,7 +541,7 @@ router.afterEach((to, from, failure) => {
       })
     }
   }
-  
+
   // Status HTTP para analytics
   const httpStatus = to.meta.httpStatus || 200
   log.info(`Status HTTP: ${httpStatus}`)
@@ -589,7 +592,7 @@ router.checkPermissions = checkPermissions
 
 // Helper para navegação com logs
 const originalPush = router.push
-router.push = function(location, onResolve, onReject) {
+router.push = function (location, onResolve, onReject) {
   if (typeof location === 'string' && location.includes('/unidades')) {
     log.unidades('Navegação para Unidades solicitada', { location })
   } else {
@@ -599,7 +602,7 @@ router.push = function(location, onResolve, onReject) {
 }
 
 const originalReplace = router.replace
-router.replace = function(location, onResolve, onReject) {
+router.replace = function (location, onResolve, onReject) {
   if (typeof location === 'string' && location.includes('/unidades')) {
     log.unidades('Redirecionamento para Unidades solicitado', { location })
   } else {
@@ -617,7 +620,7 @@ if (LOG_CONFIG.enabled) {
   log.info('  /unidades/nova → Nova unidade')
   log.info('  /unidades/:id → Detalhes da unidade')
   log.info('  /unidades/:id/editar → Editar unidade')
-  
+
   log.info('\n🎭 Simulação de usuários (use no console):')
   log.info('  router.simulateUser("admin") → Acesso total')
   log.info('  router.simulateUser("manager") → Gerente')
@@ -626,7 +629,7 @@ if (LOG_CONFIG.enabled) {
   log.info('  router.simulateUser("operador") → Operador')
   log.info('  router.simulateUser("user") → Usuário básico')
   log.info('  router.simulateUser("dev") → Desenvolvedor')
-  
+
   log.info('\n⚡ Atalhos rápidos para Unidades:')
   log.info('  router.goToUnidades()')
   log.info('  router.goToNovaUnidade()')

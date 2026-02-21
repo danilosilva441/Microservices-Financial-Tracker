@@ -1,33 +1,41 @@
-<!-- components/unidades/UnidadeDetalhes.vue -->
+<!--
+ * src/components/unidades/UnidadeDetalhes.vue
+ * UnidadeDetalhes.vue
+ *
+ * A Vue component that displays detailed information about a specific business unit (unidade).
+ * It includes a header with the unit's name, status, and contact information, as well as tabs for different sections like dashboard, info, documents, financials, and employees.
+ * The component handles loading states, error states, and provides action buttons for editing and deleting the unit.
+ * It is designed to be responsive and theme-aware, using Tailwind CSS for styling.
+ -->
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200" :class="{ 'dark': isDarkMode }">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+  <div class="min-h-screen transition-colors duration-200 bg-gray-50 dark:bg-gray-900" :class="{ 'dark': isDarkMode }">
+    <div class="container px-4 py-6 mx-auto sm:px-6 lg:px-8 sm:py-8">
       <!-- Loading State -->
       <div v-if="isLoading" class="flex items-center justify-center py-12">
         <div class="text-center">
-          <IconLoader class="w-12 h-12 animate-spin text-primary-500 dark:text-primary-400 mx-auto mb-4" />
+          <IconLoader class="w-12 h-12 mx-auto mb-4 animate-spin text-primary-500 dark:text-primary-400" />
           <p class="text-gray-600 dark:text-gray-400">Carregando informações da unidade...</p>
         </div>
       </div>
 
       <template v-else-if="unidade">
         <!-- Header Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
-          <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+        <div class="p-4 mb-6 bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 sm:p-6">
+          <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
             <!-- Left Section -->
             <div class="flex-1 min-w-0">
               <div class="flex items-start gap-4">
                 <!-- Avatar -->
                 <div class="flex-shrink-0">
-                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-lg">
+                  <div class="flex items-center justify-center text-white shadow-lg w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500">
                     <IconStore class="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
                 </div>
                 
                 <!-- Title and Status -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center flex-wrap gap-3 mb-3">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white truncate">
+                  <div class="flex flex-wrap items-center gap-3 mb-3">
+                    <h1 class="text-2xl font-bold text-gray-900 truncate sm:text-3xl dark:text-white">
                       {{ unidade.nome }}
                     </h1>
                     <span :class="statusClasses">
@@ -59,7 +67,7 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-stretch gap-3 lg:ml-6">
+            <div class="flex flex-col items-stretch gap-3 sm:flex-row lg:flex-col sm:items-center lg:items-stretch lg:ml-6">
               <button @click="goToEdit(unidade.id)" class="btn-primary whitespace-nowrap">
                 <IconEdit class="w-4 h-4 mr-2" />
                 Editar
@@ -73,7 +81,7 @@
         </div>
 
         <!-- Tabs -->
-        <div class="mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+        <div class="mb-6 overflow-x-auto border-b border-gray-200 dark:border-gray-700 scrollbar-hide">
           <div class="flex space-x-1 min-w-max">
             <button
               v-for="tab in tabs"
@@ -100,19 +108,19 @@
           <!-- Dashboard Tab -->
           <div v-if="activeTab === 'dashboard'" class="space-y-6">
             <!-- Loading State -->
-            <div v-if="dashboardLoading" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
+            <div v-if="dashboardLoading" class="p-8 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
               <div class="flex flex-col items-center justify-center text-center">
-                <IconLoader class="w-12 h-12 animate-spin text-primary-500 dark:text-primary-400 mb-4" />
+                <IconLoader class="w-12 h-12 mb-4 animate-spin text-primary-500 dark:text-primary-400" />
                 <p class="text-gray-600 dark:text-gray-400">Carregando dados do dashboard...</p>
               </div>
             </div>
 
             <!-- Error State -->
-            <div v-else-if="dashboardError" class="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-900/30 p-8">
+            <div v-else-if="dashboardError" class="p-8 bg-white border border-red-200 dark:bg-gray-800 rounded-xl dark:border-red-900/30">
               <div class="flex flex-col items-center justify-center text-center">
-                <IconAlertCircle class="w-12 h-12 text-red-500 dark:text-red-400 mb-4" />
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erro ao carregar dados</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ dashboardError }}</p>
+                <IconAlertCircle class="w-12 h-12 mb-4 text-red-500 dark:text-red-400" />
+                <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Erro ao carregar dados</h3>
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">{{ dashboardError }}</p>
                 <button @click="refreshDashboardData" class="btn-outline">
                   <IconRefresh class="w-4 h-4 mr-2" />
                   Tentar novamente
@@ -123,9 +131,9 @@
             <!-- Dashboard Content -->
             <div v-else-if="dashboardData" class="space-y-6">
               <!-- Progress Card -->
-              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <div class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
                 <div class="flex items-center justify-between mb-6">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
                     <IconChartLine class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                     Progresso da Meta
                   </h3>
@@ -137,7 +145,7 @@
                 <div class="space-y-6">
                   <!-- Progress Bar -->
                   <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <div class="flex flex-col justify-between gap-2 mb-2 sm:flex-row sm:items-center">
                       <div class="space-y-1">
                         <p class="text-sm text-gray-600 dark:text-gray-400">
                           Meta: <span class="font-semibold text-gray-900 dark:text-white">{{ formatCurrency(dashboardData.metaMensal || 0) }}</span>
@@ -151,9 +159,9 @@
                       </div>
                     </div>
 
-                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
                       <div 
-                        class="h-full rounded-full transition-all duration-500"
+                        class="h-full transition-all duration-500 rounded-full"
                         :style="{
                           width: `${dashboardData.progressoMeta || 0}%`,
                           backgroundColor: getProgressColor(dashboardData.progressoMeta || 0)
@@ -169,17 +177,17 @@
                   </div>
 
                   <!-- Stats Grid -->
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Meta Restante</p>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Meta Restante</p>
                       <p class="text-lg font-bold text-gray-900 dark:text-white">{{ formatCurrency(dashboardData.metaRestante || 0) }}</p>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Média Diária</p>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Média Diária</p>
                       <p class="text-lg font-bold text-gray-900 dark:text-white">{{ formatCurrency(dashboardData.mediaDiariaNecessaria || 0) }}</p>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Projeção</p>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Projeção</p>
                       <p class="text-lg font-bold text-gray-900 dark:text-white">{{ formatCurrency(dashboardData.projecaoFaturamento || 0) }}</p>
                     </div>
                   </div>
@@ -187,28 +195,28 @@
               </div>
 
               <!-- Financial Summary and General Info -->
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <!-- Financial Summary -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+                <div class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                  <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                     <IconChartPie class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                     Resumo Financeiro
                   </h3>
                   
                   <div class="space-y-3">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                       <span class="text-sm text-gray-600 dark:text-gray-400">Faturamento Total</span>
                       <span class="text-sm font-semibold text-green-600 dark:text-green-400">
                         {{ formatCurrency(dashboardData.faturamentoTotal || 0) }}
                       </span>
                     </div>
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                       <span class="text-sm text-gray-600 dark:text-gray-400">Despesas Totais</span>
                       <span class="text-sm font-semibold text-red-600 dark:text-red-400">
                         {{ formatCurrency(dashboardData.despesasTotais || 0) }}
                       </span>
                     </div>
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                       <span class="text-sm text-gray-600 dark:text-gray-400">Lucro Líquido</span>
                       <span :class="[
                         'text-sm font-semibold',
@@ -217,7 +225,7 @@
                         {{ formatCurrency(dashboardData.lucroLiquido || 0) }}
                       </span>
                     </div>
-                    <div class="flex justify-between items-center py-2">
+                    <div class="flex items-center justify-between py-2">
                       <span class="text-sm text-gray-600 dark:text-gray-400">Margem</span>
                       <span class="text-sm font-semibold text-gray-900 dark:text-white">
                         {{ dashboardData.margem || 0 }}%
@@ -227,27 +235,27 @@
                 </div>
 
                 <!-- General Info -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+                <div class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                  <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                     <IconInfoCircle class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                     Informações Gerais
                   </h3>
                   
                   <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">CNPJ</p>
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">CNPJ</p>
                       <p class="text-sm font-medium text-gray-900 dark:text-white">{{ unidade.cnpj || 'Não informado' }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Abertura</p>
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Abertura</p>
                       <p class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDate(unidade.dataAbertura) || 'Não informada' }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Responsável</p>
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Responsável</p>
                       <p class="text-sm font-medium text-gray-900 dark:text-white">{{ unidade.responsavel || 'Não informado' }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Funcionários</p>
+                      <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Funcionários</p>
                       <p class="text-sm font-medium text-gray-900 dark:text-white">{{ dashboardData.funcionariosAtivos || 0 }}</p>
                     </div>
                   </div>
@@ -257,35 +265,35 @@
           </div>
 
           <!-- Info Tab -->
-          <div v-if="activeTab === 'info'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div v-if="activeTab === 'info'" class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <!-- Company Info -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <div class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
+              <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 <IconBuilding class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                 Dados da Empresa
               </h3>
               <div class="space-y-3">
                 <!-- ✅ InfoRow implementado diretamente no template -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Razão Social</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Razão Social</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.razaoSocial || unidade.nome">
                     {{ unidade.razaoSocial || unidade.nome }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">CNPJ</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">CNPJ</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.cnpj || 'Não informado'">
                     {{ unidade.cnpj || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Inscrição Estadual</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Inscrição Estadual</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.inscricaoEstadual || 'Não informada'">
                     {{ unidade.inscricaoEstadual || 'Não informada' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Segmento</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Segmento</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.segmento || 'Não informado'">
                     {{ unidade.segmento || 'Não informado' }}
                   </span>
@@ -294,38 +302,38 @@
             </div>
 
             <!-- Address Info -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <div class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
+              <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 <IconMapPin class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                 Endereço
               </h3>
               <div class="space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Endereço</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Endereço</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.endereco || 'Não informado'">
                     {{ unidade.endereco || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Complemento</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Complemento</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.complemento || 'Não informado'">
                     {{ unidade.complemento || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Bairro</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Bairro</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.bairro || 'Não informado'">
                     {{ unidade.bairro || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cidade/UF</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Cidade/UF</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="`${unidade.cidade || ''} - ${unidade.estado || ''}`">
                     {{ unidade.cidade || '' }} - {{ unidade.estado || '' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">CEP</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">CEP</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.cep || 'Não informado'">
                     {{ unidade.cep || 'Não informado' }}
                   </span>
@@ -334,32 +342,32 @@
             </div>
 
             <!-- Contact Info -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <div class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
+              <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 <IconUser class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                 Contato
               </h3>
               <div class="space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Responsável</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Responsável</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.responsavel || 'Não informado'">
                     {{ unidade.responsavel || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Telefone</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Telefone</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.telefone || 'Não informado'">
                     {{ unidade.telefone || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Email</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Email</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.email || 'Não informado'">
                     {{ unidade.email || 'Não informado' }}
                   </span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0 gap-1">
-                  <span class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Celular</span>
+                <div class="flex flex-col justify-between gap-1 py-2 border-b border-gray-100 sm:flex-row sm:items-center dark:border-gray-700 last:border-0">
+                  <span class="text-xs text-gray-600 sm:text-sm dark:text-gray-400">Celular</span>
                   <span class="text-sm font-medium text-gray-900 dark:text-white break-words max-w-[250px]" :title="unidade.celular || 'Não informado'">
                     {{ unidade.celular || 'Não informado' }}
                   </span>
@@ -369,24 +377,24 @@
           </div>
 
           <!-- Documents Tab -->
-          <div v-if="activeTab === 'docs'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div v-if="activeTab === 'docs'" class="p-6 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="flex flex-col items-start justify-between gap-4 mb-6 sm:flex-row sm:items-center">
+              <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
                 <IconFile class="w-5 h-5 text-primary-500 dark:text-primary-400" />
                 Documentos da Unidade
               </h3>
-              <button class="btn-primary w-full sm:w-auto">
+              <button class="w-full btn-primary sm:w-auto">
                 <IconPlus class="w-4 h-4 mr-2" />
                 Adicionar Documento
               </button>
             </div>
 
             <div class="space-y-3">
-              <div v-for="i in 3" :key="i" class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg gap-4">
+              <div v-for="i in 3" :key="i" class="flex flex-col justify-between gap-4 p-4 rounded-lg sm:flex-row sm:items-center bg-gray-50 dark:bg-gray-900/50">
                 <div class="flex items-center gap-3">
-                  <IconFileText class="w-8 h-8 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                  <IconFileText class="flex-shrink-0 w-8 h-8 text-gray-400 dark:text-gray-500" />
                   <div class="min-w-0">
-                    <h4 class="font-medium text-gray-900 dark:text-white truncate">Contrato Social</h4>
+                    <h4 class="font-medium text-gray-900 truncate dark:text-white">Contrato Social</h4>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Última atualização: 15/01/2024</p>
                   </div>
                 </div>
@@ -403,19 +411,19 @@
           </div>
 
           <!-- Financeiro Tab (Placeholder) -->
-          <div v-if="activeTab === 'financeiro'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
+          <div v-if="activeTab === 'financeiro'" class="p-8 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
             <div class="text-center">
-              <IconChartLine class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Módulo Financeiro</h3>
+              <IconChartLine class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+              <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Módulo Financeiro</h3>
               <p class="text-gray-600 dark:text-gray-400">Em breve você poderá visualizar dados financeiros detalhados aqui.</p>
             </div>
           </div>
 
           <!-- Funcionários Tab (Placeholder) -->
-          <div v-if="activeTab === 'funcionarios'" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
+          <div v-if="activeTab === 'funcionarios'" class="p-8 bg-white border border-gray-200 dark:bg-gray-800 rounded-xl dark:border-gray-700">
             <div class="text-center">
-              <IconUsers class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Gestão de Funcionários</h3>
+              <IconUsers class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+              <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Gestão de Funcionários</h3>
               <p class="text-gray-600 dark:text-gray-400">Em breve você poderá gerenciar os funcionários da unidade aqui.</p>
             </div>
           </div>

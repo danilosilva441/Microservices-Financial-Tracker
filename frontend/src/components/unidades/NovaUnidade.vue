@@ -1,14 +1,22 @@
-<!-- components/unidades/NovaUnidade.vue -->
+<!--
+ * src/components/unidades/NovaUnidade.vue
+ * NovaUnidade.vue
+ *
+ * A Vue component that provides a form for creating a new unit (unidade) in the financial tracking application.
+ * It includes a breadcrumb navigation, a header card with information and actions, and a main content area with the form and helpful tips.
+ * The component is designed to be responsive and theme-aware, using Tailwind CSS for styling.
+ * It also integrates with the UnidadeForm component to handle the actual form submission and validation.
+ -->
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200" :class="{ 'dark': isDarkMode }">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+  <div class="min-h-screen transition-colors duration-200 bg-gray-50 dark:bg-gray-900" :class="{ 'dark': isDarkMode }">
+    <div class="container px-4 py-6 mx-auto sm:px-6 lg:px-8 sm:py-8">
       <!-- Breadcrumb -->
-      <nav class="flex items-center space-x-2 text-sm mb-6 overflow-x-auto pb-2" aria-label="Breadcrumb">
-        <ol class="flex items-center space-x-2 flex-wrap">
+      <nav class="flex items-center pb-2 mb-6 space-x-2 overflow-x-auto text-sm" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center space-x-2">
           <li class="flex items-center">
             <router-link 
               to="/" 
-              class="flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors whitespace-nowrap"
+              class="flex items-center text-gray-500 transition-colors dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 whitespace-nowrap"
             >
               <IconHome class="w-4 h-4 mr-1" />
               <span class="hidden sm:inline">Home</span>
@@ -18,14 +26,14 @@
           <li class="flex items-center">
             <router-link 
               to="/unidades" 
-              class="flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors whitespace-nowrap"
+              class="flex items-center text-gray-500 transition-colors dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 whitespace-nowrap"
             >
               <IconStore class="w-4 h-4 mr-1" />
               <span class="hidden sm:inline">Unidades</span>
             </router-link>
             <IconChevronRight class="w-4 h-4 mx-1 text-gray-400 dark:text-gray-600" />
           </li>
-          <li class="flex items-center text-primary-600 dark:text-primary-400 font-semibold whitespace-nowrap" aria-current="page">
+          <li class="flex items-center font-semibold text-primary-600 dark:text-primary-400 whitespace-nowrap" aria-current="page">
             <IconPlusCircle class="w-4 h-4 mr-1" />
             <span>Nova Unidade</span>
           </li>
@@ -33,34 +41,34 @@
       </nav>
 
       <!-- Header Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="p-4 mb-6 bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 sm:p-6">
+        <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div class="flex items-start space-x-4">
             <div class="flex-shrink-0">
-              <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-lg">
+              <div class="flex items-center justify-center w-12 h-12 text-white shadow-lg sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500">
                 <IconPlusCircle class="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              <div class="flex flex-wrap items-center gap-2">
+                <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">
                   Nova Unidade
                 </h1>
                 <span class="px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                  <IconPlus class="w-3 h-3 inline mr-1" />
+                  <IconPlus class="inline w-3 h-3 mr-1" />
                   Cadastro
                 </span>
               </div>
-              <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 flex items-center">
+              <p class="flex items-center mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
                 <IconInfoCircle class="w-4 h-4 mr-1.5 text-gray-400 dark:text-gray-500" />
                 Preencha os dados para cadastrar uma nova unidade
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-2 sm:gap-3 ml-0 sm:ml-4">
+          <div class="flex items-center gap-2 ml-0 sm:gap-3 sm:ml-4">
             <router-link 
               to="/unidades" 
-              class="btn-outline flex-1 sm:flex-initial justify-center"
+              class="justify-center flex-1 btn-outline sm:flex-initial"
             >
               <IconTimes class="w-4 h-4 mr-2" />
               <span class="hidden sm:inline">Cancelar</span>
@@ -71,14 +79,14 @@
       </div>
 
       <!-- Main Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <!-- Form Column -->
         <div class="lg:col-span-2">
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div class="overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="px-4 py-4 border-b border-gray-200 dark:border-gray-700 sm:px-6 bg-gray-50 dark:bg-gray-800/50">
               <div class="flex items-center gap-2">
                 <IconForm class="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                <h2 class="text-base font-semibold text-gray-900 sm:text-lg dark:text-white">
                   Formulário de Cadastro
                 </h2>
                 <span class="ml-auto text-xs text-gray-500 dark:text-gray-400">
@@ -100,19 +108,19 @@
         </div>
 
         <!-- Help Sidebar Column -->
-        <div class="lg:col-span-1 space-y-4 sm:space-y-6">
+        <div class="space-y-4 lg:col-span-1 sm:space-y-6">
           <!-- Dicas Card -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-20">
-            <div class="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div class="sticky overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 top-20">
+            <div class="px-4 py-4 border-b border-gray-200 dark:border-gray-700 sm:px-6 bg-gray-50 dark:bg-gray-800/50">
               <div class="flex items-center gap-2">
                 <IconLightbulb class="w-5 h-5 text-yellow-500" />
-                <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 class="text-base font-semibold text-gray-900 sm:text-lg dark:text-white">
                   Dicas para Cadastro
                 </h3>
               </div>
             </div>
             
-            <div class="p-4 sm:p-6 space-y-6">
+            <div class="p-4 space-y-6 sm:p-6">
               <!-- Boas Práticas -->
               <div>
                 <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -146,31 +154,31 @@
               </div>
 
               <!-- Informações Adicionais -->
-              <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+              <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <h4 class="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <IconInfoCircle class="w-4 h-4" />
                   Após o cadastro
                 </h4>
                 <ul class="space-y-1.5">
                   <li v-for="(info, index) in afterRegistration" :key="index" class="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-300">
-                    <IconCheck class="w-3 h-3 flex-shrink-0" />
+                    <IconCheck class="flex-shrink-0 w-3 h-3" />
                     <span>{{ info }}</span>
                   </li>
                 </ul>
               </div>
 
               <!-- Ações Rápidas -->
-              <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button 
                   @click="clearForm" 
-                  class="btn-outline w-full justify-center mb-2"
+                  class="justify-center w-full mb-2 btn-outline"
                 >
                   <IconRefresh class="w-4 h-4 mr-2" />
                   Limpar formulário
                 </button>
                 <router-link 
                   to="/unidades" 
-                  class="btn-outline w-full justify-center"
+                  class="justify-center w-full btn-outline"
                 >
                   <IconArrowLeft class="w-4 h-4 mr-2" />
                   Voltar para unidades
@@ -180,8 +188,8 @@
           </div>
 
           <!-- Progress Card (Opcional) -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hidden lg:block">
-            <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+          <div class="hidden overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 lg:block">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
               <div class="flex items-center gap-2">
                 <IconActivity class="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">
@@ -203,7 +211,7 @@
                       cy="48"
                     />
                     <circle
-                      class="text-primary-500 dark:text-primary-400 transition-all duration-500"
+                      class="transition-all duration-500 text-primary-500 dark:text-primary-400"
                       stroke-width="4"
                       stroke="currentColor"
                       fill="transparent"

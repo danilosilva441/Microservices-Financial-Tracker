@@ -1,10 +1,18 @@
-<!-- components/unidades/UnidadeFilters.vue -->
+<!--
+ * src/components/unidades/UnidadeFilters.vue
+ * UnidadeFilters.vue
+ *
+ * A Vue component that provides a comprehensive filtering interface for the "Unidades" section.
+ * It includes a search bar, advanced filters for status and expiration, a meta mensal range slider, and sorting options.
+ * The component is designed to be responsive and theme-aware, using Tailwind CSS for styling.
+ * It emits events to the parent component to handle filter changes and view toggling.
+ -->
 <template>
   <div class="w-full space-y-4">
     <!-- Barra de Pesquisa Rápida -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
       <div class="relative flex-1">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <IconSearch class="w-4 h-4 text-gray-400 dark:text-gray-500" />
         </div>
         
@@ -19,7 +27,7 @@
         <button 
           v-if="searchValue" 
           @click="clearSearch" 
-          class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+          class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
         >
           <IconTimes class="w-4 h-4" />
         </button>
@@ -38,7 +46,7 @@
         >
           <IconFilter class="w-4 h-4 mr-2" />
           <span class="hidden sm:inline">Filtros</span>
-          <span v-if="hasActiveFilters" class="absolute -top-1 -right-1 w-2 h-2 bg-primary-500 rounded-full"></span>
+          <span v-if="hasActiveFilters" class="absolute w-2 h-2 rounded-full -top-1 -right-1 bg-primary-500"></span>
         </button>
 
         <!-- Botão Alternar Visualização -->
@@ -66,15 +74,15 @@
     <!-- Filtros Avançados -->
     <transition
       enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
+      enter-from-class="-translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
       leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="-translate-y-2 opacity-0"
     >
-      <div v-if="showAdvancedFilters" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-4 sm:p-5 space-y-5">
+      <div v-if="showAdvancedFilters" class="p-4 space-y-5 bg-white border border-gray-200 shadow-lg dark:bg-gray-800 rounded-xl dark:border-gray-700 sm:p-5">
         <!-- Grid de Filtros -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
           <!-- Status -->
           <div class="space-y-3">
             <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -98,7 +106,7 @@
                   <IconCheck v-if="isStatusActive('ativa')" class="w-3 h-3 text-white" />
                 </div>
                 <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span class="w-2 h-2 bg-green-500 rounded-full"></span>
                   Ativas
                 </span>
               </label>
@@ -119,7 +127,7 @@
                   <IconCheck v-if="isStatusActive('inativa')" class="w-3 h-3 text-white" />
                 </div>
                 <span class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                  <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
                   Inativas
                 </span>
               </label>
@@ -211,16 +219,16 @@
             <div class="space-y-4">
               <!-- Range Slider -->
               <div class="relative pt-6">
-                <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                <div class="flex justify-between mb-2 text-xs text-gray-600 dark:text-gray-400">
                   <span>{{ formatCurrency(rangeValues[0]) }}</span>
                   <span>{{ formatCurrency(rangeValues[1]) }}</span>
                 </div>
                 
                 <div class="relative h-2">
-                  <div class="absolute w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                  <div class="absolute w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700"></div>
                   
                   <div 
-                    class="absolute h-2 bg-primary-500 dark:bg-primary-400 rounded-full"
+                    class="absolute h-2 rounded-full bg-primary-500 dark:bg-primary-400"
                     :style="{
                       left: (rangeValues[0] / maxMeta * 100) + '%',
                       width: ((rangeValues[1] - rangeValues[0]) / maxMeta * 100) + '%'
@@ -252,9 +260,9 @@
               <!-- Inputs Numéricos -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">De</label>
+                  <label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">De</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
+                    <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2 dark:text-gray-400">R$</span>
                     <input 
                       type="number" 
                       v-model.number="rangeValues[0]" 
@@ -268,9 +276,9 @@
                 </div>
                 
                 <div>
-                  <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Até</label>
+                  <label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Até</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">R$</span>
+                    <span class="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2 dark:text-gray-400">R$</span>
                     <input 
                       type="number" 
                       v-model.number="rangeValues[1]" 
@@ -289,7 +297,7 @@
 
         <!-- Ordenação -->
         <div class="pt-3 border-t border-gray-200 dark:border-gray-700">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
               <IconSort class="w-4 h-4 text-primary-500 dark:text-primary-400" />
               Ordenar por
@@ -299,7 +307,7 @@
               <select 
                 v-model="sortBy" 
                 @change="filterBySort"
-                class="w-full pl-3 pr-9 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500 appearance-none"
+                class="w-full py-2 pl-3 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg appearance-none pr-9 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500"
               >
                 <option value="nome">Nome (A-Z)</option>
                 <option value="nome_desc">Nome (Z-A)</option>
@@ -310,7 +318,7 @@
                 <option value="status">Status</option>
                 <option value="faturamento">Maior faturamento</option>
               </select>
-              <IconChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <IconChevronDown class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
             </div>
           </div>
         </div>
@@ -318,16 +326,16 @@
     </transition>
 
     <!-- Resumo dos Filtros Ativos -->
-    <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800 animate-fadeIn">
+    <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 p-3 border rounded-lg bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800 animate-fadeIn">
       <IconFilter class="w-4 h-4 text-primary-600 dark:text-primary-400" />
       
-      <span class="text-sm text-gray-700 dark:text-gray-300 flex-1">
+      <span class="flex-1 text-sm text-gray-700 dark:text-gray-300">
         {{ filterSummaryText }}
       </span>
       
       <button 
         @click="clearAllFilters"
-        class="p-1 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-full transition-colors"
+        class="p-1 transition-colors rounded-full hover:bg-primary-100 dark:hover:bg-primary-800"
         title="Limpar todos os filtros"
       >
         <IconTimes class="w-4 h-4 text-gray-500 dark:text-gray-400" />

@@ -1,34 +1,34 @@
 <!-- src/App.vue (atualizado e otimizado) -->
 <template>
   <div id="app">
-    <Suspense>
-      <template #default>
-        <router-view v-slot="{ Component, route }">
-          <transition
-            :name="getTransition(route)"
-            mode="out-in"
-            @before-enter="onBeforeEnter"
-            @after-enter="onAfterEnter"
-          >
-            <keep-alive :include="cachedComponents" :max="10">
-              <component
-                :is="getLayout(route)"
-                :key="route.fullPath"
-                v-bind="getLayoutProps(route)"
-              >
-                <component :is="Component" />
-              </component>
-            </keep-alive>
-          </transition>
-        </router-view>
-      </template>
+    <router-view v-slot="{ Component, route }">
       
-      <template #fallback>
-        <AppLoading />
-      </template>
-    </Suspense>
+      <component :is="getLayout(route)" v-bind="getLayoutProps(route)">
+        
+        <transition
+          :name="getTransition(route)"
+          mode="out-in"
+          @before-enter="onBeforeEnter"
+          @after-enter="onAfterEnter"
+        >
+          <keep-alive :include="cachedComponents" :max="10">
+            
+            <suspense>
+              <template #default>
+                <component :is="Component" :key="route.fullPath" />
+              </template>
+              
+              <template #fallback>
+                <AppLoading />
+              </template>
+            </suspense>
+
+          </keep-alive>
+        </transition>
+
+      </component>
+    </router-view>
     
-    <!-- Componentes Globais -->
     <NotificationContainer />
     <ConfirmModal v-if="showGlobalModal" />
     <ToastContainer />
@@ -39,19 +39,20 @@
 import { defineAsyncComponent, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+// ⚠️ IMPORTANTE: Layouts devem ser importados estaticamente. 
+// Como eles envolvem a tela inteira, fazê-los assíncronos causa "piscar de tela" 
+// e os loops de Suspense que você estava vivenciando.
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import AuthLayout from '@/components/auth/AuthLayout.vue'
+
 export default {
   name: 'App',
   
   components: {
-    // Layouts (carregamento assíncrono)
-    DefaultLayout: defineAsyncComponent(() => 
-      import('@/layouts/DefaultLayout.vue')
-    ),
-    AuthLayout: defineAsyncComponent(() => 
-      import('@/components/auth/AuthLayout.vue')
-    ),
+    DefaultLayout,
+    AuthLayout,
     
-    // Componentes Globais (carregamento assíncrono)
+    // Componentes Globais (estes podem continuar assíncronos)
     NotificationContainer: defineAsyncComponent(() => 
       import('@/components/ui/NotificationContainer.vue')
     ),
@@ -70,17 +71,14 @@ export default {
     const route = useRoute()
     const router = useRouter()
     
-    // Estado para modal global
     const showGlobalModal = ref(false)
     
-    // Componentes que devem ser mantidos em cache
     const cachedComponents = computed(() => [
       'UnidadesIndex',
       'UnidadeDetalhes',
       'DashboardIndex'
     ])
     
-    // Métodos
     const getLayout = (route) => {
       const layout = route.meta?.layout || 'default'
       return layout === 'auth' ? 'AuthLayout' : 'DefaultLayout'
@@ -110,33 +108,25 @@ export default {
     }
     
     const onBeforeEnter = () => {
-      // Scroll para o topo
       window.scrollTo(0, 0)
-      
-      // Adiciona classe para transição
       document.body.classList.add('page-transitioning')
     }
     
     const onAfterEnter = () => {
-      // Remove classe de transição
       document.body.classList.remove('page-transitioning')
       
-      // Atualiza título da página
       const appName = 'DS SysTech'
       const pageTitle = route.meta?.title || ''
       document.title = pageTitle ? `${pageTitle} | ${appName}` : appName
     }
     
-    // Watchers
     watch(
       () => route.path,
       (newPath, oldPath) => {
-        // Log de navegação (apenas em desenvolvimento)
         if (process.env.NODE_ENV === 'development') {
           console.log(`Navegação: ${oldPath} → ${newPath}`)
         }
         
-        // Rastreamento de analytics (se configurado)
         if (window.gtag) {
           window.gtag('config', 'GA_MEASUREMENT_ID', {
             page_path: newPath
@@ -145,22 +135,13 @@ export default {
       }
     )
     
-    // Interceptador de erros globais
     const handleError = (error) => {
       console.error('Erro global capturado:', error)
-      
-      // Aqui você pode implementar:
-      // 1. Envio para serviço de logging (Sentry, etc.)
-      // 2. Notificação ao usuário
-      // 3. Redirecionamento para página de erro
-      
-      // Exemplo: redirecionar para página de erro 500
       if (error.response?.status === 500) {
         router.push({ name: 'Error500' })
       }
     }
     
-    // Captura de erros não tratados
     window.addEventListener('error', handleError)
     window.addEventListener('unhandledrejection', handleError)
     

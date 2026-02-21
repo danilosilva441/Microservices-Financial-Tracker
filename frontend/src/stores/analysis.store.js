@@ -438,12 +438,12 @@ export const useAnalysisStore = defineStore('analysis', () => {
   };
 
   // Watchers
-  watch(filters, (newFilters, oldFilters) => {
-    // Se período mudar, ajusta datas automaticamente
-    if (newFilters.periodo !== oldFilters.periodo) {
-      adjustDatesForPeriod(newFilters.periodo);
-    }
-  }, { deep: true });
+watch(() => filters.value.periodo, (newPeriodo, oldPeriodo) => {
+  // Só executa se o período realmente mudou (não executa na inicialização)
+  if (newPeriodo && newPeriodo !== oldPeriodo) {
+    adjustDatesForPeriod(newPeriodo);
+  }
+});
 
   // Funções auxiliares
   const adjustDatesForPeriod = (periodo) => {

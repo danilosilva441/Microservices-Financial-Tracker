@@ -1,11 +1,6 @@
 <template>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%"
-    preserveAspectRatio="xMidYMid meet">
-    <style>
-      {
-        fill: currentColor;
-      }
-    </style>
+    preserveAspectRatio="xMidYMid meet" fill="currentColor">
     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none" />
     <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.5" fill="none" />
     <circle cx="12" cy="12" r="2" fill="currentColor" />

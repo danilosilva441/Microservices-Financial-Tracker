@@ -1,0 +1,13 @@
+// Arquivo de barrel export para facilitar imports
+export * from './useShifts'
+export * from './useShiftForm'
+export * from './useShiftsActions'
+export * from './useShiftsFilters'
+export * from './useShiftsUI'
+export * from './useCalendar'
+export * from './useShiftTypes'
+export * from './useBreaks'
+export * from './useFuncionarios'
+export * from './useShiftsStats'
+export * from './useShiftsDashboard'
+export * from './useShiftsExport'
